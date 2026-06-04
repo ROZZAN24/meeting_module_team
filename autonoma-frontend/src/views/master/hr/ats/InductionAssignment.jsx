@@ -154,7 +154,7 @@ const InductionAssignment = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
 
-  const { departments = [] } = useLookups(['DEPARTMENTS']);
+  const { departments = [], designationLevels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATION_LEVELS']);
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -170,6 +170,50 @@ const InductionAssignment = () => {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
+
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const parts = dateStr.split('T')[0].split('-');
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return `${parts[0]}/${parts[1]}/${parts[2]}`;
+      }
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
+  const topTwoLevels = useMemo(() => {
+    if (!designationLevels || designationLevels.length === 0) return [];
+    const activeSorted = [...designationLevels]
+      .filter(l => l.isActive !== false)
+      .sort((a, b) => (a.screeningLevel || 0) - (b.screeningLevel || 0));
+    if (activeSorted.length < 2) {
+      return activeSorted.map(l => l.rowId);
+    }
+    return activeSorted.slice(-2).map(l => l.rowId);
+  }, [designationLevels]);
+
+  const isReassignmentOrReschedule = useCallback((level) => {
+    if (!level.id) return false;
+    const original = history.find(h => h.id === level.id);
+    if (!original) return false;
+    
+    const trainerChanged = original.trainerEmpCode !== level.trainerEmpCode;
+    const dateChanged = original.inductionDate !== level.inductionDate;
+    const timeChanged = normalizeInductionTime(original.inductionTime) !== normalizeInductionTime(level.inductionTime);
+    
+    return trainerChanged || dateChanged || timeChanged;
+  }, [history]);
 
 
 
@@ -323,7 +367,12 @@ const InductionAssignment = () => {
       }
     },
     { id: 'updatedUser', label: 'Updated By', minWidth: 120, render: (row) => row.updatedUser || row.updatedBy || '-' },
-    { id: 'updatedDate', label: 'Updated Date', minWidth: 150 },
+    { 
+      id: 'updatedDate', 
+      label: 'Updated Date', 
+      minWidth: 150,
+      render: (row) => formatDateDDMMYYYY(row.updatedAt || row.updatedDate || row.createdDate || row.createdAt)
+    },
     {
       id: 'actions',
       label: 'Actions',
@@ -331,9 +380,16 @@ const InductionAssignment = () => {
       render: (row) => (
         <Stack direction="row" spacing={0.5} justifyContent="center">
           <Tooltip title={row.isVirtual ? "Assign Now" : "Edit Assignment"}>
-            <IconButton onClick={() => handleAssign(row)} size="small" color={row.isVirtual ? "primary" : "secondary"}>
-              {row.isVirtual ? <IconUserPlus size={18} /> : <IconEdit size={18} />}
-            </IconButton>
+            <span>
+              <IconButton 
+                onClick={() => handleAssign(row)} 
+                size="small" 
+                color={row.isVirtual ? "primary" : "secondary"}
+                disabled={!perms.write}
+              >
+                {row.isVirtual ? <IconUserPlus size={18} /> : <IconEdit size={18} />}
+              </IconButton>
+            </span>
           </Tooltip>
           <Tooltip 
             title={
@@ -349,7 +405,7 @@ const InductionAssignment = () => {
                 onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); setDeleteDialogOpen(true); }}
                 size="small"
                 color="error"
-                disabled={row.isVirtual || row.currentStatus === 'COMPLETED'}
+                disabled={row.isVirtual || row.currentStatus === 'COMPLETED' || !perms.delete}
               >
                 <IconTrash size={18} />
               </IconButton>
@@ -358,7 +414,7 @@ const InductionAssignment = () => {
         </Stack>
       )
     }
-  ], [handleAssign]);
+  ], [handleAssign, perms.write, perms.delete]);
 
   const currentLevelOptions = useMemo(() => {
     const optionsSet = new Set(LEVEL_OPTIONS);
@@ -698,6 +754,12 @@ const InductionAssignment = () => {
         newErrors[`level_${index}_trainerName`] = 'Trainer Name is required';
         validationFailed = true;
       }
+      if (isReassignmentOrReschedule(level)) {
+        if (!level.remarks || !level.remarks.trim()) {
+          newErrors[`level_${index}_remarks`] = 'Reassignment / Rescheduling Reason is required';
+          validationFailed = true;
+        }
+      }
     });
 
     if (validationFailed) {
@@ -806,8 +868,8 @@ const InductionAssignment = () => {
         columns={columns}
         rows={resolvedRows}
         loading={loading}
-        onDoubleClickRow={handleAssign}
-        onEditRow={handleAssign}
+        onDoubleClickRow={perms.write ? handleAssign : undefined}
+        onEditRow={perms.write ? handleAssign : undefined}
         disableSearchFilter={true}
         showActions={false}
       />
@@ -985,26 +1047,28 @@ const InductionAssignment = () => {
                     <MenuItem value="">-Select-</MenuItem>
                     {employees
                       .filter(emp => {
-                        // Special override for Maheshwaran and Eashwar
-                        if (emp.empCode === 'EMP-001') {
-                          return level.inductionRound === 'HR';
-                        }
-                        if (emp.empCode === 'EMP-002') {
-                          return level.inductionRound === 'QMS';
-                        }
-
                         if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
                         if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
+                        if (emp.status !== 'Active') return false;
+
                         const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
                         const round = level.inductionRound;
+                        
                         if (round === 'HR') {
-                          return ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(empDept?.toUpperCase());
+                          const deptUpper = (empDept || '').toUpperCase();
+                          const hrKeywords = ['HR', 'H.R.', 'HUMAN RESOURCE', 'PEOPLE OPERATIONS', 'PERSONNEL'];
+                          return hrKeywords.some(keyword => deptUpper.includes(keyword));
                         }
                         if (round === 'QMS') {
-                          return ['QMS', 'QUALITY MANAGEMENT', 'QUALITY', 'QMS DEPARTMENT', 'QUALITY ASSURANCE'].includes(empDept?.toUpperCase());
+                          const deptUpper = (empDept || '').toUpperCase();
+                          const qmsKeywords = ['QMS', 'QUALITY', 'Q.M.S.'];
+                          return qmsKeywords.some(keyword => deptUpper.includes(keyword));
                         }
                         if (round === 'DEPARTMENT') {
                           return empDept?.toLowerCase() === formData.department?.toLowerCase();
+                        }
+                        if (round === 'MANAGEMENT') {
+                          return topTwoLevels.includes(Number(emp.empLevelId));
                         }
                         return true;
                       })
@@ -1016,6 +1080,26 @@ const InductionAssignment = () => {
                   </BOSTextField>
                 </Box>
               </Box>
+              {isReassignmentOrReschedule(level) && (
+                <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <BOSTextField
+                      name="remarks"
+                      label="REASSIGNMENT / RESCHEDULING REASON"
+                      placeholder="Please enter the reason for reassignment or rescheduling..."
+                      value={level.remarks || ''}
+                      onChange={(e) => handleLevelInputChange(index, 'remarks', e.target.value)}
+                      required
+                      multiline
+                      rows={2}
+                      fullWidth
+                      error={!!errors[`level_${index}_remarks`]}
+                      helperText={errors[`level_${index}_remarks`]}
+                      sx={errorStyle(!!errors[`level_${index}_remarks`])}
+                    />
+                  </Box>
+                </Box>
+              )}
             </Box>
           ))}
           {perms.write && (formData.levels || []).length + history.length < 4 && (
@@ -1063,7 +1147,7 @@ const InductionAssignment = () => {
                       <TableCell>{i + 1}</TableCell>
                       <TableCell>{h.screeningLevel || '-'}</TableCell>
                       <TableCell>{h.inductionRound || '-'}</TableCell>
-                      <TableCell>{h.inductionDate ? `${h.inductionDate} ${h.inductionTime || ''}` : '-'}</TableCell>
+                      <TableCell>{h.inductionDate ? `${formatDateDDMMYYYY(h.inductionDate)} ${h.inductionTime || ''}` : '-'}</TableCell>
                       <TableCell>{h.trainerName || '-'}</TableCell>
                       <TableCell>
                         <Chip

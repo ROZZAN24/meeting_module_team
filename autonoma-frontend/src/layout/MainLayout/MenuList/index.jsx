@@ -76,12 +76,13 @@ function MenuList() {
   const permMap = useSelector((state) => state.permissions.map);
 
   useEffect(() => {
-    if (user?.id) {
-      reduxDispatch(fetchUserPermissions(user.id));
+    const uid = user?.userId || user?.id;
+    if (uid) {
+      reduxDispatch(fetchUserPermissions(uid));
     } else {
       reduxDispatch(clearPermissions());
     }
-  }, [user?.id, reduxDispatch]);
+  }, [user?.userId, user?.id, reduxDispatch]);
 
   // ── Build filtered menu items ──
   useLayoutEffect(() => {
@@ -90,6 +91,8 @@ function MenuList() {
     // Apply permission filtering only when permissions are loaded
     if (permStatus === 'loaded') {
       currentItems = filterMenuByPermissions(currentItems, permMap);
+    } else {
+      currentItems = filterMenuByPermissions(currentItems, {});
     }
 
     setMenuItems({ items: currentItems });

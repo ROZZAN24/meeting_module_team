@@ -19,9 +19,12 @@ public class RepositoryAuditAspect {
         // since pre-persist handles creation perfectly.
         
         try {
-            String currentUserId = null;
-            try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
-            String finalUserId = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+            String currentUserEmp = null;
+            try { currentUserEmp = com.autonoma.erp.util.SecurityUtils.getCurrentUserEmployeeName(); } catch (Exception e) {}
+            if (currentUserEmp == null || currentUserEmp.trim().isEmpty()) {
+                try { currentUserEmp = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+            }
+            String finalUserId = (currentUserEmp != null && !currentUserEmp.trim().isEmpty()) ? currentUserEmp : "admin";
             java.util.Date now = new java.util.Date();
 
             if (entity instanceof Iterable) {

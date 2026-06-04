@@ -13,9 +13,10 @@ import Chart from 'react-apexcharts';
 import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import useAuth from 'hooks/useAuth';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
-import { setFilterConfig, resetFilters } from 'store/slices/search';
+import { setFilterConfig, resetFilters, setFilters } from 'store/slices/search';
 import ReactQuillDemo from 'ui-component/third-party/ReactQuill';
 import BOSFilePreview from 'ui-component/bos/BOSFilePreview';
 
@@ -160,6 +161,9 @@ export default function TicketManagement({ viewType }) {
   const theme = useTheme();
   const dispatch = useDispatch();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const initialFiltersRef = useRef(location.state?.initialFilters);
 
   const currentViewType = viewType || (window.location.pathname.includes('ticket-by-me') ? 'raised-by-me' : 'raised-for-me');
   const perms = usePagePermissions(currentViewType === 'raised-by-me' ? PAGE_CODES.SUPPORT_RAISED_BY_ME : PAGE_CODES.SUPPORT_RAISED_FOR_ME);
@@ -175,6 +179,28 @@ export default function TicketManagement({ viewType }) {
   // Read Global Filters from Redux state
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+
+  // Esc key listener for returning to Dashboard
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && location.state?.fromDashboard) {
+        if (e.defaultPrevented) return;
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        
+        const hasOpenDialog = document.querySelector('.MuiDialog-root');
+        if (!hasOpenDialog) {
+          navigate('/dashboard/task-dashboard', { 
+            state: { 
+              fromTab: location.state?.fromTab,
+              dashboardFilters: location.state?.dashboardFilters
+            } 
+          });
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [location, navigate]);
 
   // Core Data States
   const [tickets, setTickets] = useState([]);
@@ -728,6 +754,16 @@ export default function TicketManagement({ viewType }) {
       { id: 'endDate', label: 'To Date', type: 'date', isStarred: false }
     ];
     dispatch(setFilterConfig(config));
+    
+    if (initialFiltersRef.current) {
+      dispatch(setFilters(initialFiltersRef.current));
+      
+      // Once employeesList is loaded, we can clear the ref so we don't overwrite user changes on any future config updates
+      if (employeesList.length > 0) {
+        initialFiltersRef.current = null;
+      }
+    }
+
     return () => {
       dispatch(setFilterConfig(null));
       dispatch(resetFilters());
@@ -748,6 +784,27 @@ export default function TicketManagement({ viewType }) {
       setFormEmail(user?.email || '');
     }
   }, [user, currentViewType]);
+
+  // Handle openNewTask from location state
+  useEffect(() => {
+    if (location.state?.openNewTask && employeesList.length > 0) {
+      setCreateOpen(true);
+      if (location.state?.assignTo) {
+        const emp = employeesList.find(e => e.employeeName === location.state.assignTo || e.id === location.state.assignTo);
+        if (emp) {
+          setFormDevName(emp.employeeName);
+          setFormDevEmail(emp.officeMail || '');
+          axios.get(`/api/master/hr/employees/${emp.id}/contact`)
+            .then(c => {
+              if (c.data?.mobile) setFormDevMobile(c.data.mobile);
+            }).catch(() => { });
+        } else {
+          setFormDevName(location.state.assignTo);
+        }
+      }
+      navigate(location.pathname, { replace: true, state: { ...location.state, openNewTask: false, assignTo: null } });
+    }
+  }, [location.state, employeesList, navigate, location.pathname]);
 
   // Keyboard Shortcut: Ctrl + N for New Task
   useEffect(() => {
@@ -1612,6 +1669,10 @@ export default function TicketManagement({ viewType }) {
       showSnackbar('Please select a Source Type.', 'warning');
       return;
     }
+    if ((formSourceType === 'Web' || formSourceType === 'Mobile') && !formPage) {
+      showSnackbar('Please select a Screen / Page Name.', 'warning');
+      return;
+    }
     if (!formDevName || !formDevName.trim()) {
       showSnackbar('Please select an Assignee (Assigned To).', 'warning');
       return;
@@ -1667,7 +1728,16 @@ export default function TicketManagement({ viewType }) {
       setDueDateReasonText('');
       setPendingSavePayload(null);
       resetForm();
-      fetchTickets();
+      if (location.state?.fromDashboard) {
+        navigate('/dashboard/task-dashboard', { 
+          state: { 
+            fromTab: location.state?.fromTab,
+            dashboardFilters: location.state?.dashboardFilters 
+          } 
+        });
+      } else {
+        fetchTickets();
+      }
     } catch (err) {
       showSnackbar('Failed to create ticket: ' + (err.response?.data?.error || err.message), 'error');
     } finally {
@@ -2043,7 +2113,7 @@ export default function TicketManagement({ viewType }) {
       const teamIdentifiers = [];
       employeesList.forEach(b => {
          const vHead = (b.verticalHead || '').trim().toLowerCase();
-         if (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName))) {
+         if (vHead && (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName)))) {
             if (b.employeeName) teamIdentifiers.push(b.employeeName.trim().toLowerCase());
             if (b.officeMail) {
                const mail = b.officeMail.trim().toLowerCase();
@@ -2056,17 +2126,13 @@ export default function TicketManagement({ viewType }) {
             }
          }
       });
-      // Add current user to their own team view
-      teamIdentifiers.push(currentUserId);
-      teamIdentifiers.push(currentUserName);
-      if (myEmpName) teamIdentifiers.push(myEmpName);
-
       const scope = globalFilters?.taskScope || 'Mine';
 
       const matchTeam = (field) => {
          if (!field) return false;
          const f = field.toLowerCase();
-         return teamIdentifiers.includes(f) || teamIdentifiers.some(m => m && (f.includes(m) || m.includes(f)));
+         if (f === currentUserId || f === currentUserName || (myEmpName && f === myEmpName)) return true;
+         return teamIdentifiers.includes(f);
       };
 
       if (currentViewType === 'raised-for-me') {
@@ -3865,6 +3931,7 @@ export default function TicketManagement({ viewType }) {
                       <MenuItem value="Select">Select</MenuItem>
                       <MenuItem value="Web">Web</MenuItem>
                       <MenuItem value="Mobile">Mobile</MenuItem>
+                      <MenuItem value="General">General</MenuItem>
                     </TextField>
                   </Box>
                   <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formPage?.pageName, 'Screen / Page Name', 90)}px` }}>
