@@ -146,7 +146,7 @@ public class CompanyCredential {
     protected void onCreate() {
         String currentUserId = null;
         try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
-        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "Admin";
         this.updatedBy = null;
 
         createdDate = new Date();
@@ -158,7 +158,7 @@ public class CompanyCredential {
     protected void onUpdate() {
         String currentUserId = null;
         try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
-        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "Admin";
         if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
 
         updatedDate = new Date();
