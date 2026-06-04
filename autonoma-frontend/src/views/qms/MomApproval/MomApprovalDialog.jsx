@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Stack, Typography, Box, Grid, Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions, Skeleton } from '@mui/material';
-import { BOSFormDialog, BOSTextField, BOSFormSection } from 'ui-component/bos';
-import { IconShieldCheck, IconX, IconPaperclip } from '@tabler/icons-react';
+import { Stack, Typography, Box, Grid, Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, IconButton } from '@mui/material';
+import { BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload } from 'ui-component/bos';
+import { IconShieldCheck, IconX, IconPaperclip, IconEye } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
@@ -305,15 +305,22 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
                       {sampleAttachment.name}
                     </Typography>
                   </Stack>
-                  <Button
-                    variant="outlined"
+                  <IconButton
                     size="small"
                     href={getFileViewUrl(sampleAttachment.url)}
                     target="_blank"
-                    sx={{ ml: 1, borderRadius: '8px', textTransform: 'none', fontWeight: 700 }}
+                    component="a"
+                    sx={{
+                      ml: 1,
+                      bgcolor: 'primary.lighter',
+                      color: 'primary.main',
+                      border: '1px solid',
+                      borderColor: 'primary.light',
+                      '&:hover': { bgcolor: 'primary.main', color: 'white' }
+                    }}
                   >
-                    View
-                  </Button>
+                    <IconEye size={18} />
+                  </IconButton>
                 </Box>
               ) : (
                 <Box
@@ -333,45 +340,13 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
               {loadingOriginal ? (
                 <Skeleton variant="rectangular" height={54} sx={{ borderRadius: 2 }} />
               ) : originalAttachments.length > 0 ? (
-                <Stack spacing={1}>
-                  {originalAttachments.map((file, i) => (
-                    <Box
-                      key={file.id || i}
-                      sx={{
-                        p: 1.5,
-                        border: '1px solid',
-                        borderColor: 'success.light',
-                        borderRadius: 2,
-                        bgcolor: 'success.lighter',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          boxShadow: '0 2px 8px rgba(76, 175, 80, 0.15)',
-                          borderColor: 'success.main'
-                        }
-                      }}
-                    >
-                      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
-                        <IconPaperclip size={20} style={{ color: '#4caf50' }} />
-                        <Typography variant="body2" fontWeight={600} noWrap sx={{ color: 'success.dark' }}>
-                          {file.fileName || 'Attachment'}
-                        </Typography>
-                      </Stack>
-                      <Button
-                        variant="outlined"
-                        color="success"
-                        size="small"
-                        href={getFileViewUrl(file.serverFileName)}
-                        target="_blank"
-                        sx={{ ml: 1, borderRadius: '8px', textTransform: 'none', fontWeight: 700 }}
-                      >
-                        View
-                      </Button>
-                    </Box>
-                  ))}
-                </Stack>
+                <BOSFileUpload
+                  files={originalAttachments}
+                  onChange={() => {}}
+                  module="QUALITY_MANAGEMENT_SYSTEMS_MEETING_CLOSE_MOM"
+                  multiple={true}
+                  disabled={true}
+                />
               ) : (
                 <Box
                   sx={{ p: 1.5, border: '1px dashed', borderColor: 'divider', borderRadius: 2, textAlign: 'center', bgcolor: 'grey.50' }}

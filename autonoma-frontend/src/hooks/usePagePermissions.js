@@ -21,7 +21,7 @@ import { fetcher } from 'utils/axios';
  */
 export default function usePagePermissions(pageCode) {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userId = user?.userId || user?.id;
 
   const { data: auths, isLoading } = useSWR(
     userId ? `/api/user-page-auth/${userId}` : null,
@@ -51,12 +51,12 @@ export default function usePagePermissions(pageCode) {
       };
     }
 
-    // While loading, default to read-only (graceful degradation — don't block users)
+    // While loading, default to loading: true, and enabled/read: false (secure by default)
     if (isLoading || !auths) {
       return {
-        loading: isLoading,
-        enabled: true,
-        read: true,
+        loading: true,
+        enabled: false,
+        read: false,
         write: false,
         delete: false,
         export: false,

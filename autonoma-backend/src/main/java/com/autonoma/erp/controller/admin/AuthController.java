@@ -368,7 +368,7 @@ public class AuthController {
                 userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
                 userMap.put("faceDescriptor", user.getFaceDescriptor());
 
-                enrichUserMapWithTenantInfo(userMap);
+                enrichUserMapWithTenantInfo(userMap, loginRequest.getTenantId(), loginRequest.getDivisionId());
 
                 response.put("user", userMap);
 
@@ -386,7 +386,10 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> me(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(value = "X-Tenant-ID", required = false) String xTenantId,
+            @RequestHeader(value = "X-Division-ID", required = false) Long xDivisionId) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body("Missing or invalid Authorization header");
         }
@@ -421,7 +424,7 @@ public class AuthController {
                         userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
                         userMap.put("faceDescriptor", user.getFaceDescriptor());
 
-                        enrichUserMapWithTenantInfo(userMap);
+                        enrichUserMapWithTenantInfo(userMap, xTenantId, xDivisionId);
 
                         Map<String, Object> resp = new HashMap<>();
                         resp.put("user", userMap);
@@ -475,29 +478,49 @@ public class AuthController {
         return ResponseEntity.notFound().build();
     }
 
-    private void enrichUserMapWithTenantInfo(Map<String, Object> userMap) {
-        String tenantId = com.autonoma.erp.config.TenantContextHolder.getTenantId();
-        Long divisionId = com.autonoma.erp.config.DivisionContextHolder.getDivisionId();
+    private void enrichUserMapWithTenantInfo(Map<String, Object> userMap, String tenantId, Long divisionId) {
+        final String resolvedTenantId;
+        if (tenantId == null || tenantId.trim().isEmpty() || "AUTONOMA".equalsIgnoreCase(tenantId)) {
+            resolvedTenantId = com.autonoma.erp.config.TenantContextHolder.getTenantId();
+        } else {
+            resolvedTenantId = tenantId;
+        }
 
-        if (tenantId != null) {
-            userMap.put("tenantId", tenantId);
+        final Long resolvedDivisionId;
+        if (divisionId == null) {
+            resolvedDivisionId = com.autonoma.erp.config.DivisionContextHolder.getDivisionId();
+        } else {
+            resolvedDivisionId = divisionId;
+        }
+
+        if (resolvedTenantId != null && !resolvedTenantId.trim().isEmpty()) {
+            userMap.put("tenantId", resolvedTenantId);
             // Switch to Master context to fetch company list safely
+            String currentTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
             com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
             companyService.findAll().stream()
-                    .filter(c -> tenantId.equals(c.getDbSourceName()))
+                    .filter(c -> resolvedTenantId.equalsIgnoreCase(c.getDbSourceName()))
                     .findFirst()
                     .ifPresent(c -> userMap.put("companyName", c.getCompanyName()));
             // Restore current tenant
-            com.autonoma.erp.config.TenantContextHolder.setTenantId(tenantId);
+            if (currentTenant != null) {
+                com.autonoma.erp.config.TenantContextHolder.setTenantId(currentTenant);
+            } else {
+                com.autonoma.erp.config.TenantContextHolder.clear();
+            }
         }
 
-        if (divisionId != null) {
-            userMap.put("divisionId", divisionId);
+        if (resolvedDivisionId != null) {
+            userMap.put("divisionId", resolvedDivisionId);
             String currentTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
             com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
-            divisionService.findById(divisionId)
+            divisionService.findById(resolvedDivisionId)
                     .ifPresent(d -> userMap.put("divisionName", d.getDivisionName()));
-            com.autonoma.erp.config.TenantContextHolder.setTenantId(currentTenant);
+            if (currentTenant != null) {
+                com.autonoma.erp.config.TenantContextHolder.setTenantId(currentTenant);
+            } else {
+                com.autonoma.erp.config.TenantContextHolder.clear();
+            }
         }
     }
 
@@ -869,7 +892,7 @@ public class AuthController {
             userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
             userMap.put("faceDescriptor", user.getFaceDescriptor());
 
-            enrichUserMapWithTenantInfo(userMap);
+            enrichUserMapWithTenantInfo(userMap, loginRequest.getTenantId(), loginRequest.getDivisionId());
             response.put("user", userMap);
 
             return ResponseEntity.ok(response);

@@ -27,11 +27,50 @@ public class InductionTrainingService {
     @Autowired
     private DepartmentRepository departmentRepo;
 
+    private int parseScreeningLevel(String level) {
+        if (level == null) return 0;
+        String digits = level.replaceAll("\\D+", "");
+        if (digits.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(digits);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public boolean isAssignmentReady(InductionAssignment assignment) {
+        if (assignment == null || !"ACTIVE".equalsIgnoreCase(assignment.getInductionStatus())) {
+            return false;
+        }
+        
+        List<InductionAssignment> traineeAssignments = assignmentRepo.findByEmpCode(assignment.getEmpCode());
+        
+        List<InductionAssignment> sortedActive = traineeAssignments.stream()
+                .filter(a -> "ACTIVE".equalsIgnoreCase(a.getInductionStatus()))
+                .sorted(java.util.Comparator.comparingInt(a -> parseScreeningLevel(a.getScreeningLevel())))
+                .collect(java.util.stream.Collectors.toList());
+        
+        int currentLevelNum = parseScreeningLevel(assignment.getScreeningLevel());
+        
+        for (InductionAssignment other : sortedActive) {
+            int otherLevelNum = parseScreeningLevel(other.getScreeningLevel());
+            if (otherLevelNum < currentLevelNum) {
+                if (!"COMPLETED".equalsIgnoreCase(other.getCurrentStatus())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     /**
      * Get assignments for a specific trainer (login-filtered).
      */
     public List<InductionAssignment> getForTrainer(String trainerEmpCode) {
-        return assignmentRepo.findByTrainerEmpCode(trainerEmpCode);
+        List<InductionAssignment> list = assignmentRepo.findByTrainerEmpCode(trainerEmpCode);
+        return list.stream()
+                .filter(this::isAssignmentReady)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -182,6 +221,10 @@ public class InductionTrainingService {
         InductionAssignment assignment = assignmentRepo.findById(assignmentId)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
+        if (!isAssignmentReady(assignment)) {
+            throw new RuntimeException("This assignment is locked. All previous induction rounds must be completed first.");
+        }
+
         if (!"PENDING".equalsIgnoreCase(assignment.getCurrentStatus()) 
             && !"RESCHEDULE".equalsIgnoreCase(assignment.getCurrentStatus())) {
             throw new RuntimeException("Training can only be started from PENDING or RESCHEDULE status. Current: " + assignment.getCurrentStatus());
@@ -226,6 +269,13 @@ public class InductionTrainingService {
      */
     @Transactional
     public void saveProgress(Long assignmentId, List<InductionTrainingDetail> updates, String currentUser) {
+        InductionAssignment assignment = assignmentRepo.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+
+        if (!isAssignmentReady(assignment)) {
+            throw new RuntimeException("This assignment is locked. All previous induction rounds must be completed first.");
+        }
+
         for (InductionTrainingDetail update : updates) {
             InductionTrainingDetail existing = detailRepo.findById(update.getId())
                     .orElseThrow(() -> new RuntimeException("Detail item not found: " + update.getId()));
@@ -257,6 +307,10 @@ public class InductionTrainingService {
     public InductionAssignment completeTraining(Long assignmentId, String currentUser) {
         InductionAssignment assignment = assignmentRepo.findById(assignmentId)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
+
+        if (!isAssignmentReady(assignment)) {
+            throw new RuntimeException("This assignment is locked. All previous induction rounds must be completed first.");
+        }
 
         List<InductionTrainingDetail> details = detailRepo.findByAssignmentId(assignmentId);
 
