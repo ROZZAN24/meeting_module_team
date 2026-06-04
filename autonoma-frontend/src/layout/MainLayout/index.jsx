@@ -12,6 +12,9 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Grow from '@mui/material/Grow';
 
+import { useDispatch } from 'store';
+import { fetchUserPermissions, clearPermissions } from 'store/slices/permissions';
+
 // project imports
 import Footer from './Footer';
 import Header from './Header';
@@ -37,6 +40,7 @@ import FaceWatchdogGuard from 'ui-component/FaceWatchdogGuard';
 function MainLayoutInner() {
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
+  const reduxDispatch = useDispatch();
 
   const {
     state: { borderRadius, container, miniDrawer, menuOrientation, i18n }
@@ -46,6 +50,15 @@ function MainLayoutInner() {
   const { ribbonOpen } = useRibbon();
   const { user, licenseStatus, logoutCountdown } = useAuth();
   const [showLicenseAlert, setShowLicenseAlert] = useState(false);
+
+  useEffect(() => {
+    const uid = user?.userId || user?.id;
+    if (uid) {
+      reduxDispatch(fetchUserPermissions(uid));
+    } else {
+      reduxDispatch(clearPermissions());
+    }
+  }, [user?.userId, user?.id, reduxDispatch]);
 
   useEffect(() => {
     const isDismissed = sessionStorage.getItem('licenseAlertDismissed');

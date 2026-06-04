@@ -53,6 +53,10 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
       dispatch(openSnackbar({ open: true, message: 'Please enter Action Taken', variant: 'alert', severity: 'warning' }));
       return;
     }
+    if (isAttachmentRequired && attachments.length === 0) {
+      dispatch(openSnackbar({ open: true, message: 'Attachment is mandatory. Please upload at least one file before submitting.', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     try {
       await axios.put(`${API_PATHS.QMS.MOMS}/${item._momId}/details/${item.id}/close`, {
         actionTaken: actionTaken.toUpperCase(),
@@ -83,7 +87,7 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
       open={open}
       onClose={onClose}
       onSave={isEditable && isAssignedToMe ? handleSave : undefined}
-      title="Close MOM Action"
+      title="Submit for Closure"
       maxWidth="md"
       isViewOnly={!isEditable}
       onEditClick={() => setIsEditable(true)}
