@@ -237,7 +237,7 @@ public class DataInitializer implements CommandLineRunner {
         com.autonoma.erp.model.EmployeeMaster adminEmp = null;
         java.util.List<com.autonoma.erp.model.EmployeeMaster> emps = employeeMasterRepository.findAll();
         for (com.autonoma.erp.model.EmployeeMaster e : emps) {
-            if ("ADMIN_EMP".equals(e.getEmpCode())) {
+            if ("ADMIN_EMP".equalsIgnoreCase(e.getEmpCode())) {
                 adminEmp = e;
                 break;
             }
@@ -275,7 +275,7 @@ public class DataInitializer implements CommandLineRunner {
             company.setPincode("560001");
             company.setGstIn("29AAAAA0000A1Z5");
             company.setDbSourceName("AUTONOMA");
-            company.setDirectoryPath("/uploads");
+            company.setDirectoryPath("BOS_DOCUMENTS");
             company.setCreatedBy("System");
             company.setCreatedDate(new Date());
             company.setLicExpRemainderDays(365);
@@ -289,6 +289,12 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Default company seeded: " + company.getCompanyName());
         } else {
             company = companyCredentialRepository.findAll().get(0);
+            // Auto-heal: migrate old '/uploads' default to the correct 'BOS_DOCUMENTS'
+            if ("/uploads".equals(company.getDirectoryPath()) || "uploads".equals(company.getDirectoryPath())) {
+                company.setDirectoryPath("BOS_DOCUMENTS");
+                companyCredentialRepository.save(company);
+                System.out.println("[DataInitializer] Migrated directoryPath from '/uploads' to 'BOS_DOCUMENTS'");
+            }
         }
 
         // Seed default division if empty

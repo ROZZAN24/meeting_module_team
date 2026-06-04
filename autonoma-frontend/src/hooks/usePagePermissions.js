@@ -45,7 +45,9 @@ export default function usePagePermissions(pageCode) {
         delete: true,
         export: true,
         approval: true,
-        manager: true
+        manager: true,
+        additional1: true,
+        additional2: true
       };
     }
 
@@ -59,7 +61,9 @@ export default function usePagePermissions(pageCode) {
         delete: false,
         export: false,
         approval: false,
-        manager: false
+        manager: false,
+        additional1: false,
+        additional2: false
       };
     }
 
@@ -78,7 +82,9 @@ export default function usePagePermissions(pageCode) {
         delete: false,
         export: false,
         approval: false,
-        manager: false
+        manager: false,
+        additional1: false,
+        additional2: false
       };
     }
 
@@ -92,7 +98,9 @@ export default function usePagePermissions(pageCode) {
         delete: false,
         export: false,
         approval: false,
-        manager: false
+        manager: false,
+        additional1: false,
+        additional2: false
       };
     }
 
@@ -105,7 +113,9 @@ export default function usePagePermissions(pageCode) {
       delete: pageAuth.deleteAcs === 1,
       export: pageAuth.export === 1,
       approval: pageAuth.approval === 1,
-      manager: pageAuth.manager === 1
+      manager: pageAuth.manager === 1,
+      additional1: pageAuth.additional1 === 1,
+      additional2: pageAuth.additional2 === 1
     };
   }, [auths, pageCode, isLoading]);
 }
@@ -224,12 +234,21 @@ export const PAGE_CODES = {
   AD_AUDIT_TRAIL: 'AD1150',
   AD_SESSION_ANALYTICS: 'AD1160',
   AD_FILE_TRACEABILITY: 'AD1170',
+  AD_DATA_MIGRATION: 'AD1180',
+  AD_ORGANIZATION_CHART: 'AD1190',
 
   // ── BOS Admin ──
   AD_BUSINESS_AUTH: 'AD1210',
   AD_APP_PREFERENCE: 'AD1220',
   AD_PREFIX_CREDENTIALS: 'AD1230',
   AD_SESSION_MONITORING: 'AD1240',
+
+  // ── Support ──
+  SUPPORT_RAISED_BY_ME: 'S1110',
+  SUPPORT_RAISED_FOR_ME: 'S1120',
+
+  // ── Missing Page Codes ──
+  QMS_MEETING_UNNAMED: 'M1320',
 
   // ── Dashboard ──
   DASHBOARD_DEFAULT: 'DB1110',

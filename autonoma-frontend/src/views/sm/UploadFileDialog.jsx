@@ -1,23 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  TextField,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  useTheme
-} from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, Box, Typography, Button, IconButton, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme } from '@mui/material';
 import { IconX, IconUpload, IconPlus, IconPrinter, IconTrash } from '@tabler/icons-react';
 import { getDialogStyles, btnSave, btnCancel, btnDelete } from 'ui-component/bos/BOSStyles';
 import { useColorScheme } from '@mui/material/styles';

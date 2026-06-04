@@ -683,7 +683,7 @@ export default function AddAuditObservation() {
                         const file = files[0];
                         updateDetail(idx, 'attachmentPath', file ? file.serverFileName : '');
                       }}
-                      module="QMS"
+                      module="QUALITY_MANAGEMENT_SYSTEMS_AUDIT_AUDIT_OBSERVATION"
                       multiple={false}
                       compact={true}
                       isEditing={perms.write}

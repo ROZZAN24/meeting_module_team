@@ -249,9 +249,9 @@ public class AuditObservationController {
     @PutMapping("/ncr/approve/{detailId}")
     @RequirePagePermission(pageCode = "QM1250", action = "approval")
     @Operation(summary = "Approve NCR Closure", description = "Approves the corrective action and closes the finding")
-    public ResponseEntity<?> approveNcr(@PathVariable Integer detailId) {
+    public ResponseEntity<?> approveNcr(@PathVariable Integer detailId, @RequestParam(required = false) String remarks) {
         try {
-            ncrOfiService.approveNcr(detailId);
+            ncrOfiService.approveNcr(detailId, remarks);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());

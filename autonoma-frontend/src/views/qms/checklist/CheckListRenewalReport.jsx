@@ -1,3 +1,4 @@
+import TextField from 'ui-component/CustomTextField';
 import { useState, useEffect, useCallback } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -9,7 +10,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import TextField from '@mui/material/TextField';
+
 import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -281,6 +282,17 @@ export default function CheckListRenewalReport() {
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]:!p[key] }));
 
   const [departmentsList, setDepartmentsList] = useState([]);
+
+  // Auto-set fromDate to today when the filter drawer opens (only if not already set)
+  useEffect(() => {
+    if (drawerOpen && !filters.fromDate) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      setFilters((prev) => ({ ...prev, fromDate: `${yyyy}-${mm}-${dd}` }));
+    }
+  }, [drawerOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     axios.get('/api/master/hr/departments')
@@ -602,14 +614,32 @@ export default function CheckListRenewalReport() {
           </FilterSection>
           <Divider />
           <FilterSection title="Consider Date?" open={openSections.considerDate} onToggle={() => toggleSection('considerDate')}>
-            <FormControl><RadioGroup value={filters.considerDate} onChange={(e) => setFilter('considerDate', e.target.value)}>
+            <FormControl><RadioGroup value={filters.considerDate} onChange={(e) => {
+              const val = e.target.value;
+              setFilter('considerDate', val);
+              if (val === 'Yes') {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const todayStr = `${yyyy}-${mm}-${dd}`;
+                setFilter('considerDateValue', todayStr);
+                setFilter('fromDate', todayStr);
+              }
+            }}>
               {['All', 'Yes', 'No'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
             </RadioGroup></FormControl>
             {filters.considerDate === 'Yes' && (
               <Box sx={{ mt: 1.5 }}>
                 <Box sx={{ mb: 1.5 }}>
                   <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>Consider Date</Typography>
-                  <TextField size="small" type="date" fullWidth value={filters.considerDateValue || ''} onChange={(e) => setFilter('considerDateValue', e.target.value)} InputLabelProps={{ shrink: true }} />
+                  <TextField size="small" type="date" fullWidth value={filters.considerDateValue || ''} onChange={(e) => {
+                    const val = e.target.value;
+                    setFilter('considerDateValue', val);
+                    if (val) {
+                      setFilter('fromDate', val);
+                    }
+                  }} InputLabelProps={{ shrink: true }} />
                 </Box>
                 {filters.considerDateValue && (
                   (() => {

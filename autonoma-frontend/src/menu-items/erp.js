@@ -120,6 +120,7 @@ export const masters = {
           title: 'ATS',
           type: 'collapse',
           icon: icons.IconSearch,
+          pageCode: 'M2100',
           children: [
             {
               id: 'hra-ats',
@@ -168,6 +169,7 @@ export const masters = {
           title: 'Employee',
           type: 'collapse',
           icon: icons.IconUsers,
+          pageCode: 'M2200',
           children: [
             {
               id: 'master-hr-employee-master',
@@ -232,6 +234,7 @@ export const masters = {
           title: 'Payroll',
           type: 'collapse',
           icon: icons.IconCoins,
+          pageCode: 'M2300',
           children: [
             {
               id: 'master-hr-payroll-holiday',
@@ -312,6 +315,7 @@ export const masters = {
           title: 'Check List',
           type: 'collapse',
           icon: icons.IconClipboardCheck,
+          pageCode: 'M1200',
           children: [
             {
               id: 'master-qms-checklist',
@@ -328,6 +332,7 @@ export const masters = {
           title: 'Audit',
           type: 'collapse',
           icon: icons.IconFileCheck,
+          pageCode: 'M1100',
           children: [
             {
               id: 'master-qms-audit-area',
@@ -360,6 +365,7 @@ export const masters = {
           title: 'Meeting',
           type: 'collapse',
           icon: icons.IconMessage2,
+          pageCode: 'M1300',
           children: [
             {
               id: 'master-qms-meeting-master',
@@ -368,6 +374,14 @@ export const masters = {
               url: '/master/qms/meeting/master',
               icon: icons.IconCalendarEvent,
               pageCode: 'M1310'
+            },
+            {
+              id: 'master-qms-meeting-unnamed',
+              title: 'Unnamed Page',
+              type: 'item',
+              url: '/master/qms/meeting/unnamed',
+              icon: icons.IconHelp,
+              pageCode: 'M1320'
             }
           ]
         }
@@ -440,6 +454,14 @@ export const masters = {
               url: '/master/npd/product-capacity',
               icon: icons.IconAward,
               pageCode: 'M3170'
+            },
+            {
+              id: 'master-npd-product-process',
+              title: 'Product Process Master',
+              type: 'item',
+              url: '/master/npd/product-process',
+              icon: icons.IconRotate2,
+              pageCode: 'M3180'
             }
           ]
         },
@@ -456,7 +478,8 @@ export const masters = {
           title: 'UOM',
           type: 'item',
           url: '/master/npd/uom',
-          icon: icons.IconRuler2
+          icon: icons.IconRuler2,
+          pageCode: 'M5240'
         }
       ]
     },
@@ -772,6 +795,7 @@ export const qms = {
       title: 'Checklist',
       type: 'collapse',
       icon: icons.IconClipboardCheck,
+      pageCode: 'QM1100',
       children: [
         {
           id: 'checklist-verify',
@@ -812,6 +836,7 @@ export const qms = {
       title: 'Audit',
       type: 'collapse',
       icon: icons.IconFileCheck,
+      pageCode: 'QM1200',
       children: [
         {
           id: 'qms-audit-schedule',
@@ -868,6 +893,7 @@ export const qms = {
       title: 'Meeting',
       type: 'collapse',
       icon: icons.IconMessage2,
+      pageCode: 'QM1300',
       children: [
         {
           id: 'qms-meeting-schedule',
@@ -941,14 +967,16 @@ export const erpSupport = {
           title: 'My Requests',
           type: 'item',
           url: '/support/ticket-by-me',
-          breadcrumbs: false
+          breadcrumbs: false,
+          pageCode: 'S1110'
         },
         {
           id: 'support-raised-for-me',
           title: 'Requests For Me',
           type: 'item',
           url: '/support/raised-for-me',
-          breadcrumbs: false
+          breadcrumbs: false,
+          pageCode: 'S1120'
         }
       ]
     }

@@ -1,29 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  MenuItem,
-  Button,
-  Checkbox,
-  Stack,
-  IconButton,
-  Tooltip,
-  useTheme,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Avatar,
-  Fade,
-  TextField,
-  TablePagination,
-  alpha,
-  CircularProgress
-} from '@mui/material';
+import { Box, Typography, Grid, MenuItem, Button, Checkbox, Stack, IconButton, Tooltip, useTheme, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Avatar, Fade, TablePagination, alpha, CircularProgress } from '@mui/material';
 import {
   IconDeviceFloppy,
   IconUser,
@@ -224,8 +201,7 @@ const UserAccess = () => {
   };
 
   useKeyboardShortcuts({
-    'ctrl+s': (e) => {
-      e.preventDefault();
+    'ctrl+s': () => {
       if (selectedUser) handleSaveAll();
     }
   });

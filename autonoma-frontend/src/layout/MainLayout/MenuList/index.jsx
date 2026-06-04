@@ -28,7 +28,7 @@ import { useGetMenu, useGetMenuMaster } from 'api/menu';
  * - type 'group': recursively filter children, hidden if all children removed
  * - Items without a pageCode: always visible (backwards compatible)
  */
-function filterMenuByPermissions(items, permMap) {
+export function filterMenuByPermissions(items, permMap) {
   if (!items || !Array.isArray(items)) return [];
 
   return items
@@ -88,7 +88,7 @@ function MenuList() {
     let currentItems = [...menuItem.items];
 
     // Apply permission filtering only when permissions are loaded
-    if (permStatus === 'loaded' && Object.keys(permMap).length > 0) {
+    if (permStatus === 'loaded') {
       currentItems = filterMenuByPermissions(currentItems, permMap);
     }
 

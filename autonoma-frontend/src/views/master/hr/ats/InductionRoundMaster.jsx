@@ -198,7 +198,7 @@ export default function InductionRoundMaster() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="+ New Round"
+          newLabel="+ New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           exportFilename="Induction_Round_Master"

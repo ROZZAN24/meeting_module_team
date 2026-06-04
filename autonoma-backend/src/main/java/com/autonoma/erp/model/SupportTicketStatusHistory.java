@@ -42,7 +42,10 @@ public class SupportTicketStatusHistory {
     protected void onCreate() {
         String currentUserId = null;
         try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
-        this.updatedBy = null;
+        
+        if (this.updatedBy == null) {
+            this.updatedBy = currentUserId != null ? currentUserId : "System";
+        }
 
         this.updatedAt = new Date();
         }

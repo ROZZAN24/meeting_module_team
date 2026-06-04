@@ -39,6 +39,23 @@ public class AuditTrailService {
     @Async
     public void saveAuditTrailAsync(String actionType, String tableName, String recordId, String prevVal,
             String currVal, String comments, String userId, String pageName) {
+
+        // Check if audit logs are globally enabled in the company configuration
+        try {
+            List<CompanyCredential> companies = companyCredentialRepository.findAll();
+            if (!companies.isEmpty()) {
+                Boolean isAuditEnabled = companies.get(0).getAuditLogEnabled();
+                if (isAuditEnabled == null || !isAuditEnabled) {
+                    return; // Skip saving the audit trail if it is disabled
+                }
+            } else {
+                return; // Do not save if no company profile exists
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to check audit log configuration: " + e.getMessage());
+            return;
+        }
+
         if (pageName == null) {
             pageName = tableName + " Page";
         }

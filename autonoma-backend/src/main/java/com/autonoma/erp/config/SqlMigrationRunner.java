@@ -2024,6 +2024,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         renameTableIfExists(targetJdbcTemplate, "audit_schedule", "QMS_AUDIT_SCHEDULE");
         renameTableIfExists(targetJdbcTemplate, "audit_schedule_criteria", "QMS_AUDIT_SCHEDULE_CRITERIA");
         renameTableIfExists(targetJdbcTemplate, "audit_type", "QMS_AUDIT_TYPE");
+        renameTableIfExists(targetJdbcTemplate, "audit_types", "QMS_AUDIT_TYPE");
 
         renameTableIfExists(targetJdbcTemplate, "hr_induction_assignment", "IND_INDUCTION_ASSIGNMENT");
         renameTableIfExists(targetJdbcTemplate, "hr_induction_master", "IND_INDUCTION_MASTER");

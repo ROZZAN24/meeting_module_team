@@ -534,7 +534,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
                   setErrors((prev) => ({ ...prev, attachments: '' }));
                 }
               }}
-              module="QMS"
+              module="MASTER_QMS_AUDIT_AUDIT_CRITERIA"
               multiple={true}
               disabled={isViewOnly}
               error={!!errors.attachments}

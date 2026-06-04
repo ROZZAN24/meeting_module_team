@@ -1,6 +1,7 @@
+import TextField from 'ui-component/CustomTextField';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { MenuItem, useTheme, Autocomplete, TextField, Box, Typography, Grid } from '@mui/material';
+import { MenuItem, useTheme, Autocomplete, Box, Typography, Grid } from '@mui/material';
 import { IconLayoutColumns, IconBuilding, IconMapPin } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';

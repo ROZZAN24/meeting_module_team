@@ -1651,7 +1651,7 @@ export default function AddAuditSchedule() {
             <BOSFileUpload
               files={customAttachments}
               onChange={setCustomAttachments}
-              module="QMS"
+              module="QUALITY_MANAGEMENT_SYSTEMS_AUDIT_AUDIT_SCHEDULE"
               multiple={false}
               compact={true}
             />

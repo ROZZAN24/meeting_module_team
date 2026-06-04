@@ -285,6 +285,20 @@ export function JWTProvider({ children }) {
           loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
+          
+          // Fetch company config for global input case style
+          try {
+            const profileRes = await axios.get('/api/company-profile/all');
+            if (Array.isArray(profileRes.data) && profileRes.data.length > 0) {
+              const profile = profileRes.data[0];
+              if (profile && profile.inputCaseStyle) {
+                window.localStorage.setItem('inputCaseStyle', profile.inputCaseStyle);
+              }
+            }
+          } catch (e) {
+            console.error('Failed to load company profile config:', e);
+          }
+
           // Ensure session context is initialized
           setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName, user.username || user.email || user.name);
           dispatch({

@@ -242,6 +242,21 @@ const BusinessAuthorization = () => {
             Save All Changes
           </Button>
         )}
+      </Box>
+      <Box sx={{
+        bgcolor: 'white',
+        p: '10px 24px',
+        borderRadius: '12px',
+        border: '1px solid #eef2f6',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+        width: '100%'
+      }}>
+
+
+
         {/* ── TABLE SECTION ── */}
         <Box sx={{
           flexGrow: 1,

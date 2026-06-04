@@ -1,50 +1,9 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 // material-ui
-import {
-  Box,
-  Grid,
-  Typography,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Stack,
-  Button,
-  useTheme,
-  Tooltip,
-  Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Divider,
-  TextField,
-  MenuItem,
-  CircularProgress,
-  Card,
-  InputLabel,
-  CardContent,
-  Avatar,
-  Autocomplete,
-  TablePagination,
-  InputBase,
-  Select,
-  FormControl,
-  OutlinedInput,
-  InputAdornment,
-  Fab,
-  Tabs,
-  Tab,
-  Collapse
-} from '@mui/material';
+import { Box, Grid, Typography, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, Button, useTheme, Tooltip, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Divider, MenuItem, CircularProgress, Card, InputLabel, CardContent, Avatar, Autocomplete, TablePagination, InputBase, Select, FormControl, OutlinedInput, InputAdornment, Fab, Tabs, Tab, Collapse } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 
 // third-party
@@ -55,8 +14,10 @@ import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import useAuth from 'hooks/useAuth';
 import { format } from 'date-fns';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
 import ReactQuillDemo from 'ui-component/third-party/ReactQuill';
+import BOSFilePreview from 'ui-component/bos/BOSFilePreview';
 
 // assets
 import CloseIcon from '@mui/icons-material/Close';
@@ -190,7 +151,7 @@ const getFileTypeDisplay = (name) => {
 const isPreviewable = (name) => {
   if (!name) return false;
   const ext = name.split('.').pop().toLowerCase();
-  return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext);
+  return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'xls', 'xlsx', 'doc', 'docx', 'csv', 'txt'].includes(ext);
 };
 
 // ==============================|| TICKET MANAGEMENT CENTER ||============================== //
@@ -201,6 +162,8 @@ export default function TicketManagement({ viewType }) {
   const { user } = useAuth();
 
   const currentViewType = viewType || (window.location.pathname.includes('ticket-by-me') ? 'raised-by-me' : 'raised-for-me');
+  const perms = usePagePermissions(currentViewType === 'raised-by-me' ? PAGE_CODES.SUPPORT_RAISED_BY_ME : PAGE_CODES.SUPPORT_RAISED_FOR_ME);
+  const hasCompanyAccess = perms.additional2;
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
@@ -215,6 +178,7 @@ export default function TicketManagement({ viewType }) {
 
   // Core Data States
   const [tickets, setTickets] = useState([]);
+  const [usersList, setUsersList] = useState([]);
   const [pagesData, setPagesData] = useState([]);
   const [employeesList, setEmployeesList] = useState([]);
   const [companiesList, setCompaniesList] = useState([]);
@@ -230,6 +194,8 @@ export default function TicketManagement({ viewType }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [commentError, setCommentError] = useState(false);
+  const [takenTimeError, setTakenTimeError] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
   const [panelsOpen, setPanelsOpen] = useState({ part1: true, part2: true, part3: true });
   const [filesExpanded, setFilesExpanded] = useState(false);
 
@@ -689,10 +655,31 @@ export default function TicketManagement({ viewType }) {
   // Snackbar Notification State
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Register Global Filter config on Mount
+  // Register Global Filter config on Mount or when access/employees change
   useEffect(() => {
+    const myName = (user?.name || '').toLowerCase();
+    const isVerticalHead = employeesList.some(e => e.verticalHead && e.verticalHead.toLowerCase() === myName);
+    
+    const taskScopeOptions = [
+      { value: 'Mine', label: 'Mine' }
+    ];
+    if (isVerticalHead) {
+      taskScopeOptions.push({ value: 'Team', label: 'Team' });
+    }
+    if (hasCompanyAccess) {
+      taskScopeOptions.push({ value: 'Company', label: 'Company' });
+    }
+
     const config = [
       { id: 'ticketId', label: 'Ticket ID', type: 'text', isStarred: true },
+      {
+        id: 'taskScope',
+        label: 'Task Scope',
+        type: 'select',
+        options: taskScopeOptions,
+        defaultValue: 'Mine',
+        isStarred: true
+      },
       {
         id: 'ticketType',
         label: 'Ticket Type',
@@ -710,7 +697,7 @@ export default function TicketManagement({ viewType }) {
         label: 'Status',
         type: 'select',
         options: [
-          { value: 'All', label: 'All Statuses' },
+          { value: 'All', label: 'All' },
           { value: 'Open', label: 'Open' },
           { value: 'In Progress', label: 'In Progress' },
           { value: 'To Be Tested', label: 'To Be Tested' },
@@ -726,7 +713,7 @@ export default function TicketManagement({ viewType }) {
         label: 'Priority',
         type: 'select',
         options: [
-          { value: 'All', label: 'All Priorities' },
+          { value: 'All', label: 'All' },
           { value: 'Low', label: 'Low' },
           { value: 'Medium', label: 'Medium' },
           { value: 'High', label: 'High' },
@@ -745,11 +732,12 @@ export default function TicketManagement({ viewType }) {
       dispatch(setFilterConfig(null));
       dispatch(resetFilters());
     };
-  }, [dispatch]);
+  }, [dispatch, employeesList, hasCompanyAccess, user]);
 
   // Load ticket details on mount
   useEffect(() => {
     fetchTickets();
+    fetchUsers();
     fetchPages();
     fetchAllEmployees();
     fetchAllCompanies();
@@ -811,7 +799,7 @@ export default function TicketManagement({ viewType }) {
   // Handle Escape to close details
   useEffect(() => {
     const handleEscapeShortcut = (e) => {
-      if (e.key === 'Escape' && detailsOpen) {
+      if (e.key === 'Escape' && detailsOpen && !previewModalOpen) {
         e.preventDefault();
         setDetailsOpen(false);
         setSelectedTicket(null);
@@ -819,7 +807,7 @@ export default function TicketManagement({ viewType }) {
     };
     window.addEventListener('keydown', handleEscapeShortcut, { capture: true });
     return () => window.removeEventListener('keydown', handleEscapeShortcut, { capture: true });
-  }, [detailsOpen]);
+  }, [detailsOpen, previewModalOpen]);
 
   // When a ticket is selected, load its comments/timeline
   useEffect(() => {
@@ -838,7 +826,28 @@ export default function TicketManagement({ viewType }) {
       setDetailDevName(selectedTicket.developerName || '');
       setDetailDevEmail(selectedTicket.developerEmail || '');
       setDetailDevMobile(selectedTicket.developerMobileNo || '');
-      setDetailResolution(selectedTicket.resolutionSummary || '');
+      
+      const savedSummary = selectedTicket.resolutionSummary || '';
+      const PREDEFINED_REASONS = ['Not Working as Expected', 'Additional Requirement Needed', 'Requirement Not Fully Completed', 'Incorrect Output', 'Missing Functionality', 'UI/Design Changes Required', 'Validation Issue Found', 'Bug Still Exists', 'Rework Required', 'Performance Improvement Needed', 'Requirement Changed', 'Clarification Required', 'Testing Failed', 'Quality Issue Identified'];
+      
+      if (selectedTicket.ticketStatus === 'Reopened') {
+        if (PREDEFINED_REASONS.includes(savedSummary)) {
+          setReopenReason(savedSummary);
+          setDetailResolution('');
+        } else if (savedSummary) {
+          setReopenReason('Others');
+          setDetailResolution(savedSummary);
+        } else {
+          setReopenReason('');
+          setDetailResolution('');
+        }
+      } else {
+        setReopenReason('');
+        setDetailResolution(savedSummary);
+      }
+
+      setCommentError(false);
+      setTakenTimeError(false);
       setDetailRootCause(selectedTicket.rootCause || '');
       setDetailAdditionalRequirement(selectedTicket.additionalRequirement || '');
 
@@ -911,7 +920,11 @@ export default function TicketManagement({ viewType }) {
     if (detailTakenHours !== '' || detailTakenMinutes !== '') {
       const h = detailTakenHours !== '' ? detailTakenHours : '00';
       const m = detailTakenMinutes !== '' ? detailTakenMinutes : '00';
-      setDetailTakenTime(`${h}:${m}`);
+      const newTime = `${h}:${m}`;
+      setDetailTakenTime(newTime);
+      if (newTime !== '00:00' && newTime !== ':') {
+        setTakenTimeError(false);
+      }
     } else {
       setDetailTakenTime('');
     }
@@ -933,6 +946,15 @@ export default function TicketManagement({ viewType }) {
       showSnackbar('Failed to load support tickets', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get('/api/users/all');
+      setUsersList(res.data || []);
+    } catch (err) {
+      console.error("Failed to load users", err);
     }
   };
 
@@ -1701,13 +1723,22 @@ export default function TicketManagement({ viewType }) {
   const handleUpdateTicketDetails = async () => {
     if (!selectedTicket) return;
 
+    let rawReason = detailResolution;
+    if (detailStatus === 'Reopened') {
+      rawReason = (reopenReason === 'Others' || reopenReason === 'Additional Requirement Needed') ? detailResolution : reopenReason;
+    }
+
+    let plainTextReason = typeof rawReason === 'string' ? rawReason.replace(/<[^>]*>?/gm, '').trim() : '';
+
     // Comments mandatory if status is changed
-    if (detailStatus !== selectedTicket.ticketStatus && (!detailResolution || !detailResolution.trim())) {
+    if (detailStatus !== selectedTicket.ticketStatus && (!plainTextReason)) {
       setCommentError(true);
       showSnackbar('Comments are mandatory for every status change', 'error');
       return;
     }
     setCommentError(false);
+
+    let finalResolution = typeof rawReason === 'string' ? rawReason.trim() : rawReason;
 
     // ─── RAISED FOR ME RULES ───────────────────────────────────────────────
     if (currentViewType === 'raised-for-me') {
@@ -1715,6 +1746,7 @@ export default function TicketManagement({ viewType }) {
       if (detailStatus === 'To Be Tested') {
         const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
         if (!detailTakenTime || !detailTakenTime.trim() || detailTakenTime === '00:00' || detailTakenTime === ':') {
+          setTakenTimeError(true);
           showSnackbar(isReopenedTicket ? 'Rework Time is mandatory when status is To Be Tested' : 'Taken Time is mandatory when status is To Be Tested', 'warning');
           return;
         }
@@ -1757,7 +1789,7 @@ export default function TicketManagement({ viewType }) {
         }
 
         const commonPayload = {
-          additionalRequirement: detailAdditionalRequirement,
+          additionalRequirement: (detailStatus === 'Reopened' && reopenReason === 'Additional Requirement Needed') ? detailResolution : detailAdditionalRequirement,
           tempAdditionalAttachments: formAttachments.map(f => typeof f === 'string' ? f : f.url),
           tempAdditionalVoiceRecordings: formVoiceFiles
         };
@@ -1770,7 +1802,7 @@ export default function TicketManagement({ viewType }) {
           developerName: detailDevName,
           developerEmail: detailDevEmail,
           developerMobileNo: detailDevMobile,
-          resolutionSummary: detailResolution,
+          resolutionSummary: finalResolution,
           takenTime: newTakenTime,
           reworkTime: newReworkTime,
           targetDate: detailTargetDate ? new Date(detailTargetDate) : null,
@@ -1799,7 +1831,7 @@ export default function TicketManagement({ viewType }) {
       // ─── RAISED BY ME RULES ────────────────────────────────────────────────
       if (currentViewType === 'raised-by-me') {
         const payload = {
-          additionalRequirement: detailAdditionalRequirement,
+          additionalRequirement: (detailStatus === 'Reopened' && reopenReason === 'Additional Requirement Needed') ? detailResolution : detailAdditionalRequirement,
           tempAdditionalAttachments: formAttachments.map(f => typeof f === 'string' ? f : f.url),
           tempAdditionalVoiceRecordings: formVoiceFiles
         };
@@ -1813,20 +1845,29 @@ export default function TicketManagement({ viewType }) {
 
         let isStatusUpdate = false;
         // REOPEN: assigned user gets REWORK status
-        if (detailStatus === 'Reopened') {
+        if (detailStatus === 'Reopened' && detailStatus !== selectedTicket.ticketStatus) {
           payload.ticketStatus = 'Reopened';
           payload.assignedUserStatus = 'Rework';  // signal backend to set assigned user's status to REWORK
-          payload.resolutionSummary = detailResolution;
+          payload.resolutionSummary = finalResolution;
           isStatusUpdate = true;
-        } else if (detailStatus === 'Completed') {
+        } else if (detailStatus === 'Completed' && detailStatus !== selectedTicket.ticketStatus) {
           // COMPLETED: ticket final complete
           payload.ticketStatus = 'Completed';
-          payload.resolutionSummary = detailResolution;
+          payload.resolutionSummary = finalResolution;
           payload.completedAt = new Date().toISOString();
           isStatusUpdate = true;
         } else {
-          // Default: current status view only — no action needed
-          if (detailAdditionalRequirement === (selectedTicket.additionalRequirement || '') && formAttachments.length === 0 && formVoiceFiles.length === 0 && !payload.assignedHours) {
+          // Default: current status view only — update comment or attachments
+          let hasChanges = false;
+          if (payload.additionalRequirement !== (selectedTicket.additionalRequirement || '')) hasChanges = true;
+          if (formAttachments.length > 0 || formVoiceFiles.length > 0) hasChanges = true;
+          if (payload.assignedHours) hasChanges = true;
+          if (finalResolution !== (selectedTicket.resolutionSummary || '')) {
+             payload.resolutionSummary = finalResolution;
+             hasChanges = true;
+          }
+
+          if (!hasChanges) {
             showSnackbar('No changes to apply', 'info');
             setIsSaving(false);
             return;
@@ -1984,47 +2025,86 @@ export default function TicketManagement({ viewType }) {
   // Base view level filtering for Raised For Me vs Raised By Me
   const baseFilteredTickets = useMemo(() => {
     return tickets.filter((t) => {
-      const myName = (user?.name || '').toLowerCase();
-      const myEmail = (user?.email || '').toLowerCase();
-      const myUsername = (user?.username || '').toLowerCase();
+      const myName = (user?.name || '').trim().toLowerCase();
+      const myEmail = (user?.email || '').trim().toLowerCase();
+      const myUsername = (user?.username || '').trim().toLowerCase();
 
+      // Map current user ID (a.USER_ID)
+      const currentUserId = (user?.username || '').trim().toLowerCase();
+      const currentUserName = (user?.name || '').trim().toLowerCase();
+      
       let myEmpName = '';
       if (user?.empId && employeesList) {
-        const emp = employeesList.find(e => e.id === user.empId || e.empCode === user.empId || e.employeeCode === user.empId);
-        if (emp && emp.employeeName) myEmpName = emp.employeeName.toLowerCase();
+        const emp = employeesList.find(e => e.id == user.empId || e.empCode == user.empId || e.employeeCode == user.empId);
+        if (emp && emp.employeeName) myEmpName = emp.employeeName.trim().toLowerCase();
       }
+
+      // Build Team User IDs & Names based on: Vertical Head -> EMP_ID -> USER_ID
+      const teamIdentifiers = [];
+      employeesList.forEach(b => {
+         const vHead = (b.verticalHead || '').trim().toLowerCase();
+         if (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName))) {
+            if (b.employeeName) teamIdentifiers.push(b.employeeName.trim().toLowerCase());
+            if (b.officeMail) {
+               const mail = b.officeMail.trim().toLowerCase();
+               teamIdentifiers.push(mail);
+               if (mail.includes('@')) teamIdentifiers.push(mail.split('@')[0]);
+            }
+            const c = usersList.find(u => u.empId == b.id);
+            if (c && c.userId) {
+               teamIdentifiers.push(c.userId.trim().toLowerCase());
+            }
+         }
+      });
+      // Add current user to their own team view
+      teamIdentifiers.push(currentUserId);
+      teamIdentifiers.push(currentUserName);
+      if (myEmpName) teamIdentifiers.push(myEmpName);
+
+      const scope = globalFilters?.taskScope || 'Mine';
+
+      const matchTeam = (field) => {
+         if (!field) return false;
+         const f = field.toLowerCase();
+         return teamIdentifiers.includes(f) || teamIdentifiers.some(m => m && (f.includes(m) || m.includes(f)));
+      };
 
       if (currentViewType === 'raised-for-me') {
-        if (accessLevel === 'Mine') {
-          const assignedTo = (t.assignedTo || '').toLowerCase();
-          const devName = (t.developerName || '').toLowerCase();
-          const devEmail = (t.developerEmail || '').toLowerCase();
-          return assignedTo === myName || assignedTo === myUsername || assignedTo === myEmpName || devName === myName || devName === myEmpName || devEmail === myEmail;
-        } else if (accessLevel === 'My Team') {
-          const tDept = (t.department || '').toLowerCase();
-          const userDept = (formDeptName || '').toLowerCase();
-          return userDept && tDept === userDept;
-        } else if (accessLevel === 'My Company') {
-          return true;
-        }
-        return false;
-      } else {
-        const createdBy = (t.createdBy || '').toLowerCase();
-        const email = (t.email || '').toLowerCase();
-        const empName = (t.employeeName || '').toLowerCase();
-        const verifiedBy = (t.verifiedBy || t.verifierName || '').toLowerCase();
-        const matchesRaisedByMe = createdBy === myUsername || createdBy === myEmail || createdBy === myEmpName || email === myEmail || empName === myName || empName === myEmpName || verifiedBy === myUsername || verifiedBy === myEmail || verifiedBy === myName || (myEmpName && verifiedBy === myEmpName);
-        if (!matchesRaisedByMe) return false;
+        const assignedTo = (t.assignedTo || t.developerName || '').toLowerCase();
+        const createdBy = (t.createdBy || t.assignedBy || '').toLowerCase();
 
-        if (raisedToFilter) {
-          const assignedTo = (t.assignedTo || '').toLowerCase();
-          const targetRaisedTo = raisedToFilter.toLowerCase();
-          if (assignedTo !== targetRaisedTo) return false;
+        if (scope !== 'Company') {
+           if (scope === 'Team') {
+              // SQL for Request for me: inner join TICKET_TRACEABILITY_CENTER d on c.USER_ID=d.created_by
+              if (!matchTeam(createdBy)) return false;
+           } else {
+              // Default 'Mine'
+              if (assignedTo !== currentUserId && assignedTo !== currentUserName && assignedTo !== myEmpName && !(myEmpName && assignedTo.includes(myEmpName))) return false;
+           }
         }
-        return true;
+      } else {
+        const createdBy = (t.createdBy || t.assignedBy || '').toLowerCase();
+        const assignedTo = (t.assignedTo || t.developerName || '').toLowerCase();
+        
+        if (scope !== 'Company') {
+           if (scope === 'Team') {
+              // SQL for My request: inner join TICKET_TRACEABILITY_CENTER d on c.USER_ID=d.assigned_to
+              if (!matchTeam(assignedTo)) return false;
+           } else {
+              // Default 'Mine'
+              if (createdBy !== currentUserId && createdBy !== currentUserName && createdBy !== myEmpName && !(myEmpName && createdBy.includes(myEmpName))) return false;
+           }
+        }
       }
+
+      if (raisedToFilter) {
+        const assignedTo = (t.assignedTo || '').toLowerCase();
+        const targetRaisedTo = raisedToFilter.toLowerCase();
+        if (assignedTo !== targetRaisedTo) return false;
+      }
+      return true;
     });
-  }, [tickets, currentViewType, accessLevel, user, formDeptName, raisedToFilter, employeesList]);
+  }, [tickets, currentViewType, globalFilters, user, raisedToFilter, employeesList, usersList]);
 
   // Statistics KPIs
   const stats = useMemo(() => {
@@ -2149,13 +2229,13 @@ export default function TicketManagement({ viewType }) {
 
       let baseMatches = matchesSearch && matchesId && matchesType && matchesStatus && matchesPriority && matchesDept && matchesAssigned && matchesDate;
 
-      // Hide closed and completed tickets in 'raised-by-me' view unless actively searched for
-      if (currentViewType === 'raised-by-me' && !hasActiveFilters && (t.ticketStatus === 'Closed' || t.ticketStatus === 'Completed')) {
+      // Hide completed tickets in 'raised-by-me' view unless actively searched for
+      if (currentViewType === 'raised-by-me' && !hasActiveFilters && t.ticketStatus === 'Completed') {
         return false;
       }
 
-      // Hide To Be Tested tickets in 'raised-for-me' view unless actively searched for
-      if (currentViewType === 'raised-for-me' && !hasActiveFilters && t.ticketStatus === 'To Be Tested') {
+      // Hide To Be Tested and Completed tickets in 'raised-for-me' view unless actively searched for
+      if (currentViewType === 'raised-for-me' && !hasActiveFilters && (t.ticketStatus === 'To Be Tested' || t.ticketStatus === 'Completed')) {
         return false;
       }
 
@@ -2323,7 +2403,7 @@ export default function TicketManagement({ viewType }) {
   const activeDevelopersForSelectedPage = useMemo(() => {
     if (!formPage || !tickets) return [];
     const activeTickets = tickets.filter(t =>
-      t.pageId === formPage.pageId &&
+      String(t.pageId) === String(formPage.pageId) &&
       t.ticketStatus !== 'Completed' &&
       t.ticketStatus !== 'To Be Tested' &&
       t.ticketStatus !== 'Closed' &&
@@ -2519,118 +2599,12 @@ export default function TicketManagement({ viewType }) {
                 </Grid>
 
                 {/* Additional Requirement */}
-                <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eef2f6' }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, display: 'block' }}>Additional Requirement</Typography>
-                  {currentViewType === 'raised-by-me' ? (
-                    <>
-                      <Box sx={{
-                        '.ql-container': { minHeight: '80px !important', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' },
-                        '.ql-toolbar': { borderTopLeftRadius: '12px', borderTopRightRadius: '12px', bgcolor: '#f8fafc' },
-                        mb: 2
-                      }}>
-                        <ReactQuillDemo value={detailAdditionalRequirement} onChange={setDetailAdditionalRequirement} />
-                      </Box>
-                      <Box sx={{ display: 'flex', gap: 1.5, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Button
-                          component="label"
-                          variant="outlined"
-                          startIcon={<CloudUploadIcon />}
-                          sx={{
-                            height: 36,
-                            borderStyle: 'dashed',
-                            borderColor: '#6366f1',
-                            color: '#6366f1',
-                            borderRadius: '8px',
-                            px: 2, fontWeight: 600, fontSize: '0.75rem',
-                            textTransform: 'none',
-                            '&:hover': { borderStyle: 'dashed', borderColor: '#4f46e5', bgcolor: '#e0e7ff' }
-                          }}
-                        >
-                          {uploading ? 'Uploading...' : 'Upload Attachments'}
-                          <input type="file" multiple hidden onChange={(e) => handleFileUpload(e, false)} />
-                        </Button>
-                        <Tooltip title={isRecordingAudio ? "Stop & Save Recording" : "Record Voice Audio Note"}>
-                          <Button
-                            variant={isRecordingAudio ? "contained" : "outlined"}
-                            color={isRecordingAudio ? "error" : "secondary"}
-                            onClick={handleToggleLiveRecording}
-                            sx={{
-                              height: 36,
-                              borderStyle: isRecordingAudio ? 'solid' : 'dashed',
-                              borderColor: isRecordingAudio ? 'error.main' : '#6366f1',
-                              color: isRecordingAudio ? '#fff' : '#6366f1',
-                              borderRadius: '8px',
-                              px: 2, fontWeight: 600, fontSize: '0.75rem',
-                              textTransform: 'none',
-                              animation: isRecordingAudio ? 'pulse-voice 1.5s infinite' : 'none',
-                              '&:hover': { borderStyle: isRecordingAudio ? 'solid' : 'dashed', borderColor: isRecordingAudio ? 'error.dark' : '#4f46e5', bgcolor: isRecordingAudio ? 'error.dark' : '#e0e7ff' }
-                            }}
-                            startIcon={isRecordingAudio ? <StopIcon /> : <MicNoneIcon />}
-                          >
-                            {isRecordingAudio ? "Recording..." : "Record Audio"}
-                          </Button>
-                        </Tooltip>
-                      </Box>
-                      {(formAttachments.length > 0 || formVoiceFiles.length > 0) && (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 150, overflowY: 'auto', mb: 2 }}>
-                          {formAttachments.map((fileObj, idx) => {
-                            const isUrlStr = typeof fileObj === 'string';
-                            const url = isUrlStr ? fileObj : fileObj.url;
-                            const name = isUrlStr ? url.substring(url.lastIndexOf('/') + 1) : fileObj.name;
-                            const size = isUrlStr ? null : fileObj.size;
-                            const canPreview = isPreviewable(name);
-
-                            return (
-                              <Box key={`a-${idx}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f8fafc', border: '1px solid #e2e8f0', p: 1, borderRadius: '6px', mb: 0.5 }}>
-                                <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <InsertDriveFileIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                                  <Tooltip title={name} arrow>
-                                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {name}
-                                    </Typography>
-                                  </Tooltip>
-                                </Box>
-                                <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
-                                  {getFileTypeDisplay(name)}
-                                </Typography>
-                                <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
-                                  {size ? formatFileSize(size) : 'Unknown'}
-                                </Typography>
-                                <Box sx={{ width: '20%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                                  {canPreview ? (
-                                    <Button size="small" onClick={() => { setPreviewFileData({ url, name, type: getFileTypeDisplay(name) }); setPreviewModalOpen(true); }} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
-                                      <VisibilityIcon sx={{ fontSize: 14, mr: 0.5 }} /> Preview
-                                    </Button>
-                                  ) : (
-                                    <Button size="small" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(url)}`, '_blank')} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
-                                      <DownloadIcon sx={{ fontSize: 14, mr: 0.5 }} /> Download
-                                    </Button>
-                                  )}
-                                </Box>
-                                <IconButton size="small" onClick={() => setFormAttachments(formAttachments.filter((_, i) => i !== idx))} sx={{ color: 'error.main', p: 0.25 }}>
-                                  <CloseIcon sx={{ fontSize: 14 }} />
-                                </IconButton>
-                              </Box>
-                            );
-                          })}
-                          {formVoiceFiles.map((url, idx) => (
-                            <Box key={`v-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#f3e8ff', px: 1, py: 0.5, borderRadius: '4px', mt: 0.5 }}>
-                              <Typography variant="caption" sx={{ flexShrink: 0, color: 'secondary.main', fontWeight: 600 }}>
-                                🎤 Audio Note
-                              </Typography>
-                              <audio src={'/api/files/download?path=' + encodeURIComponent(url)} controls style={{ height: '32px', flexGrow: 1, maxWidth: '250px' }} />
-                              <IconButton size="small" onClick={() => setFormVoiceFiles(formVoiceFiles.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
-                                <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
-                              </IconButton>
-                            </Box>
-                          ))}
-                        </Box>
-                      )}
-                    </>
-                  ) : (
-                    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2 }} dangerouslySetInnerHTML={{ __html: detailAdditionalRequirement || '<span style="color:#94a3b8">No additional requirements</span>' }} />
-                  )}
-                </Box>
+                {(selectedTicket.additionalRequirement && selectedTicket.additionalRequirement.replace(/<[^>]*>?/gm, '').trim() !== '') && (
+                  <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eef2f6' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, display: 'block' }}>Additional Requirement</Typography>
+                    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2 }} dangerouslySetInnerHTML={{ __html: selectedTicket.additionalRequirement }} />
+                  </Box>
+                )}
               </Box>
             </Collapse>
           </Box>
@@ -2665,9 +2639,11 @@ export default function TicketManagement({ viewType }) {
                             onChange={(e) => {
                               setDetailStatus(e.target.value);
                               setDetailResolution('');
+                              setReopenReason('');
                               setDetailTakenTime('');
                               setDetailTakenHours('');
                               setDetailTakenMinutes('');
+                              setTakenTimeError(false);
                               setDetailReworkTime('');
                             }}
                             sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#fff', '& fieldset': { borderColor: '#eef2f6' }, fontSize: '0.875rem' } }}
@@ -2682,7 +2658,7 @@ export default function TicketManagement({ viewType }) {
                           <TextField
                             select size="small"
                             value={detailStatus}
-                            onChange={(e) => { setDetailStatus(e.target.value); setDetailResolution(''); setDetailTakenTime(''); }}
+                            onChange={(e) => { setDetailStatus(e.target.value); setDetailResolution(''); setReopenReason(''); setDetailTakenTime(''); setTakenTimeError(false); }}
                             sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#fff', '& fieldset': { borderColor: '#eef2f6' }, fontSize: '0.875rem' } }}
                           >
                             <MenuItem key="current" value={selectedTicket.ticketStatus} disabled>{selectedTicket.ticketStatus.toUpperCase()}</MenuItem>
@@ -2693,15 +2669,15 @@ export default function TicketManagement({ viewType }) {
                       </Box>
                       {currentViewType === 'raised-for-me' && detailStatus === 'To Be Tested' && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, ml: 1 }} onClick={(e) => e.stopPropagation()}>
-                          <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReopenedTicket ? 'Rework Time' : 'Taken Time'} <span style={{ color: '#dc2626' }}>*</span></Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: takenTimeError ? '#d32f2f' : '#1e293b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReopenedTicket ? 'Rework Time' : 'Taken Time'} <span style={{ color: '#dc2626' }}>*</span></Typography>
                           <FormControl sx={{ width: 'max-content', mt: 0 }} variant="outlined">
                             <OutlinedInput
                               notched={false}
                               inputProps={{ sx: { display: 'none' }, readOnly: true }}
                               sx={{
                                 p: 0, height: '36px', borderRadius: '8px', bgcolor: '#fff',
-                                '& fieldset': { borderColor: '#eef2f6' },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2', borderWidth: '1.5px' }
+                                '& fieldset': { borderColor: takenTimeError ? '#d32f2f' : '#eef2f6' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: takenTimeError ? '#d32f2f' : '#1976d2', borderWidth: '1.5px' }
                               }}
                               onFocus={() => setIsDetailTakenTimeFocused(true)}
                               onBlur={(e) => { if (!e.relatedTarget) setIsDetailTakenTimeFocused(false); }}
@@ -2788,32 +2764,206 @@ export default function TicketManagement({ viewType }) {
                     <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
                       <Stack spacing={2}>
                         {/* COMMENTS */}
-                        <Box sx={{ mb: 2 }}>
-                          <TextField
-                            error={commentError}
-                            helperText={commentError ? "Comments are mandatory for status changes" : ""}
-                            fullWidth multiline rows={8} size="small"
-                            label="Comments"
-                            required
-                            placeholder="Required — provide update or reason for status change..."
-                            value={detailResolution}
-                            onChange={(e) => {
-                              setDetailResolution(e.target.value);
-                              if (e.target.value.trim()) setCommentError(false);
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: '12px',
-                                bgcolor: '#f8fafc',
-                                transition: 'all 0.2s',
-                                '& fieldset': { borderColor: '#e2e8f0' },
-                                '&:hover fieldset': { borderColor: '#cbd5e1' },
-                                '&.Mui-focused': { bgcolor: '#fff', boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)' },
-                                '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '1px' }
-                              }
-                            }}
-                          />
-                        </Box>
+                        {detailStatus === 'Reopened' && (
+                          <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+                            <Box sx={{ width: '50%', maxWidth: '400px' }}>
+                              <TextField
+                                select
+                                disabled={currentViewType !== 'raised-by-me'}
+                                error={commentError && !reopenReason}
+                                helperText={commentError && !reopenReason ? "Please select a reason for reopening" : ""}
+                                fullWidth size="small"
+                                label="Reason for Reopening *"
+                                required
+                                value={reopenReason}
+                                onChange={(e) => {
+                                  setReopenReason(e.target.value);
+                                  if (e.target.value === 'Others') setDetailResolution('');
+                                  if (e.target.value) setCommentError(false);
+                                }}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: '12px', bgcolor: '#f8fafc', transition: 'all 0.2s',
+                                    '& fieldset': { borderColor: '#e2e8f0' }, '&:hover fieldset': { borderColor: '#cbd5e1' },
+                                    '&.Mui-focused': { bgcolor: '#fff', boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)' },
+                                    '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '1px' },
+                                    '&.Mui-disabled': { bgcolor: '#f1f5f9', color: '#64748b' }
+                                  }
+                                }}
+                              >
+                                {['Not Working as Expected', 'Additional Requirement Needed', 'Requirement Not Fully Completed', 'Incorrect Output', 'Missing Functionality', 'UI/Design Changes Required', 'Validation Issue Found', 'Bug Still Exists', 'Rework Required', 'Performance Improvement Needed', 'Requirement Changed', 'Clarification Required', 'Testing Failed', 'Quality Issue Identified', 'Others'].map(r => (
+                                  <MenuItem key={r} value={r}>{r}</MenuItem>
+                                ))}
+                              </TextField>
+                            </Box>
+                            {reopenReason === 'Additional Requirement Needed' && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: (commentError && !reopenReason) ? -2.5 : 0 }} onClick={(e) => e.stopPropagation()}>
+                                <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ESTIMATED TIME</Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', borderRadius: '12px', px: 1.5, bgcolor: '#f8fafc', height: 40 }}>
+                                  <AccessTimeIcon sx={{ color: '#6366f1', fontSize: 20, mr: 1.5 }} />
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Select
+                                      value={detailEstimatedHours || '00'}
+                                      onChange={(e) => {
+                                        setDetailEstimatedHours(e.target.value);
+                                        if (e.target.value === '24') setDetailEstimatedMinutes('00');
+                                      }}
+                                      disabled={currentViewType !== 'raised-by-me'}
+                                      MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                                      sx={{ width: 65, height: 22, '& fieldset': { border: 'none' }, '.MuiSelect-select': { p: '0px 20px 0px 0px !important', textAlign: 'center', fontSize: '0.95rem', fontWeight: 800, color: '#1e293b' }, '& .MuiSvgIcon-root': { right: 0, fontSize: 18 } }}
+                                    >
+                                      {Array.from({ length: 25 }, (_, i) => String(i).padStart(2, '0')).map(h => (
+                                        <MenuItem key={h} value={h} sx={{ fontSize: '0.875rem', justifyContent: 'center' }}>{h}</MenuItem>
+                                      ))}
+                                    </Select>
+                                    <Typography variant="caption" sx={{ textAlign: 'center', fontSize: '0.65rem', color: '#64748b', mt: '-2px' }}>Hours</Typography>
+                                  </Box>
+                                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#64748b', mx: 0.5, mt: '-14px' }}>:</Typography>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Select
+                                      value={detailEstimatedMinutes || '00'}
+                                      onChange={(e) => setDetailEstimatedMinutes(e.target.value)}
+                                      disabled={currentViewType !== 'raised-by-me' || detailEstimatedHours === '24'}
+                                      MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                                      sx={{ width: 65, height: 22, '& fieldset': { border: 'none' }, '.MuiSelect-select': { p: '0px 20px 0px 0px !important', textAlign: 'center', fontSize: '0.95rem', fontWeight: 800, color: '#1e293b' }, '& .MuiSvgIcon-root': { right: 0, fontSize: 18 } }}
+                                    >
+                                      {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
+                                        <MenuItem key={m} value={m} sx={{ fontSize: '0.875rem', justifyContent: 'center' }}>{m}</MenuItem>
+                                      ))}
+                                    </Select>
+                                    <Typography variant="caption" sx={{ textAlign: 'center', fontSize: '0.65rem', color: '#64748b', mt: '-2px' }}>Minutes</Typography>
+                                  </Box>
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        )}
+
+                        {(detailStatus !== 'Reopened' || reopenReason === 'Others' || reopenReason === 'Additional Requirement Needed') && (
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', display: 'block', mb: 1 }}>Comments *</Typography>
+                            <Box sx={{
+                              '.ql-container': { minHeight: '120px !important', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' },
+                              '.ql-toolbar': { borderTopLeftRadius: '12px', borderTopRightRadius: '12px', bgcolor: '#f8fafc' },
+                              border: commentError ? '1px solid #d32f2f' : '1px solid #e2e8f0',
+                              borderRadius: '12px',
+                              bgcolor: '#fff',
+                              mb: 1
+                            }}>
+                              <ReactQuillDemo 
+                                value={detailResolution} 
+                                onChange={(val) => {
+                                  setDetailResolution(val);
+                                  if (val.replace(/<[^>]*>?/gm, '').trim()) setCommentError(false);
+                                }} 
+                              />
+                            </Box>
+                            {commentError && (
+                              <Typography color="error" variant="caption" sx={{ mt: 0.5, ml: 1 }}>Comments are mandatory for status changes</Typography>
+                            )}
+
+                            {detailStatus === 'Reopened' && reopenReason === 'Additional Requirement Needed' && (
+                              <Box sx={{ mt: 2 }}>
+                                <Box sx={{ display: 'flex', gap: 1.5, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <Button
+                                    component="label"
+                                    variant="outlined"
+                                    startIcon={<CloudUploadIcon />}
+                                    sx={{
+                                      height: 36,
+                                      borderStyle: 'dashed',
+                                      borderColor: '#6366f1',
+                                      color: '#6366f1',
+                                      borderRadius: '8px',
+                                      px: 2, fontWeight: 600, fontSize: '0.75rem',
+                                      textTransform: 'none',
+                                      '&:hover': { borderStyle: 'dashed', borderColor: '#4f46e5', bgcolor: '#e0e7ff' }
+                                    }}
+                                  >
+                                    {uploading ? 'Uploading...' : 'Upload Attachments'}
+                                    <input type="file" multiple hidden onChange={(e) => handleFileUpload(e, false)} />
+                                  </Button>
+                                  <Tooltip title={isRecordingAudio ? "Stop & Save Recording" : "Record Voice Audio Note"}>
+                                    <Button
+                                      variant={isRecordingAudio ? "contained" : "outlined"}
+                                      color={isRecordingAudio ? "error" : "secondary"}
+                                      onClick={handleToggleLiveRecording}
+                                      sx={{
+                                        height: 36,
+                                        borderStyle: isRecordingAudio ? 'solid' : 'dashed',
+                                        borderColor: isRecordingAudio ? 'error.main' : '#6366f1',
+                                        color: isRecordingAudio ? '#fff' : '#6366f1',
+                                        borderRadius: '8px',
+                                        px: 2, fontWeight: 600, fontSize: '0.75rem',
+                                        textTransform: 'none',
+                                        animation: isRecordingAudio ? 'pulse-voice 1.5s infinite' : 'none',
+                                        '&:hover': { borderStyle: isRecordingAudio ? 'solid' : 'dashed', borderColor: isRecordingAudio ? 'error.dark' : '#4f46e5', bgcolor: isRecordingAudio ? 'error.dark' : '#e0e7ff' }
+                                      }}
+                                      startIcon={isRecordingAudio ? <StopIcon /> : <MicNoneIcon />}
+                                    >
+                                      {isRecordingAudio ? "Recording..." : "Record Audio"}
+                                    </Button>
+                                  </Tooltip>
+                                </Box>
+                                {(formAttachments.length > 0 || formVoiceFiles.length > 0) && (
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 150, overflowY: 'auto', mb: 2 }}>
+                                    {formAttachments.map((fileObj, idx) => {
+                                      const isUrlStr = typeof fileObj === 'string';
+                                      const url = isUrlStr ? fileObj : fileObj.url;
+                                      const name = isUrlStr ? url.substring(url.lastIndexOf('/') + 1) : fileObj.name;
+                                      const size = isUrlStr ? null : fileObj.size;
+                                      const canPreview = isPreviewable(name);
+
+                                      return (
+                                        <Box key={`a-${idx}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f8fafc', border: '1px solid #e2e8f0', p: 1, borderRadius: '6px', mb: 0.5 }}>
+                                          <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <InsertDriveFileIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                            <Tooltip title={name} arrow>
+                                              <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {name}
+                                              </Typography>
+                                            </Tooltip>
+                                          </Box>
+                                          <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                                            {getFileTypeDisplay(name)}
+                                          </Typography>
+                                          <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                                            {size ? formatFileSize(size) : 'Unknown'}
+                                          </Typography>
+                                          <Box sx={{ width: '20%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                                            {canPreview ? (
+                                              <Button size="small" onClick={() => { setPreviewFileData({ url, name, type: getFileTypeDisplay(name) }); setPreviewModalOpen(true); }} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                                <VisibilityIcon sx={{ fontSize: 14, mr: 0.5 }} /> Preview
+                                              </Button>
+                                            ) : (
+                                              <Button size="small" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(url)}`, '_blank')} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                                <DownloadIcon sx={{ fontSize: 14, mr: 0.5 }} /> Download
+                                              </Button>
+                                            )}
+                                          </Box>
+                                          <IconButton size="small" onClick={() => setFormAttachments(formAttachments.filter((_, i) => i !== idx))} sx={{ color: 'error.main', p: 0.25 }}>
+                                            <CloseIcon sx={{ fontSize: 14 }} />
+                                          </IconButton>
+                                        </Box>
+                                      );
+                                    })}
+                                    {formVoiceFiles.map((url, idx) => (
+                                      <Box key={`v-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#f3e8ff', px: 1, py: 0.5, borderRadius: '4px', mt: 0.5 }}>
+                                        <Typography variant="caption" sx={{ flexShrink: 0, color: 'secondary.main', fontWeight: 600 }}>
+                                          🎤 Audio Note
+                                        </Typography>
+                                        <audio src={'/api/files/download?path=' + encodeURIComponent(url)} controls style={{ height: '32px', flexGrow: 1, maxWidth: '250px' }} />
+                                        <IconButton size="small" onClick={() => setFormVoiceFiles(formVoiceFiles.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
+                                          <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                                        </IconButton>
+                                      </Box>
+                                    ))}
+                                  </Box>
+                                )}
+                              </Box>
+                            )}
+                          </Box>
+                        )}
 
                         {/* FILES & ATTACHMENTS */}
                         <Box sx={{ mt: 1, p: 2, border: '1px solid #eef2f6', borderRadius: '8px' }}>
@@ -2839,7 +2989,7 @@ export default function TicketManagement({ viewType }) {
                                       )}
                                       <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                                         {!isVoice && (
-                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => { setPreviewFileData({ url: `/api/files/view?path=${encodeURIComponent(file.filePath)}`, name: file.fileName, type: getFileTypeDisplay(file.fileName) }); setPreviewModalOpen(true); }}>
                                             Preview
                                           </Button>
                                         )}
@@ -2874,7 +3024,7 @@ export default function TicketManagement({ viewType }) {
                                       )}
                                       <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                                         {!isVoice && (
-                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => { setPreviewFileData({ url: `/api/files/view?path=${encodeURIComponent(file.filePath)}`, name: file.fileName, type: getFileTypeDisplay(file.fileName) }); setPreviewModalOpen(true); }}>
                                             Preview
                                           </Button>
                                         )}
@@ -2994,7 +3144,15 @@ export default function TicketManagement({ viewType }) {
                                   size="small"
                                   label="Ticket Workflow Status"
                                   value={detailStatus}
-                                  onChange={(e) => setDetailStatus(e.target.value)}
+                                  onChange={(e) => {
+                                    setDetailStatus(e.target.value);
+                                    setDetailResolution('');
+                                    setReopenReason('');
+                                    setDetailTakenTime('');
+                                    setDetailTakenHours('');
+                                    setDetailTakenMinutes('');
+                                    setTakenTimeError(false);
+                                  }}
                                 >
                                   {currentViewType === 'raised-for-me' ? [
                                     <MenuItem key="Open" value="Open" disabled={selectedTicket.ticketStatus !== 'Open'}>Open</MenuItem>,
@@ -3049,9 +3207,10 @@ export default function TicketManagement({ viewType }) {
                                   <TextField
                                     fullWidth
                                     size="small"
+                                    error={takenTimeError}
                                     label="Taken Time (e.g. 2 hrs, 1 day)"
                                     value={detailTakenTime}
-                                    onChange={(e) => setDetailTakenTime(e.target.value)}
+                                    onChange={(e) => { setDetailTakenTime(e.target.value); setTakenTimeError(false); }}
                                   />
                                 </Box>
                               )}
@@ -3384,24 +3543,12 @@ export default function TicketManagement({ viewType }) {
 
 
         {/* INLINE ATTACHMENT PREVIEW */}
-        <Dialog open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '12px', height: '80vh', zIndex: 1400 } }}>
-          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', py: 1.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <VisibilityIcon sx={{ color: '#64748b' }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>{previewFileData?.name}</Typography>
-            </Box>
-            <IconButton onClick={() => setPreviewModalOpen(false)} size="small" sx={{ color: '#64748b' }}>
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ p: 0, bgcolor: '#e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            {previewFileData?.type === 'PDF' ? (
-              <iframe src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} style={{ width: '100%', height: '100%', border: 'none' }} title="PDF Preview" />
-            ) : (
-              <img src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-            )}
-          </DialogContent>
-        </Dialog>
+        <BOSFilePreview 
+          open={previewModalOpen} 
+          onClose={() => setPreviewModalOpen(false)} 
+          url={previewFileData?.url ? (previewFileData.url.startsWith('/api/') ? previewFileData.url : `/api/files/view?path=${encodeURIComponent(previewFileData.url)}`) : ''} 
+          fileName={previewFileData?.name} 
+        />
       </Box>
     );
   }
@@ -3479,7 +3626,9 @@ export default function TicketManagement({ viewType }) {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700 }}>Ticket ID</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Title / Page Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700, minWidth: 220 }}>Assigned To</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Assigned To</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Assigned By</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Verified By</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 120 }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Target Date</TableCell>
@@ -3517,18 +3666,20 @@ export default function TicketManagement({ viewType }) {
                             {getPageDisplay(t)}
                           </Typography>
                         </TableCell>
-                        <TableCell sx={{ minWidth: 220 }}>
+                        <TableCell sx={{ minWidth: 140 }}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.developerName || t.assignedTo || 'Unassigned'}</Typography>
-                          {t.developerEmail && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Email: {t.developerEmail}
-                            </Typography>
-                          )}
+
                           {t.developerMobileNo && (
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               Mobile: {t.developerMobileNo}
                             </Typography>
                           )}
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 140 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.employeeName || t.createdBy}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 140 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.verifiedBy || '-'}</Typography>
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -4483,24 +4634,12 @@ export default function TicketManagement({ viewType }) {
       </Dialog>
 
       {/* ── DIALOG: INLINE ATTACHMENT PREVIEW ── */}
-      <Dialog open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '12px', height: '80vh' } }}>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', py: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <VisibilityIcon sx={{ color: '#64748b' }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>{previewFileData?.name}</Typography>
-          </Box>
-          <IconButton onClick={() => setPreviewModalOpen(false)} size="small" sx={{ color: '#64748b' }}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0, bgcolor: '#e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          {previewFileData?.type === 'PDF' ? (
-            <iframe src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} style={{ width: '100%', height: '100%', border: 'none' }} title="PDF Preview" />
-          ) : (
-            <img src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-          )}
-        </DialogContent>
-      </Dialog>
+      <BOSFilePreview 
+        open={previewModalOpen} 
+        onClose={() => setPreviewModalOpen(false)} 
+        url={previewFileData?.url ? (previewFileData.url.startsWith('/api/') ? previewFileData.url : `/api/files/view?path=${encodeURIComponent(previewFileData.url)}`) : ''} 
+        fileName={previewFileData?.name} 
+      />
 
       {/* Snackbar notification feedback */}
       <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={() => setSnackbar({ ...snackbar, open: false })}>

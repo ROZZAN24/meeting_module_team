@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Checkbox } from '@mui/material';
+import { Typography, Button, Stack, Tooltip, IconButton, MenuItem } from '@mui/material';
 import { IconShieldCheck, IconRefresh, IconPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
@@ -41,42 +41,11 @@ export default function VerificationCriteria() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState(INITIAL_STATE);
-  const [selectedRows, setSelectedRows] = useState([]);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const perms = usePagePermissions(PAGE_CODES.ATS_VERIFICATION);
 
-  const handleSelectRow = useCallback((e, id) => {
-    e.stopPropagation();
-    if (e.target.checked) {
-      setSelectedRows(prev => [...prev, id]);
-    } else {
-      setSelectedRows(prev => prev.filter(item => item !== id));
-    }
-  }, []);
-
-  const handleSelectAll = useCallback((e) => {
-    if (e.target.checked) {
-      setSelectedRows(rows.map(r => r.id));
-    } else {
-      setSelectedRows([]);
-    }
-  }, [rows]);
-
   const columns = useMemo(() => [
-    {
-      id: 'checkbox',
-      label: 'Checkbox',
-      minWidth: 60,
-      render: (row) => (
-        <Checkbox
-          checked={selectedRows.includes(row.id)}
-          onChange={(e) => handleSelectRow(e, row.id)}
-          onClick={(e) => e.stopPropagation()}
-          size="small"
-        />
-      )
-    },
     { id: 'index', label: 'Sl.No', minWidth: 60 },
     { id: 'type', label: 'Type', bold: true, color: 'primary.main', minWidth: 150 },
     { id: 'description', label: 'Description', bold: true, minWidth: 300 },
@@ -87,10 +56,20 @@ export default function VerificationCriteria() {
       render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
     },
     { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
-    { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
+    {
+      id: 'createdAt',
+      label: 'CREATED DATE',
+      minWidth: 180,
+      render: (row) => row.createdAt
+    },
     { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
-    { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 }
-  ], [selectedRows, handleSelectRow]);
+    {
+      id: 'updatedAt',
+      label: 'UPDATED DATE',
+      minWidth: 180,
+      render: (row) => row.updatedAt
+    }
+  ], []);
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
@@ -167,7 +146,7 @@ export default function VerificationCriteria() {
       delete payload.index;
 
       if (formData.id) {
-        await axios.put(`/api/hr/verification-criteria/${formData.id}`, payload);
+        await axios.put(`/api/hr/verification-criteria/${formData.id}`, payload, { skipGlobalAlert: true });
         dispatch(openSnackbar({
           open: true,
           message: 'Verification Criteria Updated Successfully',
@@ -176,7 +155,7 @@ export default function VerificationCriteria() {
           severity: 'success'
         }));
       } else {
-        await axios.post('/api/hr/verification-criteria', payload);
+        await axios.post('/api/hr/verification-criteria', payload, { skipGlobalAlert: true });
         dispatch(openSnackbar({
           open: true,
           message: 'Verification Criteria Saved Successfully',
@@ -188,7 +167,7 @@ export default function VerificationCriteria() {
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
-      const msg = error.response?.data?.message || error.response?.data || 'Failed to save verification criteria';
+      const msg = typeof error === 'string' ? error : (error.response?.data?.message || error.response?.data || 'Failed to save verification criteria');
       dispatch(openSnackbar({
         open: true,
         message: msg,
@@ -238,7 +217,7 @@ export default function VerificationCriteria() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="New"
+          newLabel="+ New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           exportFilename="Verification_Criteria"

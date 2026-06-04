@@ -369,7 +369,7 @@ export default function InterviewCriteria() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="New"
+          newLabel="+ New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           exportFilename="Interview_Criteria"
