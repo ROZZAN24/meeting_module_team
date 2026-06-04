@@ -335,17 +335,26 @@ const InductionAssignment = () => {
               {row.isVirtual ? <IconUserPlus size={18} /> : <IconEdit size={18} />}
             </IconButton>
           </Tooltip>
-          {!row.isVirtual && row.currentStatus !== 'COMPLETED' && (
-            <Tooltip title="Delete Assignment">
+          <Tooltip 
+            title={
+              row.isVirtual 
+                ? "Cannot delete unassigned employee" 
+                : row.currentStatus === 'COMPLETED' 
+                  ? "Cannot delete completed assignment" 
+                  : "Delete Assignment"
+            }
+          >
+            <span>
               <IconButton
                 onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); setDeleteDialogOpen(true); }}
                 size="small"
                 color="error"
+                disabled={row.isVirtual || row.currentStatus === 'COMPLETED'}
               >
                 <IconTrash size={18} />
               </IconButton>
-            </Tooltip>
-          )}
+            </span>
+          </Tooltip>
         </Stack>
       )
     }

@@ -35,8 +35,8 @@ export default function BOSDataTable({
   selectable = false,
   onSelectionChange,
   totalCount,
-  page = 0,
-  size = 10,
+  page: pageProp,
+  size: sizeProp,
   onPageChange,
   onSizeChange,
   footerActions,
@@ -56,6 +56,32 @@ export default function BOSDataTable({
   const dispatch = useDispatch();
   const [localSelectedId, setLocalSelectedId] = useState(null);
   const lastConfigRef = useRef(null);
+
+  const [localPage, setLocalPage] = useState(0);
+  const [localSize, setLocalSize] = useState(10);
+
+  const isControlledPage = pageProp !== undefined && onPageChange !== undefined;
+  const page = isControlledPage ? pageProp : localPage;
+
+  const isControlledSize = sizeProp !== undefined && onSizeChange !== undefined;
+  const size = isControlledSize ? sizeProp : localSize;
+
+  const handlePageChange = (newPage) => {
+    if (isControlledPage) {
+      onPageChange(newPage);
+    } else {
+      setLocalPage(newPage);
+    }
+  };
+
+  const handleSizeChange = (newSize) => {
+    if (isControlledSize) {
+      onSizeChange(newSize);
+    } else {
+      setLocalSize(newSize);
+      setLocalPage(0);
+    }
+  };
 
   useEffect(() => {
     if (columns && rows) {
@@ -614,8 +640,8 @@ export default function BOSDataTable({
             count={totalCount ?? (rows?.length || 0)}
             rowsPerPage={size}
             page={page}
-            onPageChange={(e, p) => onPageChange(p)}
-            onRowsPerPageChange={(e) => onSizeChange(parseInt(e.target.value, 10))}
+            onPageChange={(e, p) => handlePageChange(p)}
+            onRowsPerPageChange={(e) => handleSizeChange(parseInt(e.target.value, 10))}
             sx={{
               minHeight: '36px !important',
               height: '36px !important',
@@ -655,12 +681,12 @@ export default function BOSDataTable({
 BOSDataTable.propTypes = {
   columns: PropTypes.array.isRequired,
   rows: PropTypes.array.isRequired,
-  page: PropTypes.number.isRequired,
-  size: PropTypes.number.isRequired,
+  page: PropTypes.number,
+  size: PropTypes.number,
   totalCount: PropTypes.number,
   loading: PropTypes.bool,
-  onPageChange: PropTypes.func.isRequired,
-  onSizeChange: PropTypes.func.isRequired,
+  onPageChange: PropTypes.func,
+  onSizeChange: PropTypes.func,
   onDoubleClickRow: PropTypes.func,
   onClickRow: PropTypes.func,
   selectedRowId: PropTypes.any,
