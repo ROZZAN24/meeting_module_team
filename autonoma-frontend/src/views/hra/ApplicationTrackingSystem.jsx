@@ -700,14 +700,32 @@ export default function ApplicationTrackingSystem() {
     if (!callLetterData.interviewTime) {
       errs.interviewTime = 'Interview time is required.';
     } else {
-      if (callLetterData.interviewTime >= '17:00') {
+      // Parse the time value (format: "hh:mm AM/PM" from BOSTimePicker)
+      const parseToHHMM = (tStr) => {
+        if (!tStr) return '';
+        const clean = tStr.trim().toUpperCase();
+        const match = clean.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/);
+        if (!match) return tStr; // fallback, keep original
+        let h = parseInt(match[1], 10);
+        const m = match[2];
+        const ampm = match[3] || 'AM';
+        if (ampm === 'PM' && h !== 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        return `${String(h).padStart(2, '0')}:${m}`;
+      };
+
+      const hhmm = parseToHHMM(callLetterData.interviewTime);
+
+      if (hhmm < '09:00') {
+        errs.interviewTime = 'Interview must be scheduled from 09:00 (9:00 AM).';
+      } else if (hhmm >= '17:00') {
         errs.interviewTime = 'Interview must be scheduled before 17:00 (5:00 PM).';
       }
 
-      if (callLetterData.interviewDate === todayStr) {
+      if (!errs.interviewTime && callLetterData.interviewDate === todayStr) {
         const now = new Date();
         const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        if (callLetterData.interviewTime <= currentHHMM) {
+        if (hhmm <= currentHHMM) {
           errs.interviewTime = 'Interview time must be in the future.';
         }
       }
@@ -2688,9 +2706,12 @@ export default function ApplicationTrackingSystem() {
           <Grid item xs={12}>
             <BOSTimePicker
               required
-              label="Interview time (24h):"
+              format24h
+              label="Interview time (09:00 - 17:00):"
               name="interviewTime"
               value={callLetterData.interviewTime}
+              minTime="09:00"
+              maxTime="17:00"
               onChange={(e) => {
                 setCallLetterData(prev => ({ ...prev, interviewTime: e.target.value }));
                 if (callLetterErrors.interviewTime) {

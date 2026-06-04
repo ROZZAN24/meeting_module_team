@@ -3,22 +3,24 @@ import PropTypes from 'prop-types';
 import { useTheme } from '@mui/material/styles';
 import { useColorScheme } from '@mui/material/styles';
 import { getInputStyles } from './BOSStyles';
-import { TextField, Popover, Box, Stack, Typography, IconButton, InputAdornment } from '@mui/material';
+import { TextField, Popover, Box, Typography, IconButton, InputAdornment } from '@mui/material';
 import { IconClock } from '@tabler/icons-react';
 
-const HOURS = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const HOURS_12 = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const HOURS_24 = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 const MERIDIEMS = ['AM', 'PM'];
 
 function WheelColumn({ items, value, onChange }) {
   const containerRef = useRef(null);
-  const itemHeight = 40; // Height of each row in pixels
-  const paddingRows = 2; // Number of empty rows for top/bottom padding
+  const itemHeight = 40;
+  const paddingRows = 2;
   const scrollTimeoutRef = useRef(null);
-  
-  const selectedIndex = items.indexOf(value);
 
-  // Set initial scroll position to center the selected item
+  // Convert to string for comparison since 24h hours are strings, 12h hours are numbers
+  const strValue = String(value);
+  const selectedIndex = items.findIndex(item => String(item) === strValue);
+
   useEffect(() => {
     if (containerRef.current && selectedIndex !== -1) {
       const targetScrollTop = selectedIndex * itemHeight;
@@ -28,41 +30,29 @@ function WheelColumn({ items, value, onChange }) {
     }
   }, [selectedIndex]);
 
-  // Clean up timeout on unmount
   useEffect(() => {
     return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     };
   }, []);
 
   const handleScroll = () => {
     if (!containerRef.current) return;
-    
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     scrollTimeoutRef.current = setTimeout(() => {
       if (!containerRef.current) return;
       const scrollTop = containerRef.current.scrollTop;
       const index = Math.round(scrollTop / itemHeight);
       if (index >= 0 && index < items.length) {
         const newValue = items[index];
-        if (newValue !== value) {
-          onChange(newValue);
-        }
+        if (String(newValue) !== strValue) onChange(newValue);
       }
-    }, 80); // Quick debounce for smooth interaction
+    }, 80);
   };
 
   const handleItemClick = (index) => {
     if (containerRef.current) {
-      containerRef.current.scrollTo({
-        top: index * itemHeight,
-        behavior: 'smooth'
-      });
+      containerRef.current.scrollTo({ top: index * itemHeight, behavior: 'smooth' });
       onChange(items[index]);
     }
   };
@@ -72,7 +62,7 @@ function WheelColumn({ items, value, onChange }) {
       ref={containerRef}
       onScroll={handleScroll}
       sx={{
-        height: `${itemHeight * (paddingRows * 2 + 1)}px`, // 5 rows total
+        height: `${itemHeight * (paddingRows * 2 + 1)}px`,
         overflowY: 'auto',
         scrollSnapType: 'y mandatory',
         scrollbarWidth: 'none',
@@ -84,10 +74,10 @@ function WheelColumn({ items, value, onChange }) {
     >
       <Box sx={{ height: `${itemHeight * paddingRows}px` }} />
       {items.map((item, idx) => {
-        const isSelected = item === value;
+        const isSelected = String(item) === strValue;
         return (
           <Box
-            key={item}
+            key={String(item)}
             onClick={() => handleItemClick(idx)}
             sx={{
               height: `${itemHeight}px`,
@@ -112,6 +102,10 @@ function WheelColumn({ items, value, onChange }) {
   );
 }
 
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+/** Parse a time string to total minutes.
+ *  Accepts "HH:MM" (24-h) or "hh:mm AM/PM" (12-h). */
 const parseTimeToMinutes = (timeStr) => {
   if (!timeStr) return null;
   const clean = timeStr.trim().toUpperCase();
@@ -119,27 +113,37 @@ const parseTimeToMinutes = (timeStr) => {
   if (!match) return null;
   let h = parseInt(match[1], 10);
   const m = parseInt(match[2], 10);
-  const ampm = match[3] || 'AM';
-  if (h < 1 || h > 12 || m < 0 || m > 59) return null;
-  if (ampm === 'PM' && h !== 12) h += 12;
-  if (ampm === 'AM' && h === 12) h = 0;
+  const ampm = match[3]; // undefined when no meridiem (24-h input)
+
+  if (ampm) {
+    // 12-hour input
+    if (h < 1 || h > 12 || m < 0 || m > 59) return null;
+    if (ampm === 'PM' && h !== 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+  } else {
+    // 24-hour input
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  }
   return h * 60 + m;
 };
 
-const minutesToTimeParts = (totalMins) => {
-  let h24 = Math.floor(totalMins / 60) % 24;
-  let m = totalMins % 60;
+const minutesToTimeParts12 = (totalMins) => {
+  const h24 = Math.floor(totalMins / 60) % 24;
+  const m = totalMins % 60;
   const ampm = h24 >= 12 ? 'PM' : 'AM';
   let h12 = h24 % 12;
   if (h12 === 0) h12 = 12;
-  return {
-    hour: h12,
-    minute: String(m).padStart(2, '0'),
-    ampm
-  };
+  return { hour: h12, minute: String(m).padStart(2, '0'), ampm };
 };
 
-const timeToMinutes = (h, m, ampm) => {
+const minutesToTimeParts24 = (totalMins) => {
+  const h = Math.floor(totalMins / 60) % 24;
+  const m = totalMins % 60;
+  return { hour: String(h).padStart(2, '0'), minute: String(m).padStart(2, '0') };
+};
+
+/** Convert 12-h components to minutes */
+const timeToMinutes12 = (h, m, ampm) => {
   let hrs = parseInt(h, 10);
   const mins = parseInt(m, 10);
   if (ampm === 'PM' && hrs !== 12) hrs += 12;
@@ -147,12 +151,28 @@ const timeToMinutes = (h, m, ampm) => {
   return hrs * 60 + mins;
 };
 
+/** Convert 24-h components to minutes */
+const timeToMinutes24 = (h, m) => parseInt(h, 10) * 60 + parseInt(m, 10);
+
+// ── component ─────────────────────────────────────────────────────────────────
+
 /**
  * BOSTimePicker
- * Wraps custom scroll wheel popover with standardized BOS styles and 12-hour format ("hh:mm a").
- * Displays a clock icon on the right side, allows keyboard typing, and opens the wheel picker popover.
+ *
+ * Props:
+ *   format24h {bool} – When true, shows a 24-hour wheel (00-23) without AM/PM column
+ *                      and emits values in "HH:MM" format.
+ *                      When false/omitted, uses the original 12-hour wheel with AM/PM
+ *                      and emits values in "hh:mm AM/PM" format.
+ *
+ *   minTime / maxTime – Accept both "HH:MM" (24-h) and "hh:mm AM/PM" (12-h) regardless of mode.
  */
-export default function BOSTimePicker({ label, value, onChange, disabled, required, error, helperText, minTime, maxTime, name, ...rest }) {
+export default function BOSTimePicker({
+  label, value, onChange, disabled, required,
+  error, helperText, minTime, maxTime, name,
+  format24h = false,
+  ...rest
+}) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -161,6 +181,7 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
 
+  // ── range limits ──────────────────────────────────────────────────────────
   const finalMinMins = useMemo(() => {
     const parsedMin = parseTimeToMinutes(minTime);
     const parsedMax = parseTimeToMinutes(maxTime);
@@ -170,57 +191,97 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
   }, [minTime, maxTime]);
 
   const finalMaxMins = useMemo(() => {
-    const parsedMax = parseTimeToMinutes(maxTime);
-    return parsedMax !== null ? parsedMax : 1439;
+    const parsed = parseTimeToMinutes(maxTime);
+    return parsed !== null ? parsed : 1439;
   }, [maxTime]);
 
+  // ── clean value ───────────────────────────────────────────────────────────
   const cleanValue = !value || value === 'undefined' || value === 'null' ? '' : value;
 
+  // ── parse incoming value into picker state ────────────────────────────────
   const parsedTime = useMemo(() => {
-    if (!cleanValue) {
-      const now = new Date();
-      let h = now.getHours() % 12 || 12;
-      return {
-        hour: h,
-        minute: String(now.getMinutes()).padStart(2, '0'),
-        ampm: now.getHours() >= 12 ? 'PM' : 'AM'
-      };
+    if (format24h) {
+      // 24-hour mode: value is "HH:MM" or empty
+      if (!cleanValue) {
+        const now = new Date();
+        return {
+          hour: String(now.getHours()).padStart(2, '0'),
+          minute: String(now.getMinutes()).padStart(2, '0')
+        };
+      }
+      try {
+        const [hStr, mStr] = cleanValue.split(':');
+        let h = parseInt(hStr, 10);
+        let m = parseInt(mStr, 10);
+        if (isNaN(h) || h < 0 || h > 23) h = 9;
+        if (isNaN(m) || m < 0 || m > 59) m = 0;
+        return { hour: String(h).padStart(2, '0'), minute: String(m).padStart(2, '0') };
+      } catch {
+        return { hour: '09', minute: '00' };
+      }
+    } else {
+      // 12-hour mode (original behaviour)
+      if (!cleanValue) {
+        const now = new Date();
+        let h = now.getHours() % 12 || 12;
+        return {
+          hour: h,
+          minute: String(now.getMinutes()).padStart(2, '0'),
+          ampm: now.getHours() >= 12 ? 'PM' : 'AM'
+        };
+      }
+      try {
+        const parts = cleanValue.split(' ');
+        const timeParts = parts[0].split(':');
+        let h = parseInt(timeParts[0], 10);
+        let m = parseInt(timeParts[1], 10);
+        const meridiem = parts[1] || 'AM';
+        if (isNaN(h) || h < 1 || h > 12) h = 12;
+        if (isNaN(m) || m < 0 || m > 59) m = 0;
+        return { hour: h, minute: String(m).padStart(2, '0'), ampm: meridiem === 'PM' ? 'PM' : 'AM' };
+      } catch {
+        return { hour: 12, minute: '00', ampm: 'AM' };
+      }
     }
-    try {
-      const parts = cleanValue.split(' ');
-      const timeParts = parts[0].split(':');
-      let h = parseInt(timeParts[0], 10);
-      let m = parseInt(timeParts[1], 10);
-      const meridiem = parts[1] || 'AM';
-      
-      if (isNaN(h) || h < 1 || h > 12) h = 12;
-      if (isNaN(m) || m < 0 || m > 59) m = 0;
-      
-      return {
-        hour: h,
-        minute: String(m).padStart(2, '0'),
-        ampm: meridiem === 'PM' ? 'PM' : 'AM'
-      };
-    } catch (e) {
-      return { hour: 12, minute: '00', ampm: 'AM' };
-    }
-  }, [cleanValue]);
+  }, [cleanValue, format24h]);
 
-  // Automatically clamp value if outside min/max range
+  // ── clamp value if outside min/max ────────────────────────────────────────
   useEffect(() => {
     if (!cleanValue) return;
     const currentMins = parseTimeToMinutes(cleanValue);
     if (currentMins === null) return;
-
     if (currentMins < finalMinMins || currentMins > finalMaxMins) {
       const clampedMins = Math.max(finalMinMins, Math.min(finalMaxMins, currentMins));
-      const parts = minutesToTimeParts(clampedMins);
-      const formatted = `${String(parts.hour).padStart(2, '0')}:${parts.minute} ${parts.ampm}`;
-      if (formatted !== cleanValue) {
-        onChange({ target: { name, value: formatted } });
+      let formatted;
+      if (format24h) {
+        const p = minutesToTimeParts24(clampedMins);
+        formatted = `${p.hour}:${p.minute}`;
+      } else {
+        const p = minutesToTimeParts12(clampedMins);
+        formatted = `${String(p.hour).padStart(2, '0')}:${p.minute} ${p.ampm}`;
       }
+      if (formatted !== cleanValue) onChange({ target: { name, value: formatted } });
     }
-  }, [cleanValue, finalMinMins, finalMaxMins, onChange, name]);
+  }, [cleanValue, finalMinMins, finalMaxMins, onChange, name, format24h]);
+
+  // ── allowed items ─────────────────────────────────────────────────────────
+  const allowedHours24 = useMemo(() => {
+    return HOURS_24.filter(hStr => {
+      const h = parseInt(hStr, 10);
+      const minPossible = h * 60;
+      const maxPossible = h * 60 + 59;
+      return Math.max(finalMinMins, minPossible) <= Math.min(finalMaxMins, maxPossible);
+    });
+  }, [finalMinMins, finalMaxMins]);
+
+  const allowedHours12 = useMemo(() => {
+    const selectedAmpm = parsedTime.ampm;
+    return HOURS_12.filter(h => {
+      const minPossible = timeToMinutes12(h, 0, selectedAmpm);
+      const maxPossible = timeToMinutes12(h, 59, selectedAmpm);
+      return Math.max(finalMinMins, minPossible) <= Math.min(finalMaxMins, maxPossible);
+    });
+  }, [finalMinMins, finalMaxMins, parsedTime.ampm]);
 
   const allowedMeridiems = useMemo(() => {
     const list = [];
@@ -229,41 +290,45 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
     return list.length > 0 ? list : ['PM'];
   }, [finalMinMins, finalMaxMins]);
 
-  const allowedHours = useMemo(() => {
-    const selectedAmpm = parsedTime.ampm;
-    const allHours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-    const filtered = allHours.filter(h => {
-      const minPossible = timeToMinutes(h, 0, selectedAmpm);
-      const maxPossible = timeToMinutes(h, 59, selectedAmpm);
-      return Math.max(finalMinMins, minPossible) <= Math.min(finalMaxMins, maxPossible);
-    });
-    return filtered.length > 0 ? filtered : [12];
-  }, [finalMinMins, finalMaxMins, parsedTime.ampm]);
-
   const allowedMinutes = useMemo(() => {
-    const selectedAmpm = parsedTime.ampm;
-    const selectedHour = parsedTime.hour;
-    const allMinutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-    const filtered = allMinutes.filter(mStr => {
-      const m = parseInt(mStr, 10);
-      const currentMins = timeToMinutes(selectedHour, m, selectedAmpm);
-      return currentMins >= finalMinMins && currentMins <= finalMaxMins;
-    });
-    return filtered.length > 0 ? filtered : ['00'];
-  }, [finalMinMins, finalMaxMins, parsedTime.ampm, parsedTime.hour]);
+    if (format24h) {
+      const selectedHour = parsedTime.hour;
+      return MINUTES.filter(mStr => {
+        const m = parseInt(mStr, 10);
+        const currentMins = timeToMinutes24(selectedHour, m);
+        return currentMins >= finalMinMins && currentMins <= finalMaxMins;
+      });
+    } else {
+      const selectedAmpm = parsedTime.ampm;
+      const selectedHour = parsedTime.hour;
+      return MINUTES.filter(mStr => {
+        const m = parseInt(mStr, 10);
+        const currentMins = timeToMinutes12(selectedHour, m, selectedAmpm);
+        return currentMins >= finalMinMins && currentMins <= finalMaxMins;
+      });
+    }
+  }, [finalMinMins, finalMaxMins, parsedTime.ampm, parsedTime.hour, format24h]);
 
+  // ── change handler ────────────────────────────────────────────────────────
   const handleTimePartChange = (part, newVal) => {
-    let { hour, minute, ampm } = parsedTime;
-    if (part === 'hour') hour = newVal;
-    if (part === 'minute') minute = newVal;
-    if (part === 'ampm') ampm = newVal;
-
-    const rawMins = timeToMinutes(hour, parseInt(minute, 10), ampm);
-    const clampedMins = Math.max(finalMinMins, Math.min(finalMaxMins, rawMins));
-    const parts = minutesToTimeParts(clampedMins);
-    const formatted = `${String(parts.hour).padStart(2, '0')}:${parts.minute} ${parts.ampm}`;
-    
-    onChange({ target: { name, value: formatted } });
+    if (format24h) {
+      let { hour, minute } = parsedTime;
+      if (part === 'hour') hour = newVal;
+      if (part === 'minute') minute = newVal;
+      const rawMins = timeToMinutes24(hour, minute);
+      const clampedMins = Math.max(finalMinMins, Math.min(finalMaxMins, rawMins));
+      const p = minutesToTimeParts24(clampedMins);
+      onChange({ target: { name, value: `${p.hour}:${p.minute}` } });
+    } else {
+      let { hour, minute, ampm } = parsedTime;
+      if (part === 'hour') hour = newVal;
+      if (part === 'minute') minute = newVal;
+      if (part === 'ampm') ampm = newVal;
+      const rawMins = timeToMinutes12(hour, parseInt(minute, 10), ampm);
+      const clampedMins = Math.max(finalMinMins, Math.min(finalMaxMins, rawMins));
+      const p = minutesToTimeParts12(clampedMins);
+      onChange({ target: { name, value: `${String(p.hour).padStart(2, '0')}:${p.minute} ${p.ampm}` } });
+    }
   };
 
   const handleIconClick = (e) => {
@@ -271,6 +336,7 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
     setOpen(true);
   };
 
+  // ── render ────────────────────────────────────────────────────────────────
   return (
     <>
       <TextField
@@ -293,7 +359,7 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
             </InputAdornment>
           )
         }}
-        sx={{ 
+        sx={{
           ...bosInput,
           '& .MuiOutlinedInput-root': {
             ...bosInput['& .MuiOutlinedInput-root'],
@@ -312,7 +378,7 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
               borderWidth: '2px !important',
             }
           },
-          '& .MuiInputBase-input': { 
+          '& .MuiInputBase-input': {
             paddingTop: '0px !important',
             paddingBottom: '0px !important',
             height: '38px !important',
@@ -347,13 +413,18 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
               border: '1px solid',
               borderColor: 'divider',
               backgroundColor: 'background.paper',
-              width: '240px'
+              width: format24h ? '180px' : '240px'
             }
           }
         }}
       >
-        <Typography variant="subtitle2" color="text.secondary" fontWeight={700} sx={{ letterSpacing: '0.5px', textTransform: 'uppercase', display: 'block', mb: 1.5, textAlign: 'center' }}>
-          Select Time
+        <Typography
+          variant="subtitle2"
+          color="text.secondary"
+          fontWeight={700}
+          sx={{ letterSpacing: '0.5px', textTransform: 'uppercase', display: 'block', mb: 1.5, textAlign: 'center' }}
+        >
+          {format24h ? 'Select Time (24h)' : 'Select Time'}
         </Typography>
 
         <Box sx={{ position: 'relative', display: 'flex', gap: 1.5, alignItems: 'center', justifyContent: 'center', px: 1, py: 0.5 }}>
@@ -377,7 +448,7 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
 
           {/* Hour Column */}
           <WheelColumn
-            items={allowedHours}
+            items={format24h ? allowedHours24 : allowedHours12}
             value={parsedTime.hour}
             onChange={(val) => handleTimePartChange('hour', val)}
           />
@@ -386,17 +457,19 @@ export default function BOSTimePicker({ label, value, onChange, disabled, requir
 
           {/* Minute Column */}
           <WheelColumn
-            items={allowedMinutes}
+            items={allowedMinutes.length > 0 ? allowedMinutes : MINUTES}
             value={parsedTime.minute}
             onChange={(val) => handleTimePartChange('minute', val)}
           />
 
-          {/* AM/PM Column */}
-          <WheelColumn
-            items={allowedMeridiems}
-            value={parsedTime.ampm}
-            onChange={(val) => handleTimePartChange('ampm', val)}
-          />
+          {/* AM/PM Column — 12-hour mode only */}
+          {!format24h && (
+            <WheelColumn
+              items={allowedMeridiems}
+              value={parsedTime.ampm}
+              onChange={(val) => handleTimePartChange('ampm', val)}
+            />
+          )}
         </Box>
       </Popover>
     </>
@@ -413,5 +486,6 @@ BOSTimePicker.propTypes = {
   helperText: PropTypes.string,
   name: PropTypes.string,
   minTime: PropTypes.string,
-  maxTime: PropTypes.string
+  maxTime: PropTypes.string,
+  format24h: PropTypes.bool
 };
