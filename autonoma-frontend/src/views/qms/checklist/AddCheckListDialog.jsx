@@ -408,7 +408,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         } else {
           const upFormData = new FormData();
           upFormData.append('file', f);
-          const res = await axios.post('/api/files/upload?module=QMS', upFormData, {
+          const res = await axios.post('/api/files/upload?module=MASTER_QMS_CHECKLIST_CHECK_LIST_MASTER', upFormData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
           uploadedFileNames.push(res.data);
@@ -422,7 +422,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         } else {
           const upFormData = new FormData();
           upFormData.append('file', f);
-          const res = await axios.post('/api/files/upload?module=QMS', upFormData, {
+          const res = await axios.post('/api/files/upload?module=MASTER_QMS_CHECKLIST_CHECK_LIST_MASTER', upFormData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
           scannedFileNames.push(res.data);

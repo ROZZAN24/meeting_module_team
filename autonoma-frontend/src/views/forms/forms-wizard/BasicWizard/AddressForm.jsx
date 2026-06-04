@@ -1,9 +1,10 @@
+import TextField from 'ui-component/CustomTextField';
 // material-ui
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
+
 
 // ==============================|| FORM WIZARD - BASIC ||============================== //
 

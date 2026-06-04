@@ -1,6 +1,7 @@
+import TextField from 'ui-component/CustomTextField';
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Grid, TextField, InputAdornment } from '@mui/material';
+import { Grid, InputAdornment } from '@mui/material';
 import { IconUser, IconCalendar } from '@tabler/icons-react';
 import useAuth from 'hooks/useAuth';
 import BOSFormSection from './BOSFormSection';

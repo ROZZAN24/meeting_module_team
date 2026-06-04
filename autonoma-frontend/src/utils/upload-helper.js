@@ -8,19 +8,48 @@ import { API_PATHS } from 'utils/api-constants';
 export const getModuleFromPath = () => {
     const path = window.location.pathname.toLowerCase();
     
-    // Check specific sub-modules first
-    if (path.includes('/qms/checklist')) return 'QMS_CHECKLIST';
-    if (path.includes('/qms/audit')) return 'QMS_AUDIT';
-    if (path.includes('/qms/ncr')) return 'QMS_NCR';
+    // Check specific 3-level menu routes first
+    
+    // QMS - Checklist Sub-routes
+    if (path.includes('/qms/checklist/verify')) return 'QUALITY_MANAGEMENT_SYSTEMS_CHECKLIST_CHECKLIST_VERIFY';
+    if (path.includes('/qms/checklist/close-renewal')) return 'QUALITY_MANAGEMENT_SYSTEMS_CHECKLIST_CLOSE_CHECKLIST_RENEWAL';
+    if (path.includes('/qms/checklist/renewal-verify')) return 'QUALITY_MANAGEMENT_SYSTEMS_CHECKLIST_CHECKLIST_RENEWAL_VERIFY';
+    if (path.includes('/qms/checklist/renewal-report')) return 'QUALITY_MANAGEMENT_SYSTEMS_CHECKLIST_CHECKLIST_RENEWAL_REPORT';
+    if (path.includes('/qms/checklist')) return 'QMS_CHECKLIST'; // general checklist fallback
+    
+    // QMS - Audit Sub-routes
+    if (path.includes('/qms/audit/schedule')) return 'QUALITY_MANAGEMENT_SYSTEMS_AUDIT_AUDIT_SCHEDULE';
+    if (path.includes('/qms/audit/observation')) return 'QUALITY_MANAGEMENT_SYSTEMS_AUDIT_AUDIT_OBSERVATION';
+    if (path.includes('/qms/audit/ncr/close')) return 'QUALITY_MANAGEMENT_SYSTEMS_AUDIT_CLOSE_NC_OFI';
+    if (path.includes('/qms/audit/ncr/approval')) return 'QUALITY_MANAGEMENT_SYSTEMS_AUDIT_AUDIT_NC_OFI_APPROVAL';
+    if (path.includes('/qms/audit')) return 'QMS_AUDIT'; // general audit fallback
+
+    // QMS - Meeting / MOM
+    if (path.includes('/qms/close-mom')) return 'QUALITY_MANAGEMENT_SYSTEMS_MEETING_CLOSE_MOM';
+    
+    // Master/HRA/ATS Sub-routes
+    if (path.includes('/master/hr/ats/interview-criteria') || path.includes('/hra/ats/interview-criteria')) return 'MASTER_HR_ATS_INTERVIEW_CRITERIA_MASTER';
+    if (path.includes('/master/hr/ats/induction-criteria') || path.includes('/hra/ats/induction-criteria')) return 'MASTER_HR_ATS_INDUCTION_CRITERIA';
+    if (path.includes('/hra/ats/induction-assignment')) return 'HRA_INDUCTION_INDUCTION_PENDING';
+    if (path.includes('/hra/ats/induction-training')) return 'HRA_INDUCTION_INDUCTION_TRAINING';
+    if (path.includes('/hra/ats/induction-trainee')) return 'HRA_INDUCTION_INDUCTION_TRAINEE';
+    if (path.includes('/hra/ats') || path.includes('/master/hr/ats')) return 'MASTER_HR_ATS_APPLICATION_TRACKING_SYSTEM';
+    
+    // Master - HR - Employee
+    if (path.includes('/hr/employee/master') || path.includes('/master/hr/employee/master')) return 'MASTER_HR_EMPLOYEE_EMPLOYEE_MASTER';
+    if (path.includes('/hr/') || path.includes('/master/hr/')) return 'HRA';
+
+    // Sales & Marketing Sub-routes
+    if (path.includes('/sm/enquiry/dashboard')) return 'SALES_MARKETING_OCR_ENQUIRY_DASHBOARD';
+    if (path.includes('/sm/enquiries')) return 'SALES_MARKETING_OCR_ENQUIRY';
+    if (path.includes('/sm/quotations')) return 'SALES_MARKETING_OCR_QUOTATION';
     if (path.includes('/sm/customers')) return 'SALES_CUSTOMER';
-    if (path.includes('/sm/enquiries')) return 'SALES_ENQUIRY';
-    if (path.includes('/sm/quotations')) return 'SALES_QUOTATION';
     
-    // Check HRA modules
-    if (path.includes('/hr/employee/master')) return 'HRA_PROFILE';
-    if (path.includes('/hr/')) return 'HRA';
+    // Admin Sub-routes
+    if (path.includes('/admin/company-profile')) return 'ADMIN_BOS_COMPANY_PROFILE';
+    if (path.includes('/admin/user-credentials')) return 'ADMIN_BOS_USER_CREDENTIALS';
     
-    // Then general modules
+    // Then general module fallbacks
     if (path.includes('/user-overview') || path.includes('/profile')) return 'USER_PROFILE';
     if (path.includes('/finance/')) return 'FINANCE';
     if (path.includes('/production/')) return 'PRODUCTION';

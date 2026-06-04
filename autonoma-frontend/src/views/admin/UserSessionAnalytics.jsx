@@ -1,20 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  Box,
-  Grid,
-  Typography,
-  Stack,
-  Avatar,
-  Paper,
-  useTheme,
-  LinearProgress,
-  Chip,
-  IconButton,
-  Tooltip,
-  Autocomplete,
-  TextField,
-  Button
-} from '@mui/material';
+import { Box, Grid, Typography, Stack, Avatar, Paper, useTheme, LinearProgress, Chip, IconButton, Tooltip, Autocomplete, Button } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 
