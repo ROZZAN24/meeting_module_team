@@ -1612,6 +1612,10 @@ export default function TicketManagement({ viewType }) {
       showSnackbar('Please select a Source Type.', 'warning');
       return;
     }
+    if ((formSourceType === 'Web' || formSourceType === 'Mobile') && !formPage) {
+      showSnackbar('Please select a Screen / Page Name.', 'warning');
+      return;
+    }
     if (!formDevName || !formDevName.trim()) {
       showSnackbar('Please select an Assignee (Assigned To).', 'warning');
       return;
@@ -3865,6 +3869,7 @@ export default function TicketManagement({ viewType }) {
                       <MenuItem value="Select">Select</MenuItem>
                       <MenuItem value="Web">Web</MenuItem>
                       <MenuItem value="Mobile">Mobile</MenuItem>
+                      <MenuItem value="General">General</MenuItem>
                     </TextField>
                   </Box>
                   <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formPage?.pageName, 'Screen / Page Name', 90)}px` }}>
