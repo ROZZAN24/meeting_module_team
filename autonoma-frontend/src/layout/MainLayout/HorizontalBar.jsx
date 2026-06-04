@@ -632,7 +632,7 @@ export default function HorizontalBar() {
   const { pathname } = useLocation();
   const { ribbonOpen, setRibbonOpen } = useRibbon();
   const { user } = useAuth();
-  const userId = user?.id;
+  const userId = user?.userId || user?.id;
 
   const permStatus = useSelector((state) => state.permissions.status);
   const permMap = useSelector((state) => state.permissions.map);

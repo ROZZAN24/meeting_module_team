@@ -21,7 +21,7 @@ import { fetcher } from 'utils/axios';
  */
 export default function usePagePermissions(pageCode) {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userId = user?.userId || user?.id;
 
   const { data: auths, isLoading } = useSWR(
     userId ? `/api/user-page-auth/${userId}` : null,
