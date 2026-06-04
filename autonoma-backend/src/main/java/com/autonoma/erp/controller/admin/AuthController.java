@@ -125,7 +125,7 @@ public class AuthController {
             java.util.List<com.autonoma.erp.model.admin.UserDivisionMapping> divMappings = userDivisionMappingRepository
                     .findByUserId(user.getUserId());
 
-            boolean isSuperUser = (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
+            boolean isSuperUser = "admin".equalsIgnoreCase(user.getUserId()) || (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN);
 
             if (isSuperUser) {
                 // Super Users get everything regardless of mappings
@@ -227,7 +227,7 @@ public class AuthController {
                 .findByUserId(userId);
 
         com.autonoma.erp.model.admin.UserCredential user = userRepository.findByUserId(userId).orElse(null);
-        boolean isSuperUser = (user != null && user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
+        boolean isSuperUser = (user != null && ("admin".equalsIgnoreCase(user.getUserId()) || (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)));
 
         if (isSuperUser) {
             // Super Users get everything regardless of mappings
@@ -636,7 +636,7 @@ public class AuthController {
             java.util.List<com.autonoma.erp.model.admin.UserDivisionMapping> divMappings = userDivisionMappingRepository
                     .findByUserId(matchedUser.getUserId());
 
-            boolean isSuperUser = (matchedUser.getUserLevel() != null && matchedUser.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
+            boolean isSuperUser = "admin".equalsIgnoreCase(matchedUser.getUserId()) || (matchedUser.getUserLevel() != null && matchedUser.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN);
 
             if (isSuperUser) {
                 java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository
