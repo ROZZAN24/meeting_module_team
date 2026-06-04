@@ -122,23 +122,21 @@ public abstract class BaseAuditEntity {
 
     @PrePersist
     protected void onCreate() {
-        String currentUserId = null;
-        try {
-            currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
-        } catch (Exception e) {
-        }
-        this.createdUser = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
-        this.updatedUser = null;
-
         if (this.createdDate == null) {
             this.createdDate = new Date();
         }
-        if (this.createdUser == null) {
-            String userId = SecurityUtils.getCurrentUserId();
-            this.createdUser = (userId != null) ? userId
-                    : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName()
-                            : "System");
+        if (this.createdUser == null || this.createdUser.trim().isEmpty()) {
+            String empName = null;
+            try {
+                empName = com.autonoma.erp.util.SecurityUtils.getCurrentUserEmployeeName();
+            } catch (Exception e) {
+            }
+            if (empName == null || empName.trim().isEmpty()) {
+                empName = "admin";
+            }
+            this.createdUser = empName;
         }
+        this.updatedUser = null;
     }
 
     @PreUpdate
@@ -155,17 +153,18 @@ public abstract class BaseAuditEntity {
         
         this.updatedDate = new Date();
         
-        String currentUserId = null;
-        try {
-            currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
-        } catch (Exception e) {
-        }
-        
-        if (currentUserId != null && !currentUserId.trim().isEmpty()) {
-            this.updatedUser = currentUserId;
-        } else {
-            String displayName = SecurityUtils.getCurrentUserDisplayName();
-            this.updatedUser = (displayName != null) ? displayName : "System";
+        if (this.updatedUser == null || this.updatedUser.trim().isEmpty()) {
+            String empName = null;
+            try {
+                empName = com.autonoma.erp.util.SecurityUtils.getCurrentUserEmployeeName();
+            } catch (Exception e) {
+            }
+            
+            if (empName != null && !empName.trim().isEmpty()) {
+                this.updatedUser = empName;
+            } else {
+                this.updatedUser = "System";
+            }
         }
 
         if (this.createdUser != null && this.createdUser.trim().isEmpty()) {
