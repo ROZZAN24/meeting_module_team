@@ -125,6 +125,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260604_V83.0__Create_HR_Induction_Reassignment_Log.sql",
         "20260604_V84.0__Add_Is_Active_To_QMS_Checklist.sql",
         "20260604_V85.0__Standardize_QMS_Audit_Criteria_Schema.sql",
+        "20260605_V86.0__Create_QMS_Audit_Criteria_Table.sql",
         // New v_next consolidation scripts
         "V001__Master_Module.sql",
         "V002__User_Module.sql",
