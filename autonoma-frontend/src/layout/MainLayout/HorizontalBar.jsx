@@ -634,6 +634,8 @@ export default function HorizontalBar() {
     let currentItems = [...menuItem.items];
     if (permStatus === 'loaded') {
       currentItems = filterMenuByPermissions(currentItems, permMap);
+    } else {
+      currentItems = filterMenuByPermissions(currentItems, {});
     }
     return currentItems;
   }, [permStatus, permMap]);
