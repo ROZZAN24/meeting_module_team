@@ -28,6 +28,7 @@ import useConfig from 'hooks/useConfig';
 import { useRibbon } from 'contexts/RibbonContext';
 import SpeedDialConfigModal from './SpeedDialConfigModal';
 import { useSelector } from 'store';
+import useAuth from 'hooks/useAuth';
 
 import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight, IconSettings } from '@tabler/icons-react';
 
@@ -412,9 +413,13 @@ function RibbonGroupSection({ group, onClose, speedDialIds, onEditClick, altMode
     }
   };
 
-  const displayedChildren = speedDialIds && speedDialIds.length > 0
+  let displayedChildren = speedDialIds && speedDialIds.length > 0
     ? speedDialIds.map(id => allLeafItems.find(c => c.id === id)).filter(Boolean)
-    : allLeafItems.slice(0, 5);
+    : [];
+
+  if (displayedChildren.length === 0) {
+    displayedChildren = allLeafItems.slice(0, 5);
+  }
 
   const displayedChildrenWithKeyTips = useMemo(() => {
     if (!isKeyTipActive) return displayedChildren;
@@ -626,6 +631,8 @@ export default function HorizontalBar() {
   } = useConfig();
   const { pathname } = useLocation();
   const { ribbonOpen, setRibbonOpen } = useRibbon();
+  const { user } = useAuth();
+  const userId = user?.id;
 
   const permStatus = useSelector((state) => state.permissions.status);
   const permMap = useSelector((state) => state.permissions.map);
@@ -646,15 +653,19 @@ export default function HorizontalBar() {
   const [configModuleGroup, setConfigModuleGroup] = useState(null);
 
   useEffect(() => {
-    const savedPrefs = localStorage.getItem('speedDialPreferences');
-    if (savedPrefs) {
-      try {
-        setSpeedDialPreferences(JSON.parse(savedPrefs));
-      } catch (e) {
-        console.error('Failed to parse speedDialPreferences', e);
+    if (userId) {
+      const savedPrefs = localStorage.getItem(`speedDialPreferences_${userId}`);
+      if (savedPrefs) {
+        try {
+          setSpeedDialPreferences(JSON.parse(savedPrefs));
+        } catch (e) {
+          console.error('Failed to parse speedDialPreferences', e);
+        }
+      } else {
+        setSpeedDialPreferences({});
       }
     }
-  }, []);
+  }, [userId]);
 
   const handleEditClick = (group) => {
     setConfigModuleGroup(group);
@@ -662,9 +673,10 @@ export default function HorizontalBar() {
   };
 
   const handleSaveSpeedDial = (groupId, selectedIds) => {
+    if (!userId) return;
     const newPrefs = { ...speedDialPreferences, [groupId]: selectedIds };
     setSpeedDialPreferences(newPrefs);
-    localStorage.setItem('speedDialPreferences', JSON.stringify(newPrefs));
+    localStorage.setItem(`speedDialPreferences_${userId}`, JSON.stringify(newPrefs));
   };
 
   // Close ribbon on route change (removed as per user request to keep it expanded)
