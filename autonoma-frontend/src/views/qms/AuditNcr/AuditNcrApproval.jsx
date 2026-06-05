@@ -579,7 +579,7 @@ export default function AuditNcrApproval() {
 
               <Box sx={{ position: 'relative' }}>
                 <BOSTextField 
-                  label="Observation Comment" 
+                  label="Comments" 
                   value={selectedFinding?.remarks || selectedFinding?.clause || ''} 
                   multiline 
                   rows={2} 
