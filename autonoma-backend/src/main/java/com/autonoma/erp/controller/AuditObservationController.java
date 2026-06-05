@@ -151,11 +151,16 @@ public class AuditObservationController {
         if (observation.getDetails() != null) {
             for (AuditObservationDetail detail : observation.getDetails()) {
                 detail.setAuditObservation(observation);
-                if (detail.getNcrStatus() == null && ("NC".equalsIgnoreCase(detail.getObservationStatus()) || "NCR".equalsIgnoreCase(detail.getObservationStatus()) || "OFI".equalsIgnoreCase(detail.getObservationStatus()))) {
-                    detail.setNcrStatus("OPEN");
-                }
-                if (detail.getApprovalStatus() == null) {
-                    detail.setApprovalStatus("PENDING");
+                if ("COMPLIANCE".equalsIgnoreCase(detail.getObservationStatus())) {
+                    detail.setApprovalStatus("APPROVED");
+                    detail.setNcrStatus(null);
+                } else {
+                    if (detail.getNcrStatus() == null && ("NC".equalsIgnoreCase(detail.getObservationStatus()) || "NCR".equalsIgnoreCase(detail.getObservationStatus()) || "OFI".equalsIgnoreCase(detail.getObservationStatus()))) {
+                        detail.setNcrStatus("OPEN");
+                    }
+                    if (detail.getApprovalStatus() == null || "APPROVED".equalsIgnoreCase(detail.getApprovalStatus())) {
+                        detail.setApprovalStatus("PENDING");
+                    }
                 }
             }
         }
@@ -211,11 +216,16 @@ public class AuditObservationController {
                                         existingDetail.setObservationStatus(incomingDetail.getObservationStatus());
                                         existingDetail.setComments(incomingDetail.getComments());
                                         
-                                        if (incomingDetail.getNcrStatus() != null) {
-                                            existingDetail.setNcrStatus(incomingDetail.getNcrStatus());
-                                        }
-                                        if (incomingDetail.getApprovalStatus() != null) {
-                                            existingDetail.setApprovalStatus(incomingDetail.getApprovalStatus());
+                                        if ("COMPLIANCE".equalsIgnoreCase(incomingDetail.getObservationStatus())) {
+                                            existingDetail.setApprovalStatus("APPROVED");
+                                            existingDetail.setNcrStatus(null);
+                                        } else {
+                                            if (incomingDetail.getNcrStatus() != null) {
+                                                existingDetail.setNcrStatus(incomingDetail.getNcrStatus());
+                                            }
+                                            if (incomingDetail.getApprovalStatus() != null) {
+                                                existingDetail.setApprovalStatus(incomingDetail.getApprovalStatus());
+                                            }
                                         }
                                         if (incomingDetail.getRootCause() != null) {
                                             existingDetail.setRootCause(incomingDetail.getRootCause());
@@ -238,11 +248,16 @@ public class AuditObservationController {
                             } else {
                                 // Add new detail
                                 incomingDetail.setAuditObservation(observation);
-                                if (incomingDetail.getNcrStatus() == null && ("NC".equalsIgnoreCase(incomingDetail.getObservationStatus()) || "NCR".equalsIgnoreCase(incomingDetail.getObservationStatus()) || "OFI".equalsIgnoreCase(incomingDetail.getObservationStatus()))) {
-                                    incomingDetail.setNcrStatus("OPEN");
-                                }
-                                if (incomingDetail.getApprovalStatus() == null) {
-                                    incomingDetail.setApprovalStatus("PENDING");
+                                if ("COMPLIANCE".equalsIgnoreCase(incomingDetail.getObservationStatus())) {
+                                    incomingDetail.setApprovalStatus("APPROVED");
+                                    incomingDetail.setNcrStatus(null);
+                                } else {
+                                    if (incomingDetail.getNcrStatus() == null && ("NC".equalsIgnoreCase(incomingDetail.getObservationStatus()) || "NCR".equalsIgnoreCase(incomingDetail.getObservationStatus()) || "OFI".equalsIgnoreCase(incomingDetail.getObservationStatus()))) {
+                                        incomingDetail.setNcrStatus("OPEN");
+                                    }
+                                    if (incomingDetail.getApprovalStatus() == null || "APPROVED".equalsIgnoreCase(incomingDetail.getApprovalStatus())) {
+                                        incomingDetail.setApprovalStatus("PENDING");
+                                    }
                                 }
                                 observation.getDetails().add(incomingDetail);
                             }
