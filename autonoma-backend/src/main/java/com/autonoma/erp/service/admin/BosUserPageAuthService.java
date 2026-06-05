@@ -85,7 +85,8 @@ public class BosUserPageAuthService {
                 result.add(auth);
             } else if (isAdmin) {
                 String code = page.getPageCode();
-                if (code != null && (code.equals("AD1210") || code.equals("AD1220") || code.equals("AD1230") || code.equals("AD1240"))) {
+                if (code != null && (code.equals("AD1210") || code.equals("AD1220") || code.equals("AD1230")
+                        || code.equals("AD1240"))) {
                     // Drop Super Admin pages for regular Admin
                 } else {
                     auth.setEnable(1);
@@ -129,7 +130,8 @@ public class BosUserPageAuthService {
      */
     public boolean hasPermission(String userId, String pageCode, String action) {
         BosPage page = pageRepository.findByPageCode(pageCode).orElse(null);
-        if (page == null) return false;
+        if (page == null)
+            return false;
 
         boolean isSuperAdmin = userRepository.findByUserId(userId)
                 .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
@@ -144,27 +146,31 @@ public class BosUserPageAuthService {
                 .orElse(false);
 
         if (isAdmin) {
-            if (pageCode != null && (pageCode.equals("AD1210") || pageCode.equals("AD1220") || pageCode.equals("AD1230") || pageCode.equals("AD1240"))) {
+            if (pageCode != null && (pageCode.equals("AD1210") || pageCode.equals("AD1220") || pageCode.equals("AD1230")
+                    || pageCode.equals("AD1240"))) {
                 // Drop down to DB check for Super BOS(S) pages
             } else {
                 return true;
             }
         }
 
-        // Rule: Disabled pages must not be accessible through direct URLs or APIs (for Regular Users only)
+        // Rule: Disabled pages must not be accessible through direct URLs or APIs (for
+        // Regular Users only)
         if (page.getEnabled() == null || page.getEnabled() != 1) {
             return false;
         }
 
         BosUserPageAuth auth = authRepository.findByUserIdAndPageId(userId, page.getPageId());
         if (auth == null) {
-            // For regular users without configured page auth record, only allow Close Checklist / Renewal page (QM1120) by default
+            // For regular users without configured page auth record, only allow Close
+            // Checklist / Renewal page (QM1120) by default
             if ("QM1120".equals(page.getPageCode())) {
                 return "read".equalsIgnoreCase(action) || "write".equalsIgnoreCase(action);
             }
             return false;
         }
-        if (auth.getEnable() == 0) return false;
+        if (auth.getEnable() == 0)
+            return false;
 
         return switch (action.toLowerCase()) {
             case "read" -> auth.getReadAcs() == 1;

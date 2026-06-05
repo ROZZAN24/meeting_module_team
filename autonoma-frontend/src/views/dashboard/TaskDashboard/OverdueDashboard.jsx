@@ -16,12 +16,13 @@ import {
   TableRow,
   LinearProgress,
   Link,
-  IconButton
+  IconButton,
+  useTheme
 } from '@mui/material';
 import { styled, alpha, keyframes } from '@mui/system';
-
-const glowPulse = keyframes`0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}`;
 import ReactApexChart from 'react-apexcharts';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
@@ -37,6 +38,8 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import DateRangeRoundedIcon from '@mui/icons-material/DateRangeRounded';
+
+const glowPulse = keyframes`0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}`;
 
 const StyledCard = styled(Paper)(({ theme }) => ({
   borderRadius: '16px',
@@ -160,7 +163,11 @@ const NeonCard = styled(Paper)(({ theme, statcolor }) => ({
   },
 }));
 
-export default function OverdueDashboard({ isDark, realTasks = [] }) {
+export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) {
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search?.filters || {});
+
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
 
@@ -808,7 +815,28 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
         }}
       >
         {topStats.map((stat, idx) => (
-          <NeonCard key={idx} statcolor={stat.color}>
+          <NeonCard 
+            key={idx} 
+            statcolor={stat.color}
+            onClick={() => {
+              const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+              const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+              
+              const initialFilters = {
+                taskScope: globalFilters?.performanceScope || 'Mine',
+              };
+              
+              navigate(routePath, { 
+                state: { 
+                  fromDashboard: true, 
+                  fromTab: activeTab,
+                  dashboardFilters: globalFilters,
+                  initialFilters 
+                } 
+              });
+            }}
+            sx={{ cursor: 'pointer' }}
+          >
             <Box className="hud-corner hud-tl" />
             <Box className="hud-corner hud-tr" />
             <Box className="hud-corner hud-bl" />

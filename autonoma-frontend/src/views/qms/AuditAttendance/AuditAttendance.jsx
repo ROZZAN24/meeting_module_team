@@ -49,6 +49,11 @@ const getSystemTime12h = () => {
   return `${strHours}:${strMinutes} ${ampm}`;
 };
 
+const stripEmpCode = (name) => {
+  if (!name) return '';
+  return name.replace(/\s*\(\s*EMP-\d+\s*\)/gi, '').replace(/\s+-\s+EMP-\d+/gi, '').replace(/\s*EMP-\d+/gi, '').trim();
+};
+
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '-';
   try {
@@ -218,17 +223,16 @@ export default function AuditAttendance() {
         return false;
       }
 
-      // 2. Schedule must start within the next 10 minutes or be currently active
+      // 2. Schedule must start within the next 10 minutes and not have started yet
       const schStartTime = parseScheduleDateTime(s, false);
-      const schEndTime = parseScheduleDateTime(s, true);
 
-      if (schStartTime && schEndTime) {
+      if (schStartTime) {
         const tenMinsBeforeStart = new Date(schStartTime.getTime() - 10 * 60 * 1000);
         if (now < tenMinsBeforeStart) {
-          return false; // too early (Requirement 1)
+          return false; // too early
         }
-        if (now > schEndTime) {
-          return false; // past schedule (Requirement 3)
+        if (now > schStartTime) {
+          return false; // past schedule / already started
         }
       }
       
@@ -243,7 +247,7 @@ export default function AuditAttendance() {
     setFormData({
       id: null,
       auditScheduleNo: nearestScheduleNo,
-      name: defaultName,
+      name: stripEmpCode(defaultName),
       employeeCode: defaultCode,
       inTime: getSystemTime12h(),
       attendanceStatus: 'PRESENT'
@@ -339,6 +343,9 @@ export default function AuditAttendance() {
     if (col.id === 'index') return idx + 1 + page * size;
     let val = row[col.id];
 
+    if (col.id === 'name') {
+      return stripEmpCode(val);
+    }
     if (col.id === 'createdUser') {
       val = row.createdUser || row.createdBy;
     }
@@ -431,7 +438,7 @@ export default function AuditAttendance() {
                 required
                 disabled
                 label="Name"
-                value={formData.name ? `${formData.name} (${formData.employeeCode})` : `${currentUserEmp?.employeeName || user?.name} (${currentUserEmp?.empCode || user?.employeeCode})`}
+                value={stripEmpCode(formData.name || currentUserEmp?.employeeName || user?.name || '')}
                 InputProps={{ readOnly: true }}
                 error={!!errors.name}
                 helperText={errors.name}
@@ -444,17 +451,20 @@ export default function AuditAttendance() {
                 value={formData.name && formData.employeeCode ? formData.name + '|' + formData.employeeCode : ''}
                 onChange={(e) => {
                   const [n, c] = e.target.value.split('|');
-                  setFormData({ ...formData, name: n, employeeCode: c });
+                  setFormData({ ...formData, name: stripEmpCode(n), employeeCode: c });
                 }}
                 error={!!errors.name}
                 helperText={errors.name}
                 disabled={!!formData.id}
+                SelectProps={{
+                  renderValue: (val) => val ? stripEmpCode(val.split('|')[0]) : ''
+                }}
               >
                 {participants.length > 0 ? (
-                  participants.map(p => <MenuItem key={p.code + p.name} value={p.name + '|' + p.code}>{p.name} ({p.code})</MenuItem>)
+                  participants.map(p => <MenuItem key={p.code + p.name} value={p.name + '|' + p.code}>{stripEmpCode(p.name)}</MenuItem>)
                 ) : (
                   formData.name ? (
-                    <MenuItem value={formData.name + '|' + formData.employeeCode}>{formData.name} ({formData.employeeCode})</MenuItem>
+                    <MenuItem value={formData.name + '|' + formData.employeeCode}>{stripEmpCode(formData.name)}</MenuItem>
                   ) : (
                     <MenuItem disabled value="">No Participants Found</MenuItem>
                   )

@@ -248,6 +248,18 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       setErrors((prev) => ({ ...prev, department: 'At least one Department should be selected.' }));
       return;
     }
+    if (attachments.length === 0) {
+      setErrors((prev) => ({ ...prev, attachments: 'At least one attachment file is required.' }));
+      dispatch(openSnackbar({
+        open: true,
+        message: 'At least one attachment file is required.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error',
+        close: false
+      }));
+      return;
+    }
 
     try {
       const updatedAttachments = [...attachments];
@@ -516,10 +528,16 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
           <BOSFormSection title="Attachments" icon={<IconPaperclip size={20} color={theme.palette.secondary.main} />}>
             <BOSFileUpload
               files={attachments}
-              onChange={setAttachments}
+              onChange={(newAtts) => {
+                setAttachments(newAtts);
+                if (newAtts.length > 0 && errors.attachments) {
+                  setErrors((prev) => ({ ...prev, attachments: '' }));
+                }
+              }}
               module="MASTER_QMS_AUDIT_AUDIT_CRITERIA"
               multiple={true}
               disabled={isViewOnly}
+              error={!!errors.attachments}
             />
           </BOSFormSection>
         </Box>

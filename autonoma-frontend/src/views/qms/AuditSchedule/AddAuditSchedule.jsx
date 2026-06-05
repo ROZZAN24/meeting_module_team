@@ -255,6 +255,9 @@ export default function AddAuditSchedule() {
     startTime: defaultStartTime,
     endTime: '05:00 PM',
     frequency: 'NONE',
+    weekDays: '',
+    repeatEveryValue: '',
+    repeatEveryUnit: 'DAYS',
     department: '',
     auditee: '',
     auditeeType: '',
@@ -402,6 +405,9 @@ export default function AddAuditSchedule() {
         ncrApprovedByType: data.ncrApprovedByType || '',
         criteriaMinCount: data.criteriaMinCount || 0,
         frequency: data.frequency || 'NONE',
+        weekDays: data.weekDays || '',
+        repeatEveryValue: data.repeatEveryValue !== null && data.repeatEveryValue !== undefined ? data.repeatEveryValue : '',
+        repeatEveryUnit: data.repeatEveryUnit || 'DAYS',
         itemCode: data.itemCode || '',
         customerName: extras.customerName || '',
         contactName: extras.contactName || '',
@@ -430,7 +436,10 @@ export default function AddAuditSchedule() {
           if (!val) return '';
           const valStr = String(val);
           const code = valStr.includes(' - ') ? valStr.split(' - ')[1] : valStr;
-          const match = employees.find(emp => String(emp?.empCode || emp?.employeeCode || emp?.id || '') === String(code));
+          const match = employees.find(emp => 
+            String(emp?.empCode || emp?.employeeCode || emp?.id || '').toLowerCase() === String(code).toLowerCase() ||
+            String(emp?.employeeName || '').toLowerCase() === String(code).toLowerCase()
+          );
           if (match) {
             const fName = match.firstName || '';
             const lName = match.lastName || '';
@@ -472,11 +481,21 @@ export default function AddAuditSchedule() {
         return prev;
       });
     }
-  }, [employees]);
+  }, [employees, formData.auditor, formData.auditee, formData.ncrApprovedBy, formData.coOrdinator]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'frequency') {
+      setFormData((prev) => ({
+        ...prev,
+        frequency: value,
+        weekDays: value === 'WEEKLY' ? '' : prev.weekDays,
+        repeatEveryValue: value === 'CUSTOM' ? '' : prev.repeatEveryValue,
+        repeatEveryUnit: value === 'CUSTOM' ? 'DAYS' : prev.repeatEveryUnit
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSave = async () => {
@@ -492,6 +511,14 @@ export default function AddAuditSchedule() {
       { field: 'endTime', label: 'End Time', required: true },
       { field: 'frequency', label: 'Frequency', required: true }
     ];
+
+    if (formData.frequency === 'WEEKLY') {
+      rules.push({ field: 'weekDays', label: 'Week Days', required: true });
+    }
+    if (formData.frequency === 'CUSTOM') {
+      rules.push({ field: 'repeatEveryValue', label: 'Repeat Every', required: true, type: 'number' });
+      rules.push({ field: 'repeatEveryUnit', label: 'Schedule Unit', required: true });
+    }
 
     if (category === 'CUSTOMER_AUDIT') {
       rules.push({ field: 'customerName', label: 'Customer Name', required: true });
@@ -622,6 +649,9 @@ export default function AddAuditSchedule() {
       
       const payload = { 
         ...formData, 
+        repeatEveryValue: formData.frequency === 'CUSTOM' && formData.repeatEveryValue ? parseInt(formData.repeatEveryValue, 10) : null,
+        repeatEveryUnit: formData.frequency === 'CUSTOM' ? formData.repeatEveryUnit : null,
+        weekDays: formData.frequency === 'WEEKLY' ? formData.weekDays : null,
         auditeeDetails: JSON.stringify(extraDetails),
         criteriaList 
       };
@@ -662,6 +692,9 @@ export default function AddAuditSchedule() {
         startTime: defaultStartTime,
         endTime: '05:00 PM',
         frequency: 'NONE',
+        weekDays: '',
+        repeatEveryValue: '',
+        repeatEveryUnit: 'DAYS',
         department: '',
         auditee: '',
         auditeeType: '',
@@ -789,11 +822,18 @@ export default function AddAuditSchedule() {
   }, [masterCriteria, formData.auditType, formData.department, criteriaList]);
 
   const mappedAuditAreas = useMemo(() => {
-    if (!formData.auditType) return [];
+    const getActiveGlobalAreas = () => 
+      auditAreas.filter(a => a && a.status?.toUpperCase() === 'ACTIVE').map(a => a.description).filter(Boolean);
+
+    if (!formData.auditType || !auditTypes.length) {
+      return getActiveGlobalAreas();
+    }
     const selectedTypeObj = auditTypes.find(t => t.auditType === formData.auditType);
-    if (!selectedTypeObj || !selectedTypeObj.auditArea) return [];
+    if (!selectedTypeObj || !selectedTypeObj.auditArea) {
+      return getActiveGlobalAreas();
+    }
     return selectedTypeObj.auditArea.split(',').map(s => s.trim()).filter(Boolean);
-  }, [formData.auditType, auditTypes]);
+  }, [formData.auditType, auditTypes, auditAreas]);
 
   const totalRequiredCount = useMemo(() => {
     const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
@@ -876,6 +916,7 @@ export default function AddAuditSchedule() {
                     fullWidth
                   >
                     <MenuItem value="OPEN">OPEN</MenuItem>
+                    <MenuItem value="WAITING_APPROVAL">PENDING FOR APPROVAL</MenuItem>
                     <MenuItem value="CLOSED">CLOSED</MenuItem>
                     <MenuItem value="CANCELLED">CANCELLED</MenuItem>
                   </BOSTextField>
@@ -883,7 +924,7 @@ export default function AddAuditSchedule() {
                   <BOSTextField
                     label="Status"
                     name="status"
-                    value={formData.status}
+                    value={formData.status === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : formData.status}
                     inputProps={{ readOnly: true }}
                     fullWidth
                   />
@@ -962,10 +1003,59 @@ export default function AddAuditSchedule() {
                 helperText={errors.frequency}
                 disabled={!canWrite}
               >
-                {['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'BI-ANNUAL', 'ANNUAL'].map((f) => (
+                {['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'BI-ANNUAL', 'ANNUAL', 'CUSTOM'].map((f) => (
                   <MenuItem key={f} value={f}>{f}</MenuItem>
                 ))}
               </BOSTextField>
+
+              {formData.frequency === 'WEEKLY' && (
+                <BOSTextField
+                  select
+                  required
+                  label="Week Days"
+                  name="weekDays"
+                  value={formData.weekDays || ''}
+                  onChange={handleChange}
+                  error={!!errors.weekDays}
+                  helperText={errors.weekDays}
+                  disabled={!canWrite}
+                >
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d) => (
+                    <MenuItem key={d} value={d}>{d}</MenuItem>
+                  ))}
+                </BOSTextField>
+              )}
+
+              {formData.frequency === 'CUSTOM' && (
+                <>
+                  <BOSTextField
+                    required
+                    type="number"
+                    label="Repeat Every"
+                    name="repeatEveryValue"
+                    value={formData.repeatEveryValue || ''}
+                    onChange={handleChange}
+                    error={!!errors.repeatEveryValue}
+                    helperText={errors.repeatEveryValue}
+                    disabled={!canWrite}
+                  />
+                  <BOSTextField
+                    select
+                    required
+                    label="Schedule"
+                    name="repeatEveryUnit"
+                    value={formData.repeatEveryUnit || 'DAYS'}
+                    onChange={handleChange}
+                    error={!!errors.repeatEveryUnit}
+                    helperText={errors.repeatEveryUnit}
+                    disabled={!canWrite}
+                  >
+                    {['DAYS', 'WEEKS', 'MONTHS', 'YEARS'].map((u) => (
+                      <MenuItem key={u} value={u}>{u}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </>
+              )}
               <BOSTextField
                 select
                 required
@@ -1231,35 +1321,99 @@ export default function AddAuditSchedule() {
                   required
                   label="Co-Ordinator"
                   name="coOrdinator"
-                  value={formData.coOrdinator}
+                  value={(() => {
+                    const val = formData.coOrdinator;
+                    if (!val) return '';
+                    const valStr = String(val).trim().toLowerCase();
+                    const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                    const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                    // Compute options list to map
+                    const coordOptions = (employees || []).filter(emp => emp).filter(emp => {
+                      if (emp.status !== 'Active') return false;
+                      if (!formData.department) return false;
+                      const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
+                      return empDept?.departmentName === formData.department;
+                    }).map(emp => {
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      let name = '';
+                      if (fName && lName) {
+                        name = `${fName} ${lName}`.trim();
+                      } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+                        name = `${empName} ${lName}`.trim();
+                      } else if (empName) {
+                        name = empName;
+                      } else {
+                        name = `${fName} ${lName}`.trim();
+                      }
+                      return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
+                    });
+
+                    const match = coordOptions.find(opt => {
+                      const optStr = String(opt).trim().toLowerCase();
+                      const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                      const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                      if (valCode && optCode) return valCode === optCode;
+                      return valName === optName;
+                    });
+                    return match || val;
+                  })()}
                   onChange={handleChange}
                   error={!!errors.coOrdinator}
                   helperText={errors.coOrdinator}
                   disabled={!canWrite}
                 >
                   <MenuItem value="">-Select-</MenuItem>
-                  {(employees || []).filter(emp => emp).filter(emp => {
-                    if (emp.status !== 'Active') return false;
-                    if (!formData.department) return false;
-                    const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
-                    return empDept?.departmentName === formData.department;
-                  }).map(emp => {
-                    const fName = emp.firstName || '';
-                    const lName = emp.lastName || '';
-                    const empName = emp.employeeName || '';
-                    let name = '';
-                    if (fName && lName) {
-                      name = `${fName} ${lName}`.trim();
-                    } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
-                      name = `${empName} ${lName}`.trim();
-                    } else if (empName) {
-                      name = empName;
-                    } else {
-                      name = `${fName} ${lName}`.trim();
+                  {(() => {
+                    const coordOptions = (employees || []).filter(emp => emp).filter(emp => {
+                      if (emp.status !== 'Active') return false;
+                      if (!formData.department) return false;
+                      const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
+                      return empDept?.departmentName === formData.department;
+                    }).map(emp => {
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      let name = '';
+                      if (fName && lName) {
+                        name = `${fName} ${lName}`.trim();
+                      } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+                        name = `${empName} ${lName}`.trim();
+                      } else if (empName) {
+                        name = empName;
+                      } else {
+                        name = `${fName} ${lName}`.trim();
+                      }
+                      return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
+                    });
+
+                    const val = formData.coOrdinator;
+                    if (val) {
+                      const valStr = String(val).trim().toLowerCase();
+                      const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                      const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                      const hasMatch = coordOptions.some(opt => {
+                        const optStr = String(opt).trim().toLowerCase();
+                        const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                        const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                        if (valCode && optCode) return valCode === optCode;
+                        return valName === optName;
+                      });
+
+                      if (!hasMatch) {
+                        coordOptions.push(val);
+                      }
                     }
-                    const opt = `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
-                    return <MenuItem key={opt} value={opt}>{opt}</MenuItem>;
-                  })}
+
+                    return coordOptions.map(opt => (
+                      <MenuItem key={opt} value={opt}>{opt.includes(' - ') ? opt.split(' - ')[0].trim() : opt}</MenuItem>
+                    ));
+                  })()}
                 </BOSTextField>
               )}
             </Box>
@@ -1316,12 +1470,26 @@ export default function AddAuditSchedule() {
                   return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
                 };
 
-                const selectedEmp = filteredEmployees.find(emp => {
+                const selectedEmp = (employees || []).find(emp => {
                   const label = getEmpLabel(emp);
                   if (label === value) return true;
-                  if (value && String(value).includes(' - ')) {
-                    const code = String(value).split(' - ')[1];
-                    return String(emp?.empCode || emp?.employeeCode || emp?.id || '') === String(code);
+                  if (value) {
+                    const valStr = String(value);
+                    if (valStr.includes(' - ')) {
+                      const code = valStr.split(' - ')[1];
+                      return String(emp?.empCode || emp?.employeeCode || emp?.id || '').toLowerCase() === String(code).toLowerCase();
+                    } else {
+                      // Fallback name matching case-insensitively
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      const names = [
+                        empName.toLowerCase(),
+                        `${fName} ${lName}`.trim().toLowerCase(),
+                        `${empName} ${lName}`.trim().toLowerCase()
+                      ].filter(Boolean);
+                      return names.includes(valStr.trim().toLowerCase());
+                    }
                   }
                   return false;
                 });
@@ -1337,6 +1505,45 @@ export default function AddAuditSchedule() {
                 }
 
                 const employeeOptions = filteredEmployees.map(emp => getEmpLabel(emp));
+                if (value) {
+                  const valStr = String(value).trim().toLowerCase();
+                  const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                  const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                  const hasMatch = employeeOptions.some(opt => {
+                    const optStr = String(opt).trim().toLowerCase();
+                    const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                    const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                    if (valCode && optCode) return valCode === optCode;
+                    return valName === optName;
+                  });
+
+                  if (!hasMatch) {
+                    employeeOptions.push(value);
+                  }
+                }
+                if (selectedEmp) {
+                  const label = getEmpLabel(selectedEmp);
+                  if (label) {
+                    const labelStr = String(label).trim().toLowerCase();
+                    const labelCode = labelStr.includes(' - ') ? labelStr.split(' - ')[1].trim() : '';
+                    const labelName = labelStr.includes(' - ') ? labelStr.split(' - ')[0].trim() : labelStr;
+
+                    const hasMatch = employeeOptions.some(opt => {
+                      const optStr = String(opt).trim().toLowerCase();
+                      const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                      const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                      if (labelCode && optCode) return optCode === labelCode;
+                      return optName === labelName;
+                    });
+
+                    if (!hasMatch) {
+                      employeeOptions.push(label);
+                    }
+                  }
+                }
 
                 return (
                   <Card key={person.role} sx={{
@@ -1381,7 +1588,23 @@ export default function AddAuditSchedule() {
                           required
                           label={`Select ${person.label}`}
                           name={person.field}
-                          value={formData[person.field]}
+                          value={(() => {
+                            const val = formData[person.field];
+                            if (!val) return '';
+                            const valStr = String(val).trim().toLowerCase();
+                            const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                            const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                            const match = employeeOptions.find(opt => {
+                              const optStr = String(opt).trim().toLowerCase();
+                              const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                              const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                              if (valCode && optCode) return valCode === optCode;
+                              return valName === optName;
+                            });
+                            return match || val;
+                          })()}
                           onChange={handleChange}
                           error={!!errors[person.field]}
                           helperText={errors[person.field]}
@@ -1432,15 +1655,15 @@ export default function AddAuditSchedule() {
             <BOSDataTable
               columns={(category === 'SUPPLIER_ASSESSMENT') ? [
                 { id: 'clause', label: 'Clause', minWidth: 100 },
-                { id: 'criteriaDetails', label: 'Agenda', minWidth: 300 },
-                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
+                { id: 'criteriaDetails', label: 'Agenda', minWidth: 650 },
+                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 80 },
                 { id: 'remarks', label: 'Remarks', minWidth: 150 }
               ] : [
                 { id: 'index', label: '#', minWidth: 50 },
                 { id: 'seqNo', label: 'Seq No', minWidth: 80 },
                 { id: 'clause', label: 'Clause', minWidth: 100 },
-                { id: 'criteriaDetails', label: 'Criteria Details', minWidth: 300 },
-                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
+                { id: 'criteriaDetails', label: 'Criteria Details', minWidth: 650 },
+                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 80 },
                 { id: 'remarks', label: 'Remarks', minWidth: 150 }
               ]}
               rows={criteriaList}
@@ -1476,14 +1699,14 @@ export default function AddAuditSchedule() {
             columns={(category === 'SUPPLIER_ASSESSMENT') ? [
               { id: 'select', label: '', minWidth: 50 },
               { id: 'clause', label: 'Clause', minWidth: 100 },
-              { id: 'criteriaText', label: 'Agenda', minWidth: 400 },
-              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 }
+              { id: 'criteriaText', label: 'Agenda', minWidth: 650 },
+              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 80 }
             ] : [
               { id: 'select', label: '', minWidth: 50 },
               { id: 'seqNo', label: 'Seq No', minWidth: 80 },
               { id: 'clause', label: 'Clause', minWidth: 100 },
-              { id: 'criteriaText', label: 'Criteria Details', minWidth: 400 },
-              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 }
+              { id: 'criteriaText', label: 'Criteria Details', minWidth: 650 },
+              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 80 }
             ]}
             rows={availableCriteria}
             page={0}

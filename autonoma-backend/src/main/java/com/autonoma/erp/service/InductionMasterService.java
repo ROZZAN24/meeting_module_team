@@ -37,6 +37,18 @@ public class InductionMasterService {
             throw new RuntimeException("At least one Level must be selected.");
         }
 
+        // Level selection rules validation
+        List<String> selectedLevels = java.util.Arrays.stream(entity.getLevelCodes().split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(java.util.stream.Collectors.toList());
+        if (selectedLevels.contains("L1") && selectedLevels.size() < 2) {
+            throw new RuntimeException("Minimum 2 levels must be selected when Level L1 is chosen.");
+        }
+        if ((selectedLevels.contains("L6") || selectedLevels.contains("L7")) && selectedLevels.size() < 3) {
+            throw new RuntimeException("Minimum 3 levels must be selected when Level L6 or L7 is chosen.");
+        }
+
         // Duplicate Check (Same Details + Same Dept + Same Level)
         // Note: For multi-select, we should ideally normalize the codes string (sort them)
         List<InductionMaster> all = repository.findAll();

@@ -38,6 +38,15 @@ public class AuditSchedule extends BaseAuditEntity {
     @Column(name = "FREQUENCY", columnDefinition = "NVARCHAR(50)")
     private String frequency = "NONE";
 
+    @Column(name = "WEEK_DAYS", columnDefinition = "NVARCHAR(255)")
+    private String weekDays;
+
+    @Column(name = "REPEAT_EVERY_VALUE")
+    private Integer repeatEveryValue;
+
+    @Column(name = "REPEAT_EVERY_UNIT", columnDefinition = "NVARCHAR(50)")
+    private String repeatEveryUnit;
+
     @Column(name = "IS_DELETED", nullable = false)
     private boolean isDeleted = false;
 

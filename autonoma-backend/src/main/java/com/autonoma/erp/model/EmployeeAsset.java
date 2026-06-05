@@ -27,7 +27,7 @@ public class EmployeeAsset {
     @Column(name = "ASSET_NAME", length = 255)
     private String assetName;
 
-    @Column(name = "ASSET_VALUE", precision = 12, scale = 2)
+    @Column(name = "VALUE", precision = 12, scale = 2)
     private BigDecimal assetValue;
 
     @Column(name = "ISSUE_DATE")
@@ -42,9 +42,6 @@ public class EmployeeAsset {
 
     @Column(name = "SERIAL_NO", length = 100)
     private String serialNo;
-
-    @Column(name = "VALUE", precision = 12, scale = 2)
-    private BigDecimal value;
 
     @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;

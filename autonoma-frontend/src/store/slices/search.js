@@ -27,13 +27,22 @@ const search = createSlice({
       console.log('REDUX REDUCER - setFilterConfig called with:', JSON.stringify(action.payload));
       state.config = action.payload;
       // Reset filter values and query when a new page sets its config,
-      // so each page starts with a clean filter state, and show all data by default
+      // so each page starts with its specified default filters.
       const nextFilters = {};
       if (Array.isArray(action.payload)) {
         action.payload.forEach((field) => {
-          if (field && field.type === 'dateRange') {
-            nextFilters[`${field.id}Start`] = '';
-            nextFilters[`${field.id}End`] = '';
+          if (field) {
+            if (field.type === 'dateRange') {
+              const today = new Date();
+              const yyyy = today.getFullYear();
+              const mm = String(today.getMonth() + 1).padStart(2, '0');
+              const dd = String(today.getDate()).padStart(2, '0');
+              const todayStr = `${yyyy}-${mm}-${dd}`;
+              nextFilters[`${field.id}Start`] = todayStr;
+              nextFilters[`${field.id}End`] = todayStr;
+            } else if (field.defaultValue !== undefined) {
+              nextFilters[field.id] = field.defaultValue;
+            }
           }
         });
       }
@@ -41,7 +50,25 @@ const search = createSlice({
       state.query = '';
     },
     resetFilters(state) {
-      state.filters = {};
+      const nextFilters = {};
+      if (Array.isArray(state.config)) {
+        state.config.forEach((field) => {
+          if (field) {
+            if (field.type === 'dateRange') {
+              const today = new Date();
+              const yyyy = today.getFullYear();
+              const mm = String(today.getMonth() + 1).padStart(2, '0');
+              const dd = String(today.getDate()).padStart(2, '0');
+              const todayStr = `${yyyy}-${mm}-${dd}`;
+              nextFilters[`${field.id}Start`] = todayStr;
+              nextFilters[`${field.id}End`] = todayStr;
+            } else if (field.defaultValue !== undefined) {
+              nextFilters[field.id] = field.defaultValue;
+            }
+          }
+        });
+      }
+      state.filters = nextFilters;
     },
     setTableConfig(state, action) {
       state.tableConfig = action.payload;

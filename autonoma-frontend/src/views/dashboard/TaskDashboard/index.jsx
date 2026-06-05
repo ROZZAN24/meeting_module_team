@@ -23,6 +23,9 @@ import {
   DialogContent,
   Slide
 } from '@mui/material';
+import { useSelector, useDispatch } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { setFilterConfig, resetFilters, setFilters } from 'store/slices/search';
 import { styled, alpha, keyframes } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
 import axios from 'utils/axios';
@@ -409,7 +412,7 @@ const VerticalSummaryCard = styled(Paper)(({ theme, basecolor }) => ({
 }));
 
 // ── Workload View ─────────────────────────────────────────────────────────────
-const WorkloadView = ({ realWorkload, isDark }) => {
+const WorkloadView = ({ realWorkload, isDark, navigate, filterRequestManagement, isCurrentUser, activeTab, globalFilters }) => {
   const [viewAllOpen, setViewAllOpen] = useState(false);
 
   const criticalCount = realWorkload.filter((w) => w.status === 'Critical').length;
@@ -518,7 +521,27 @@ const WorkloadView = ({ realWorkload, isDark }) => {
         </TableHead>
         <TableBody sx={{ bgcolor: isDark ? '#1E293B' : '#FFFFFF' }}>
           {rows.map((row, idx) => (
-            <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === rows.length - 1 ? 'none' : `1px solid ${borderColor}` } }}>
+            <TableRow 
+              key={idx} 
+              hover 
+              sx={{ 
+                cursor: filterRequestManagement === 'My Request' && !isCurrentUser(row.user) ? 'pointer' : 'default',
+                '& td': { borderBottom: idx === rows.length - 1 ? 'none' : `1px solid ${borderColor}` } 
+              }}
+              onDoubleClick={() => {
+                if (filterRequestManagement === 'My Request' && !isCurrentUser(row.user)) {
+                  navigate('/support/ticket-by-me', {
+                    state: {
+                      openNewTask: true,
+                      assignTo: row.user,
+                      fromDashboard: true,
+                      fromTab: activeTab,
+                      dashboardFilters: globalFilters
+                    }
+                  });
+                }
+              }}
+            >
               <TableCell sx={{ py: 1.5 }}>
                 <Stack direction="row" alignItems="center" gap={2}>
                   <Avatar sx={{ width: 32, height: 32, bgcolor: row.color, fontSize: '14px', fontWeight: 700, color: '#fff' }}>
@@ -1960,7 +1983,14 @@ export default function TaskDashboard() {
   const { user } = useAuth();
   const activeUserId = user?.id || user?.userId || user?.email || user?.empCode || '';
 
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const dispatch = useDispatch();
+  const globalFilters = useSelector((state) => state.search?.filters || {});
+  const filterScope = globalFilters?.performanceScope || 'Mine';
+  const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(location.state?.fromTab || 'dashboard');
   const [loading, setLoading] = useState(true);
   const [realData, setRealData] = useState({
     total: 0,
@@ -1978,6 +2008,48 @@ export default function TaskDashboard() {
   const [devStats, setDevStats] = useState([]);
 
   useEffect(() => {
+    const performanceScopeOptions = [
+      { value: 'Mine', label: 'Mine' },
+      { value: 'Team', label: 'Team' },
+      { value: 'Company', label: 'Company' }
+    ];
+
+    const requestManagementOptions = [
+      { value: 'My Request', label: 'My Request' },
+      { value: 'Request For Me', label: 'Request For Me' }
+    ];
+
+    const config = [
+      {
+        id: 'requestManagement',
+        label: 'Request Management',
+        type: 'select',
+        options: requestManagementOptions,
+        defaultValue: 'Request For Me',
+        isStarred: true
+      },
+      {
+        id: 'performanceScope',
+        label: 'Performance Scope',
+        type: 'select',
+        options: performanceScopeOptions,
+        defaultValue: 'Mine',
+        isStarred: true
+      }
+    ];
+    dispatch(setFilterConfig(config));
+    
+    if (location.state?.dashboardFilters) {
+      dispatch(setFilters(location.state.dashboardFilters));
+    }
+    
+    return () => {
+      dispatch(setFilterConfig(null));
+      dispatch(resetFilters());
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
     if (!activeUserId) return;
     const fetchData = async () => {
       try {
@@ -1986,13 +2058,14 @@ export default function TaskDashboard() {
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         const todayStr = `${yyyy}-${mm}-${dd}`;
-        const [r1, r2, r3, r4, r5, r6] = await Promise.allSettled([
+        const [r1, r2, r3, r4, r5, r6, r7] = await Promise.allSettled([
           axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0, toDate: todayStr } }),
           axios.get('/api/qms/moms/actions'),
           axios.get('/api/tickets'),
           axios.get('/api/qms/audit-schedules'),
           axios.get('/api/master/hr/employees'),
-          axios.get('/api/bos-pages')
+          axios.get('/api/bos-pages'),
+          axios.get('/api/users/all')
         ]);
         const cl = r1.status === 'fulfilled' ? r1.value.data?.content || r1.value.data || [] : [];
         const mom = r2.status === 'fulfilled' ? r2.value.data || [] : [];
@@ -2000,6 +2073,7 @@ export default function TaskDashboard() {
         const audit = r4.status === 'fulfilled' ? r4.value.data || [] : [];
         const employees = r5.status === 'fulfilled' ? r5.value.data || [] : [];
         const bosPages = r6.status === 'fulfilled' ? r6.value.data || [] : [];
+        const usersList = r7.status === 'fulfilled' ? r7.value.data || [] : [];
 
         // Build pageId -> pageName lookup
         const pageIdMap = {};
@@ -2008,8 +2082,6 @@ export default function TaskDashboard() {
         });
 
         let empLookup = {};
-        let workloadMap = {};
-        let devHoursMap = {};
 
         employees.forEach((emp) => {
           const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.empCode || 'Unknown';
@@ -2017,11 +2089,6 @@ export default function TaskDashboard() {
           if (emp.userId) empLookup[emp.userId] = fullName;
           if (emp.email) empLookup[emp.email] = fullName;
           if (fullName !== 'Unknown') empLookup[fullName] = fullName;
-        });
-
-        Object.values(empLookup).forEach((name) => {
-          if (!workloadMap[name]) workloadMap[name] = { user: name, hours: 0, tasks: 0 };
-          if (!devHoursMap[name]) devHoursMap[name] = { user: name, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
         });
 
         const getName = (u) => {
@@ -2104,7 +2171,7 @@ export default function TaskDashboard() {
             _pageName: t.pageName || t.moduleName || (t.pageId ? (pageIdMap[t.pageId] || 'Ticket') : null) || t.ticketType || 'Ticket',
             _takenHrs: parseDurationToMinutes(t.takenTime || '') / 60,
             _reworkHrs: parseDurationToMinutes(t.reworkTime || '') / 60,
-            _reopenCount: t.reopenedCount || 0,
+            _reopenCount: t.reopenCount || 0,
             _createdBy: t.createdBy || 'System'
           });
         });
@@ -2126,6 +2193,82 @@ export default function TaskDashboard() {
           });
         });
 
+        // Build Team User IDs & Names based on: Vertical Head -> EMP_ID
+        const myName = (user?.name || '').trim().toLowerCase();
+        const currentUserId = (user?.username || '').trim().toLowerCase();
+        const currentUserName = (user?.name || '').trim().toLowerCase();
+        let myEmpName = '';
+        if (user?.empId && employees) {
+          const emp = employees.find(e => e.id == user.empId || e.empCode == user.empId || e.employeeCode == user.empId);
+          if (emp && emp.employeeName) myEmpName = emp.employeeName.trim().toLowerCase();
+        }
+
+        const teamIdentifiers = [];
+        employees.forEach(b => {
+           const vHead = (b.verticalHead || '').trim().toLowerCase();
+           if (vHead && (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName)))) {
+              if (b.employeeName) teamIdentifiers.push(b.employeeName.trim().toLowerCase());
+              if (b.officeMail) {
+                 const mail = b.officeMail.trim().toLowerCase();
+                 teamIdentifiers.push(mail);
+                 if (mail.includes('@')) teamIdentifiers.push(mail.split('@')[0]);
+              }
+              const c = usersList.find(u => u.empId == b.id);
+              if (c && c.userId) {
+                 teamIdentifiers.push(c.userId.trim().toLowerCase());
+              }
+           }
+        });
+        const matchTeam = (field) => {
+           if (!field) return false;
+           const f = field.toLowerCase();
+           if (f === currentUserId || f === currentUserName || (myEmpName && f === myEmpName)) return true;
+           return teamIdentifiers.includes(f);
+        };
+
+        let workloadMap = {};
+        let devHoursMap = {};
+
+        const filterUserScope = (uName) => {
+           if (filterScope === 'Company') return true;
+           const targetField = uName.toLowerCase();
+           if (filterScope === 'Team') {
+              return matchTeam(targetField);
+           } else {
+              return targetField === currentUserId || targetField === currentUserName || targetField === myEmpName || (myEmpName && targetField.includes(myEmpName));
+           }
+        };
+
+        Object.values(empLookup).forEach((name) => {
+          if (filterUserScope(name)) {
+            if (!workloadMap[name]) workloadMap[name] = { user: name, hours: 0, tasks: 0 };
+            if (!devHoursMap[name]) devHoursMap[name] = { user: name, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
+          }
+        });
+
+        const filterTask = (t) => {
+          if (filterScope === 'Company') return true;
+          
+          const createdBy = (t._createdBy || '').toLowerCase();
+          const assignedTo = (t._user || '').toLowerCase();
+
+          if (filterRequestManagement === 'Request For Me') {
+             if (filterScope === 'Team') {
+                return matchTeam(createdBy);
+             } else {
+                return assignedTo === currentUserId || assignedTo === currentUserName || assignedTo === myEmpName || (myEmpName && assignedTo.includes(myEmpName));
+             }
+          } else { // My Request
+             if (filterScope === 'Team') {
+                return matchTeam(assignedTo);
+             } else {
+                return createdBy === currentUserId || createdBy === currentUserName || createdBy === myEmpName || (myEmpName && createdBy.includes(myEmpName));
+             }
+          }
+        };
+
+        tasksList = tasksList.filter(filterTask);
+
         let stats = { total: tasksList.length, completed: 0, open: 0, inProgress: 0, toBeTested: 0, overdue: 0, dueToday: 0, reopened: 0 };
         today.setHours(0, 0, 0, 0);
         let overdueList = [];
@@ -2138,26 +2281,28 @@ export default function TaskDashboard() {
           const isDevDone = isDone || isToBeTested;
           const hrs = t._hrs ? (parseDurationToMinutes(t._hrs) / 60) || 8 : 8;
           const uName = t._user || 'Unknown';
-          if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
-          devHoursMap[uName].assignedHrs += hrs;
-          devHoursMap[uName].takenHrs += t._takenHrs || 0;
-          devHoursMap[uName].reworkHrs += t._reworkHrs || 0;
-          if (isDevDone) devHoursMap[uName].completedHrs += hrs;
-          
-          if (!isDevDone && t._dueDate) {
-            const dueDate = new Date(t._dueDate);
-            dueDate.setHours(18, 0, 0, 0); // Assuming EOD is 6 PM
-            const now = new Date();
-            if (now > dueDate) {
-               const delayMs = calculateWorkingMs(dueDate, now);
-               console.log("Delay calc:", { uName, id: t._id, dueDate: dueDate.toString(), now: now.toString(), delayMs });
-               devHoursMap[uName].delayHrs += (delayMs / (1000 * 60 * 60));
+          if (filterUserScope(uName)) {
+            if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
+            devHoursMap[uName].assignedHrs += hrs;
+            devHoursMap[uName].takenHrs += t._takenHrs || 0;
+            devHoursMap[uName].reworkHrs += t._reworkHrs || 0;
+            if (isDevDone) devHoursMap[uName].completedHrs += hrs;
+            
+            if (!isDevDone && t._dueDate) {
+              const dueDate = new Date(t._dueDate);
+              dueDate.setHours(18, 0, 0, 0); // Assuming EOD is 6 PM
+              const now = new Date();
+              if (now > dueDate) {
+                 const delayMs = calculateWorkingMs(dueDate, now);
+                 console.log("Delay calc:", { uName, id: t._id, dueDate: dueDate.toString(), now: now.toString(), delayMs });
+                 devHoursMap[uName].delayHrs += (delayMs / (1000 * 60 * 60));
+              }
             }
-          }
-          if (!isDevDone) {
-            if (!workloadMap[uName]) workloadMap[uName] = { user: uName, hours: 0, tasks: 0 };
-            workloadMap[uName].tasks += 1;
-            workloadMap[uName].hours += hrs;
+            if (!isDevDone) {
+              if (!workloadMap[uName]) workloadMap[uName] = { user: uName, hours: 0, tasks: 0 };
+              workloadMap[uName].tasks += 1;
+              workloadMap[uName].hours += hrs;
+            }
           }
           if (isDone) stats.completed++;
           if (['open', 'new', 'pending'].includes(st)) stats.open++;
@@ -2243,7 +2388,7 @@ export default function TaskDashboard() {
       }
     };
     fetchData();
-  }, [activeUserId]);
+  }, [activeUserId, filterScope, filterRequestManagement]);
 
   // Workload Logic Based on Total Days
   const isRed = realWorkload.some((w) => w.days < 5);
@@ -2264,7 +2409,15 @@ export default function TaskDashboard() {
     workloadColor = '#3B82F6';
     workloadBg = '#EFF6FF';
     workloadHex = '1f30a'; // Wave (Blue)
+    workloadHex = '1f300'; // Wave (Blue)
   }
+
+  const isCurrentUser = (name) => {
+    const currentUserName = (user?.name || '').trim().toLowerCase();
+    const currentUsername = (user?.username || '').trim().toLowerCase();
+    const n = (name || '').trim().toLowerCase();
+    return n === currentUserName || n === currentUsername;
+  };
 
   const topStats = [
     { id: 'dashboard', title: 'Overview', value: realData.total, iconHex: '1f4ca', color: '#3B82F6', bg: '#EFF6FF' },
@@ -2281,21 +2434,29 @@ export default function TaskDashboard() {
   const renderActiveDashboard = () => {
     switch (activeTab) {
       case 'workload':
-        return <WorkloadView realWorkload={realWorkload} isDark={isDark} />;
+        return <WorkloadView 
+                 realWorkload={realWorkload} 
+                 isDark={isDark} 
+                 navigate={navigate}
+                 filterRequestManagement={filterRequestManagement}
+                 isCurrentUser={isCurrentUser}
+                 activeTab={activeTab}
+                 globalFilters={globalFilters}
+               />;
       case 'dueToday':
-        return <DueTodayDashboard realTasks={realTasks} isDark={isDark} />;
+        return <DueTodayDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'reopen':
-        return <ReopenDashboard realData={realData} realTasks={realTasks} isDark={isDark} />;
+        return <ReopenDashboard realData={realData} realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'toBeTested':
-        return <ToBeTestedDashboard realTasks={realTasks} isDark={isDark} />;
+        return <ToBeTestedDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'completed':
-        return <CompletedDashboard isDark={isDark} realTasks={realTasks} />;
+        return <CompletedDashboard isDark={isDark} realTasks={realTasks} activeTab={activeTab} />;
       case 'inProgress':
-        return <InProgressDashboard isDark={isDark} realTasks={realTasks} />;
+        return <InProgressDashboard isDark={isDark} realTasks={realTasks} activeTab={activeTab} />;
       case 'overdue':
-        return <OverdueDashboard realTasks={realTasks} isDark={isDark} />;
+        return <OverdueDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'open':
-        return <OpenDashboard realTasks={realTasks} isDark={isDark} />;
+        return <OpenDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'dashboard':
       default:
         return <PerformanceOverview devStats={devStats} isDark={isDark} textColor={textColor} textMuted={textMuted} />;

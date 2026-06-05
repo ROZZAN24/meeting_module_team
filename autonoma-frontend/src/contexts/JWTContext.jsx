@@ -117,7 +117,7 @@ export function JWTProvider({ children }) {
         try {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) localI18n = JSON.parse(stored)?.i18n || null;
-        } catch {}
+        } catch { }
 
         const mappedSettings = {
           menuOrientation: dbSettings.menuOrientation,
@@ -132,7 +132,7 @@ export function JWTProvider({ children }) {
           container: dbSettings.container,
           dashboardLayout: dbSettings.dashboardLayout || 'glass'
         };
-        
+
         setConfigState((prev) => ({
           ...prev,
           ...mappedSettings
@@ -180,8 +180,9 @@ export function JWTProvider({ children }) {
 
   const logout = async () => {
     try {
-      if (state.user?.id) {
-        await axios.post('/api/account/logout', { userId: state.user.id });
+      const uid = state.user?.userId || state.user?.id;
+      if (uid) {
+        await axios.post('/api/account/logout', { userId: uid });
       }
     } catch (err) {
       console.error('Logout audit failed:', err);
@@ -195,12 +196,12 @@ export function JWTProvider({ children }) {
       localStorage.removeItem('theme-mode');
       localStorage.removeItem('berry-config-vite-js');
       localStorage.removeItem('lastActiveTime');
-    } catch (_) {}
+    } catch (_) { }
 
     // Clear all sessionStorage (tenantId, divisionId, companyName, divisionName, serviceToken)
     try {
       sessionStorage.clear();
-    } catch (_) {}
+    } catch (_) { }
 
     // Force a hard redirect to /login — this completely wipes all in-memory
     // React/Redux state (permissions, search filters, cached routes, etc.)
@@ -285,7 +286,7 @@ export function JWTProvider({ children }) {
           loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
-          
+
           // Fetch company config for global input case style
           try {
             const profileRes = await axios.get('/api/CompanyProfile/profile', { skipGlobalAlert: true });

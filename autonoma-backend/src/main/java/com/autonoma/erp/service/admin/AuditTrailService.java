@@ -14,12 +14,17 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class AuditTrailService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuditTrailService.class);
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -67,6 +72,8 @@ public class AuditTrailService {
         try {
             jdbcTemplate.update(sql, userId != null ? userId : "SYSTEM", pageName, actionType, tableName, recordId,
                     prevVal, currVal, comments);
+            log.info("[DB_CHANGE] Action: {} | Table: {} | RecordId: {} | User: {} | Comments: {}", 
+                    actionType, tableName, recordId, userId != null ? userId : "SYSTEM", comments);
         } catch (Exception e) {
             System.err.println("Failed to save audit trail asynchronously: " + e.getMessage());
         }

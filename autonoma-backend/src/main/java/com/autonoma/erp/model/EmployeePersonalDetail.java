@@ -125,7 +125,7 @@ public class EmployeePersonalDetail {
     private Boolean isActive = true;
 
     @Column(name = "CREATED_BY", nullable = false, length = 50)
-    private String createdBy;
+    private String createdBy = "admin";
 
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
@@ -151,6 +151,8 @@ public class EmployeePersonalDetail {
         String currentUserId = null;
         try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
         this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
-        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+        if (this.createdBy == null || this.createdBy.trim().isEmpty()) {
+            this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        }
  updatedDate = new Date();     }
 }
