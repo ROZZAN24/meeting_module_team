@@ -196,11 +196,11 @@ export default function InductionTraining() {
     setSelectedAssignment(row);
     setLoading(true);
     try {
-      const activeTrainingDate = globalFilters.trainingDate;
+      const activeTrainingDate = globalFilters.trainingDate || new Date().toISOString().split('T')[0];
       const filteredAssignments = row.assignments.filter(a => {
         if (!a.inductionDate) return false;
         const aDateStr = new Date(a.inductionDate).toISOString().split('T')[0];
-        return !activeTrainingDate || aDateStr === activeTrainingDate;
+        return aDateStr === activeTrainingDate;
       });
 
       if (filteredAssignments.length === 0) {
@@ -558,7 +558,7 @@ export default function InductionTraining() {
   const resolvedRows = useMemo(() => {
     let filtered = rows;
     
-    const trainingDateVal = globalFilters.trainingDate;
+    const trainingDateVal = globalFilters.trainingDate || new Date().toISOString().split('T')[0];
     if (trainingDateVal) {
       filtered = filtered.filter(r => 
         r.assignments.some(a => {

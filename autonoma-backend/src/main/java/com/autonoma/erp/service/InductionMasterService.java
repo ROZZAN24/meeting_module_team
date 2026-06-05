@@ -37,6 +37,7 @@ public class InductionMasterService {
             throw new RuntimeException("At least one Level must be selected.");
         }
 
+
         // Level selection rules validation
         List<String> selectedLevels = java.util.Arrays.stream(entity.getLevelCodes().split(","))
                 .map(String::trim)

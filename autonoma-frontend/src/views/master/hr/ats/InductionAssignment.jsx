@@ -748,6 +748,13 @@ const InductionAssignment = () => {
         newErrors[`level_${index}_inductionRound`] = 'Round is required';
         validationFailed = true;
       }
+      if (level.inductionRound === 'MANAGEMENT') {
+        const levelCode = (formData.gradeCode || '').trim().toUpperCase();
+        if (levelCode !== 'L6' && levelCode !== 'L7') {
+          newErrors[`level_${index}_inductionRound`] = 'Management round is only applicable for Level L6 & L7 trainees';
+          validationFailed = true;
+        }
+      }
       if (!level.inductionDate) {
         newErrors[`level_${index}_inductionDate`] = 'Induction Date is required';
         validationFailed = true;
@@ -982,9 +989,17 @@ const InductionAssignment = () => {
                     sx={errorStyle(!!errors[`level_${index}_inductionRound`])}
                   >
                     <MenuItem value="">-SELECT-</MenuItem>
-                    {roundOptions.map(r => (
-                      <MenuItem key={r} value={r}>{r}</MenuItem>
-                    ))}
+                    {roundOptions
+                      .filter(r => {
+                        if (r === 'MANAGEMENT') {
+                          const levelCode = (formData.gradeCode || '').trim().toUpperCase();
+                          return levelCode === 'L6' || levelCode === 'L7';
+                        }
+                        return true;
+                      })
+                      .map(r => (
+                        <MenuItem key={r} value={r}>{r}</MenuItem>
+                      ))}
                   </BOSTextField>
                 </Box>
               </Box>

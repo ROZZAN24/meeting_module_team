@@ -159,6 +159,10 @@ public class InductionTrainingService {
         InductionAssignment assignment = assignmentRepo.findById(assignmentId)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
+        if (!isAssignmentReady(assignment)) {
+            throw new RuntimeException("This assignment is locked. All previous induction rounds must be completed first.");
+        }
+
         List<InductionTrainingDetail> details = detailRepo.findByAssignmentId(assignmentId);
 
         // Synchronize with InductionMaster if training is started or completed

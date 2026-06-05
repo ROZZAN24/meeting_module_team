@@ -147,6 +147,14 @@ public class InductionAssignmentService {
         // Fetch Trainee and Trainer
         EmployeeMaster trainee = employeeMasterRepository.findByEmpCode(entity.getEmpCode())
             .orElseThrow(() -> new RuntimeException("Trainee employee not found: " + entity.getEmpCode()));
+
+        // Trainee must be L6 or L7 for Management round
+        if ("MANAGEMENT".equalsIgnoreCase(entity.getInductionRound())) {
+            String grade = trainee.getGradeCode();
+            if (grade == null || (!grade.trim().equalsIgnoreCase("L6") && !grade.trim().equalsIgnoreCase("L7"))) {
+                throw new RuntimeException("Management round is only applicable for Level L6 & L7 trainees.");
+            }
+        }
         EmployeeMaster newTrainer = employeeMasterRepository.findByEmpCode(entity.getTrainerEmpCode())
             .orElseThrow(() -> new RuntimeException("Trainer employee not found: " + entity.getTrainerEmpCode()));
 
