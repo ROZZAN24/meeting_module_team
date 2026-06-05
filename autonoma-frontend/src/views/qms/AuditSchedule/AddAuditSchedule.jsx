@@ -481,7 +481,7 @@ export default function AddAuditSchedule() {
         return prev;
       });
     }
-  }, [employees]);
+  }, [employees, formData.auditor, formData.auditee, formData.ncrApprovedBy, formData.coOrdinator]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -1321,35 +1321,99 @@ export default function AddAuditSchedule() {
                   required
                   label="Co-Ordinator"
                   name="coOrdinator"
-                  value={formData.coOrdinator}
+                  value={(() => {
+                    const val = formData.coOrdinator;
+                    if (!val) return '';
+                    const valStr = String(val).trim().toLowerCase();
+                    const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                    const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                    // Compute options list to map
+                    const coordOptions = (employees || []).filter(emp => emp).filter(emp => {
+                      if (emp.status !== 'Active') return false;
+                      if (!formData.department) return false;
+                      const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
+                      return empDept?.departmentName === formData.department;
+                    }).map(emp => {
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      let name = '';
+                      if (fName && lName) {
+                        name = `${fName} ${lName}`.trim();
+                      } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+                        name = `${empName} ${lName}`.trim();
+                      } else if (empName) {
+                        name = empName;
+                      } else {
+                        name = `${fName} ${lName}`.trim();
+                      }
+                      return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
+                    });
+
+                    const match = coordOptions.find(opt => {
+                      const optStr = String(opt).trim().toLowerCase();
+                      const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                      const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                      if (valCode && optCode) return valCode === optCode;
+                      return valName === optName;
+                    });
+                    return match || val;
+                  })()}
                   onChange={handleChange}
                   error={!!errors.coOrdinator}
                   helperText={errors.coOrdinator}
                   disabled={!canWrite}
                 >
                   <MenuItem value="">-Select-</MenuItem>
-                  {(employees || []).filter(emp => emp).filter(emp => {
-                    if (emp.status !== 'Active') return false;
-                    if (!formData.department) return false;
-                    const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
-                    return empDept?.departmentName === formData.department;
-                  }).map(emp => {
-                    const fName = emp.firstName || '';
-                    const lName = emp.lastName || '';
-                    const empName = emp.employeeName || '';
-                    let name = '';
-                    if (fName && lName) {
-                      name = `${fName} ${lName}`.trim();
-                    } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
-                      name = `${empName} ${lName}`.trim();
-                    } else if (empName) {
-                      name = empName;
-                    } else {
-                      name = `${fName} ${lName}`.trim();
+                  {(() => {
+                    const coordOptions = (employees || []).filter(emp => emp).filter(emp => {
+                      if (emp.status !== 'Active') return false;
+                      if (!formData.department) return false;
+                      const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
+                      return empDept?.departmentName === formData.department;
+                    }).map(emp => {
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      let name = '';
+                      if (fName && lName) {
+                        name = `${fName} ${lName}`.trim();
+                      } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+                        name = `${empName} ${lName}`.trim();
+                      } else if (empName) {
+                        name = empName;
+                      } else {
+                        name = `${fName} ${lName}`.trim();
+                      }
+                      return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
+                    });
+
+                    const val = formData.coOrdinator;
+                    if (val) {
+                      const valStr = String(val).trim().toLowerCase();
+                      const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                      const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                      const hasMatch = coordOptions.some(opt => {
+                        const optStr = String(opt).trim().toLowerCase();
+                        const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                        const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                        if (valCode && optCode) return valCode === optCode;
+                        return valName === optName;
+                      });
+
+                      if (!hasMatch) {
+                        coordOptions.push(val);
+                      }
                     }
-                    const opt = `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
-                    return <MenuItem key={opt} value={opt}>{opt}</MenuItem>;
-                  })}
+
+                    return coordOptions.map(opt => (
+                      <MenuItem key={opt} value={opt}>{opt.includes(' - ') ? opt.split(' - ')[0].trim() : opt}</MenuItem>
+                    ));
+                  })()}
                 </BOSTextField>
               )}
             </Box>
@@ -1409,9 +1473,23 @@ export default function AddAuditSchedule() {
                 const selectedEmp = (employees || []).find(emp => {
                   const label = getEmpLabel(emp);
                   if (label === value) return true;
-                  if (value && String(value).includes(' - ')) {
-                    const code = String(value).split(' - ')[1];
-                    return String(emp?.empCode || emp?.employeeCode || emp?.id || '').toLowerCase() === String(code).toLowerCase();
+                  if (value) {
+                    const valStr = String(value);
+                    if (valStr.includes(' - ')) {
+                      const code = valStr.split(' - ')[1];
+                      return String(emp?.empCode || emp?.employeeCode || emp?.id || '').toLowerCase() === String(code).toLowerCase();
+                    } else {
+                      // Fallback name matching case-insensitively
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      const names = [
+                        empName.toLowerCase(),
+                        `${fName} ${lName}`.trim().toLowerCase(),
+                        `${empName} ${lName}`.trim().toLowerCase()
+                      ].filter(Boolean);
+                      return names.includes(valStr.trim().toLowerCase());
+                    }
                   }
                   return false;
                 });
@@ -1427,13 +1505,43 @@ export default function AddAuditSchedule() {
                 }
 
                 const employeeOptions = filteredEmployees.map(emp => getEmpLabel(emp));
-                if (value && !employeeOptions.includes(value)) {
-                  employeeOptions.push(value);
+                if (value) {
+                  const valStr = String(value).trim().toLowerCase();
+                  const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                  const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                  const hasMatch = employeeOptions.some(opt => {
+                    const optStr = String(opt).trim().toLowerCase();
+                    const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                    const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                    if (valCode && optCode) return valCode === optCode;
+                    return valName === optName;
+                  });
+
+                  if (!hasMatch) {
+                    employeeOptions.push(value);
+                  }
                 }
                 if (selectedEmp) {
                   const label = getEmpLabel(selectedEmp);
-                  if (label && !employeeOptions.includes(label)) {
-                    employeeOptions.push(label);
+                  if (label) {
+                    const labelStr = String(label).trim().toLowerCase();
+                    const labelCode = labelStr.includes(' - ') ? labelStr.split(' - ')[1].trim() : '';
+                    const labelName = labelStr.includes(' - ') ? labelStr.split(' - ')[0].trim() : labelStr;
+
+                    const hasMatch = employeeOptions.some(opt => {
+                      const optStr = String(opt).trim().toLowerCase();
+                      const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                      const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                      if (labelCode && optCode) return optCode === labelCode;
+                      return optName === labelName;
+                    });
+
+                    if (!hasMatch) {
+                      employeeOptions.push(label);
+                    }
                   }
                 }
 
@@ -1480,7 +1588,23 @@ export default function AddAuditSchedule() {
                           required
                           label={`Select ${person.label}`}
                           name={person.field}
-                          value={formData[person.field]}
+                          value={(() => {
+                            const val = formData[person.field];
+                            if (!val) return '';
+                            const valStr = String(val).trim().toLowerCase();
+                            const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                            const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                            const match = employeeOptions.find(opt => {
+                              const optStr = String(opt).trim().toLowerCase();
+                              const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                              const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                              if (valCode && optCode) return valCode === optCode;
+                              return valName === optName;
+                            });
+                            return match || val;
+                          })()}
                           onChange={handleChange}
                           error={!!errors[person.field]}
                           helperText={errors[person.field]}
