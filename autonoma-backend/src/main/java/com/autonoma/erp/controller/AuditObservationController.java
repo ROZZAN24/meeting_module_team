@@ -222,9 +222,19 @@ public class AuditObservationController {
                                         } else {
                                             if (incomingDetail.getNcrStatus() != null) {
                                                 existingDetail.setNcrStatus(incomingDetail.getNcrStatus());
+                                            } else if (existingDetail.getNcrStatus() == null && ("NC".equalsIgnoreCase(incomingDetail.getObservationStatus()) || "NCR".equalsIgnoreCase(incomingDetail.getObservationStatus()) || "OFI".equalsIgnoreCase(incomingDetail.getObservationStatus()))) {
+                                                existingDetail.setNcrStatus("OPEN");
                                             }
                                             if (incomingDetail.getApprovalStatus() != null) {
-                                                existingDetail.setApprovalStatus(incomingDetail.getApprovalStatus());
+                                                if ("APPROVED".equalsIgnoreCase(incomingDetail.getApprovalStatus())) {
+                                                    existingDetail.setApprovalStatus("PENDING");
+                                                } else {
+                                                    existingDetail.setApprovalStatus(incomingDetail.getApprovalStatus());
+                                                }
+                                            } else {
+                                                if (existingDetail.getApprovalStatus() == null || "APPROVED".equalsIgnoreCase(existingDetail.getApprovalStatus())) {
+                                                    existingDetail.setApprovalStatus("PENDING");
+                                                }
                                             }
                                         }
                                         if (incomingDetail.getRootCause() != null) {
