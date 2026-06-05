@@ -24,11 +24,21 @@ public class AuditScheduleService {
     @Autowired
     private com.autonoma.erp.repository.admin.AppPreferenceRepository appPreferenceRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.AuditObservationRepository auditObservationRepository;
+
     public List<AuditSchedule> getAllAuditSchedules() {
         List<AuditSchedule> list = repository.findAll().stream().filter(a -> !a.isDeleted()).toList();
         for (AuditSchedule schedule : list) {
             boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(schedule.getScheduleNo()).isEmpty();
             schedule.setHasAttendance(exists);
+
+            // Auto-heal schedule status if observation already exists in DB (e.g. from seed scripts)
+            boolean hasObservation = auditObservationRepository.existsByAuditScheduleNoIgnoreCase(schedule.getScheduleNo());
+            if (hasObservation && !"CLOSED".equalsIgnoreCase(schedule.getStatus())) {
+                schedule.setStatus("CLOSED");
+                repository.save(schedule);
+            }
         }
         return list;
     }
@@ -37,6 +47,13 @@ public class AuditScheduleService {
         return repository.findById(id).map(schedule -> {
             boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(schedule.getScheduleNo()).isEmpty();
             schedule.setHasAttendance(exists);
+
+            // Auto-heal schedule status if observation already exists in DB
+            boolean hasObservation = auditObservationRepository.existsByAuditScheduleNoIgnoreCase(schedule.getScheduleNo());
+            if (hasObservation && !"CLOSED".equalsIgnoreCase(schedule.getStatus())) {
+                schedule.setStatus("CLOSED");
+                repository.save(schedule);
+            }
             return schedule;
         });
     }
