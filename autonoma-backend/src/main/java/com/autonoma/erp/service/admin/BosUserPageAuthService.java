@@ -116,6 +116,27 @@ public class BosUserPageAuthService {
 
     @Transactional
     public void saveAll(List<BosUserPageAuth> auths) {
+        String currentUser = "System";
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getName() != null) {
+            currentUser = authentication.getName();
+        }
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+        for (BosUserPageAuth auth : auths) {
+            BosUserPageAuth existing = authRepository.findByUserIdAndPageId(auth.getUserId(), auth.getPageId());
+            if (existing != null) {
+                auth.setCreatedBy(existing.getCreatedBy());
+                auth.setCreatedDate(existing.getCreatedDate() != null ? existing.getCreatedDate() : now);
+            } else {
+                auth.setCreatedBy(currentUser);
+                auth.setCreatedDate(now);
+            }
+            auth.setUpdatedBy(currentUser);
+            auth.setUpdatedDate(now);
+        }
+
         authRepository.saveAll(auths);
     }
 

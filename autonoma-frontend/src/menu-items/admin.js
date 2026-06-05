@@ -2,7 +2,8 @@
 import {
   IconUserPlus, IconUsers, IconShieldLock, IconSettings, IconBuildingSkyscraper,
   IconAccessPoint, IconHistory, IconLayoutColumns, IconTimeline,
-  IconFingerprint, IconActivity, IconUserShield, IconCategory, IconFileAnalytics, IconDatabaseExport
+  IconFingerprint, IconActivity, IconUserShield, IconCategory, IconFileAnalytics,
+  IconDatabaseExport, IconAccessibleFilled, IconAccessible
 } from '@tabler/icons-react';
 
 // constant
@@ -21,7 +22,7 @@ const icons = {
   IconUserShield,
   IconCategory,
   IconFileAnalytics,
-  IconDatabaseExport
+  IconDatabaseExport, IconAccessibleFilled, IconAccessible
 };
 
 // ==============================|| MENU ITEMS - ADMIN ||============================== //
@@ -61,7 +62,7 @@ const admin = {
           title: 'User Credentials',
           type: 'item',
           url: '/admin/user-credentials',
-          icon: icons.IconUsers,
+          icon: icons.IconFingerprint,
           breadcrumbs: true,
           pageCode: 'AD1130'
         },
@@ -70,7 +71,7 @@ const admin = {
           title: 'User Access',
           type: 'item',
           url: '/admin/user-access',
-          icon: icons.IconFingerprint,
+          icon: icons.IconAccessible,
           breadcrumbs: true,
           pageCode: 'AD1140'
         },

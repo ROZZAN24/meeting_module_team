@@ -47,7 +47,10 @@ import {
   IconMoodSmile,
   IconSearch,
   IconCategory,
-  IconRotate2
+  IconRotate2,
+  IconTicTac,
+  IconTicket,
+  IconTicketOff
 } from '@tabler/icons-react';
 
 const icons = {
@@ -984,7 +987,8 @@ export const erpSupport = {
           type: 'item',
           url: '/support/ticket-by-me',
           breadcrumbs: false,
-          pageCode: 'S1110'
+          pageCode: 'S1110',
+          icon: IconTicketOff
         },
         {
           id: 'support-raised-for-me',
@@ -992,7 +996,8 @@ export const erpSupport = {
           type: 'item',
           url: '/support/raised-for-me',
           breadcrumbs: false,
-          pageCode: 'S1120'
+          pageCode: 'S1120',
+          icon: IconTicket
         }
       ]
     }

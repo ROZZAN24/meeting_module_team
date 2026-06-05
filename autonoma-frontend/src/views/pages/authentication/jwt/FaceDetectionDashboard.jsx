@@ -237,22 +237,22 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
       {/* Status Indicators */}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          {success ? <IconCheck size={20} color="#00e676" /> : 
-           errorMessage ? <IconX size={20} color="#ff1744" /> : 
-           <IconFaceId size={20} color="#00B0FF" />}
+          {success ? <IconCheck size={20} color="#00e676" /> :
+            errorMessage ? <IconX size={20} color="#ff1744" /> :
+              <IconFaceId size={20} color="#00B0FF" />}
           <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '1rem' }}>
-            {success ? 'Identity Verified' : 
-             errorMessage ? 'Verification Failed' : 
-             'Position your face in the frame'}
+            {success ? 'Identity Verified' :
+              errorMessage ? 'Verification Failed' :
+                'Position your face in the frame'}
           </Typography>
         </Box>
         <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
-          {success ? 'You are successfully authenticated' : 
-           errorMessage ? errorMessage : 
-           'Make sure your face is clearly visible'}
+          {success ? 'You are successfully authenticated' :
+            errorMessage ? errorMessage :
+              'Make sure your face is clearly visible'}
         </Typography>
       </Box>
-      
+
       {/* Authenticate Button Mock */}
       <Button
         disabled={!webcamActive || !!errorMessage || success}
