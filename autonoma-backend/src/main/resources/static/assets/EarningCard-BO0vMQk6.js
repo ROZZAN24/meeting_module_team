@@ -1,2 +1,0 @@
-import{j as a,aj as n,ag as e,S as t}from"./index-BTB7i-Au.js";import{S as r}from"./Skeleton-C625RLAD.js";function h(){return a.jsx(n,{children:a.jsx(e,{children:a.jsxs(t,{children:[a.jsxs(t,{direction:"row",sx:{justifyContent:"space-between"},children:[a.jsx(r,{variant:"rectangular",width:44,height:44}),a.jsx(r,{variant:"rectangular",width:34,height:34})]}),a.jsx(r,{variant:"rectangular",sx:{my:2},height:40}),a.jsx(r,{variant:"rectangular",height:30})]})})})}export{h as E};
-//# sourceMappingURL=EarningCard-BO0vMQk6.js.map
