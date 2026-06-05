@@ -1,2 +1,0 @@
-import{d as o}from"./index-BTB7i-Au.js";const a=[["path",{d:"M16.7 8a3 3 0 0 0 -2.7 -2h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1 -2.7 -2",key:"svg-0"}],["path",{d:"M12 3v3m0 12v3",key:"svg-1"}]],r=o("outline","currency-dollar","CurrencyDollar",a);const l=[["path",{d:"M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z",key:"svg-0"}]],e=o("outline","star","Star",l);export{r as I,e as a};
-//# sourceMappingURL=IconStar-DGSDHzio.js.map
