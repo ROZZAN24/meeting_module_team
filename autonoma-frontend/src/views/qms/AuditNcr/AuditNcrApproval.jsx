@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import {
-  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, useBOSForm, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
+  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, useBOSForm, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, errorStyle } from 'ui-component/bos';
 import { getFileDownloadUrl, getFileViewUrl } from 'utils/upload-helper';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useAuth from 'hooks/useAuth';
@@ -198,7 +198,7 @@ export default function AuditNcrApproval() {
   const handleOpenReview = async (row) => {
     setIsNewMode(false);
     setSelectedFinding(row);
-    updateForm({ remarks: row.remarks || '' });
+    updateForm({ remarks: '' });
     setErrors({});
     setNcrAttachments([]);
     fetchNcrAttachments(row.id);
@@ -219,7 +219,7 @@ export default function AuditNcrApproval() {
     const row = rows.find(r => r.id === findingId);
     if (row) {
       setSelectedFinding(row);
-      updateForm({ remarks: row.remarks || '' });
+      updateForm({ remarks: '' });
       setErrors({});
       setNcrAttachments([]);
       fetchNcrAttachments(row.id);
@@ -242,7 +242,17 @@ export default function AuditNcrApproval() {
   const handleProcessApproval = async (status) => {
     if (!selectedFinding) return;
     if (!formData.remarks || !formData.remarks.trim()) {
-      setErrors({ remarks: 'Comments are mandatory' });
+      setErrors({ remarks: 'Comments are required *' });
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: 'Comments are mandatory for approval or rejection',
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'error',
+          close: false
+        })
+      );
       return;
     }
     
@@ -605,6 +615,7 @@ export default function AuditNcrApproval() {
                 error={!!errors.remarks}
                 helperText={errors.remarks}
                 placeholder="Enter approval / rejection remarks..."
+                sx={errorStyle(!!errors.remarks)}
               />
             </Box>
 
