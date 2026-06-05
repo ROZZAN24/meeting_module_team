@@ -21,9 +21,6 @@ public class MasterChecklist extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "W_DAYS")
-    private String wDays;
-
     @Column(name = "SEQ_NO")
     private String seqNo;
 
