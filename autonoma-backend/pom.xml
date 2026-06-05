@@ -16,6 +16,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<lombok.version>1.18.38</lombok.version>
+		<npm.executable>npm</npm.executable>
 	</properties>
 	<dependencies>
 
@@ -116,6 +117,14 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>static/**</exclude>
+				</excludes>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -167,7 +176,130 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<!-- Clean static folder before frontend build -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.3.2</version>
+				<executions>
+					<execution>
+						<id>clean-static-resources</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+						<configuration>
+							<excludeDefaultDirectories>true</excludeDefaultDirectories>
+							<filesets>
+								<fileset>
+									<directory>${project.basedir}/src/main/resources/static</directory>
+									<includes>
+										<include>**/*</include>
+									</includes>
+								</fileset>
+							</filesets>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Frontend build plugin -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>3.1.1</version>
+				<executions>
+					<execution>
+						<id>npm-install</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>${npm.executable}</executable>
+							<arguments>
+								<argument>install</argument>
+							</arguments>
+							<workingDirectory>${project.basedir}/../autonoma-frontend</workingDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>npm-build</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>${npm.executable}</executable>
+							<arguments>
+								<argument>run</argument>
+								<argument>build</argument>
+							</arguments>
+							<workingDirectory>${project.basedir}/../autonoma-frontend</workingDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Copy frontend build output to BOTH src/main/resources/static and target/classes/static -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<executions>
+					<execution>
+						<id>copy-frontend-resources-to-source</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.basedir}/src/main/resources/static</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.basedir}/../autonoma-frontend/dist</directory>
+									<filtering>false</filtering>
+									<excludes>
+										<exclude>**/*.map</exclude>
+									</excludes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-frontend-resources-to-target</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.basedir}/../autonoma-frontend/dist</directory>
+									<filtering>false</filtering>
+									<excludes>
+										<exclude>**/*.map</exclude>
+									</excludes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>windows-build</id>
+			<activation>
+				<os>
+					<family>windows</family>
+				</os>
+			</activation>
+			<properties>
+				<npm.executable>npm.cmd</npm.executable>
+			</properties>
+		</profile>
+	</profiles>
 
 </project>

@@ -58,6 +58,9 @@ public class HraApplicantController {
     private EmployeeActivityRepository activityRepo;
 
     @Autowired
+    private HraApplicantInterviewRepository applicantInterviewRepo;
+
+    @Autowired
     private com.autonoma.erp.service.EmployeeMasterService employeeMasterService;
 
     @Autowired
@@ -91,6 +94,13 @@ public class HraApplicantController {
         return employeeRepo.findById(id)
                 .map(emp -> ResponseEntity.ok(mapEmployeeToFullMap(emp)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/interviews")
+    @RequirePagePermission(pageCode = "HA1110", action = "read")
+    @Operation(summary = "Get candidate interview history")
+    public List<HraApplicantInterview> getApplicantInterviews(@PathVariable Long id) {
+        return applicantInterviewRepo.findByEmployeeId(id);
     }
 
     @GetMapping("/next-code")
@@ -503,6 +513,7 @@ public class HraApplicantController {
             experienceRepo.deleteByEmployeeId(id);
             kycDocumentRepo.deleteByEmployeeId(id);
             activityRepo.deleteByEmployeeId(id);
+            applicantInterviewRepo.deleteByEmployeeId(id);
             employeeRepo.deleteById(id);
             return ResponseEntity.ok().build();
         }
@@ -531,6 +542,30 @@ public class HraApplicantController {
                     case "INTERVIEW":
                         applicant.setInterviewStatus("SCHEDULED");
                         applicant.setStatus("INTERVIEWING");
+                        
+                        HraApplicantInterview interview = new HraApplicantInterview();
+                        interview.setEmployeeId(id);
+                        interview.setScreeningLevel(getStringValue(payload, "screeningLevel"));
+                        interview.setRound(getStringValue(payload, "round"));
+                        interview.setInterviewDate(getStringValue(payload, "interviewDate"));
+                        interview.setStartTime(getStringValue(payload, "startTime"));
+                        interview.setEndTime(getStringValue(payload, "endTime"));
+                        interview.setInterviewPerson(getStringValue(payload, "interviewPerson"));
+                        interview.setInterviewStatus("PENDING");
+                        
+                        String currentUser = "admin";
+                        try {
+                            currentUser = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+                        } catch (Exception ex) {}
+                        if (currentUser == null || currentUser.trim().isEmpty()) {
+                            currentUser = "admin";
+                        }
+                        interview.setCreatedBy(currentUser);
+                        interview.setCreatedDate(new Date());
+                        interview.setStatus("ACTIVE");
+                        interview.setIsActive(true);
+                        
+                        applicantInterviewRepo.save(interview);
                         break;
                     case "OFFER":
                         applicant.setOfferStatus("ISSUED");
@@ -550,6 +585,91 @@ public class HraApplicantController {
         }
 
         return ResponseEntity.ok(Map.of("message", "Bulk action executed successfully."));
+    }
+
+    @GetMapping("/all-interviews")
+    @RequirePagePermission(pageCode = "HA1110", action = "read")
+    @Operation(summary = "Get all applicant interviews with candidate info")
+    public List<Map<String, Object>> getAllApplicantInterviews() {
+        List<HraApplicantInterview> interviews = applicantInterviewRepo.findAll();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (HraApplicantInterview interview : interviews) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", interview.getId());
+            map.put("employeeId", interview.getEmployeeId());
+            map.put("screeningLevel", interview.getScreeningLevel());
+            map.put("round", interview.getRound());
+            map.put("interviewDate", interview.getInterviewDate());
+            map.put("startTime", interview.getStartTime());
+            map.put("endTime", interview.getEndTime());
+            map.put("interviewPerson", interview.getInterviewPerson());
+            map.put("interviewStatus", interview.getInterviewStatus());
+            map.put("createdBy", interview.getCreatedBy());
+            map.put("createdDate", interview.getCreatedDate());
+            map.put("status", interview.getStatus());
+
+            Optional<EmployeeMaster> empOpt = employeeRepo.findById(interview.getEmployeeId());
+            if (empOpt.isPresent()) {
+                EmployeeMaster emp = empOpt.get();
+                map.put("candidateName", (emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : "")).trim());
+                map.put("candidateCode", emp.getEmpCode());
+                map.put("positionLookFor", emp.getPositionLookFor());
+                map.put("department", emp.getDepartment());
+            } else {
+                map.put("candidateName", "Unknown");
+                map.put("candidateCode", "N/A");
+                map.put("positionLookFor", "");
+                map.put("department", "");
+            }
+            result.add(map);
+        }
+        return result;
+    }
+
+    @PutMapping("/interviews/{interviewId}")
+    @RequirePagePermission(pageCode = "HA1110", action = "write")
+    @Operation(summary = "Update applicant interview details and status")
+    @Transactional
+    public ResponseEntity<?> updateApplicantInterview(@PathVariable Long interviewId, @RequestBody Map<String, Object> payload) {
+        return applicantInterviewRepo.findById(interviewId).map(interview -> {
+            if (payload.containsKey("interviewStatus")) {
+                interview.setInterviewStatus(getStringValue(payload, "interviewStatus"));
+            }
+            if (payload.containsKey("screeningLevel")) {
+                interview.setScreeningLevel(getStringValue(payload, "screeningLevel"));
+            }
+            if (payload.containsKey("round")) {
+                interview.setRound(getStringValue(payload, "round"));
+            }
+            if (payload.containsKey("interviewDate")) {
+                interview.setInterviewDate(getStringValue(payload, "interviewDate"));
+            }
+            if (payload.containsKey("startTime")) {
+                interview.setStartTime(getStringValue(payload, "startTime"));
+            }
+            if (payload.containsKey("endTime")) {
+                interview.setEndTime(getStringValue(payload, "endTime"));
+            }
+            if (payload.containsKey("interviewPerson")) {
+                interview.setInterviewPerson(getStringValue(payload, "interviewPerson"));
+            }
+            if (payload.containsKey("status")) {
+                interview.setStatus(getStringValue(payload, "status"));
+            }
+            applicantInterviewRepo.save(interview);
+            return ResponseEntity.ok(interview);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/interviews/{interviewId}")
+    @RequirePagePermission(pageCode = "HA1110", action = "delete")
+    @Operation(summary = "Delete an interview record")
+    @Transactional
+    public ResponseEntity<?> deleteApplicantInterview(@PathVariable Long interviewId) {
+        return applicantInterviewRepo.findById(interviewId).map(interview -> {
+            applicantInterviewRepo.delete(interview);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     // Helper method to generate next Employee Code starting with EMP-
@@ -999,5 +1119,68 @@ public class HraApplicantController {
                 activityRepo.save(act);
             }
         }
+    }
+
+    @GetMapping("/final-process-candidates")
+    @RequirePagePermission(pageCode = "HA1110", action = "read")
+    @Operation(summary = "Get candidates for final interview decision processing")
+    public List<Map<String, Object>> getFinalProcessCandidates() {
+        List<EmployeeMaster> applicants = employeeRepo.findByEmpCodeStartingWith("ATS-");
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (EmployeeMaster emp : applicants) {
+            List<HraApplicantInterview> interviews = applicantInterviewRepo.findByEmployeeId(emp.getId());
+            
+            int totalRounds = interviews.size();
+            String latestRound = "-";
+            String latestRoundStatus = "-";
+            if (!interviews.isEmpty()) {
+                HraApplicantInterview latest = interviews.get(interviews.size() - 1);
+                latestRound = latest.getRound();
+                latestRoundStatus = latest.getInterviewStatus();
+            }
+
+            String email = personalRepo.findByEmployeeId(emp.getId())
+                    .map(EmployeePersonalDetail::getPersonalEmail)
+                    .orElse("-");
+            String interviewDate = "-";
+            if (!interviews.isEmpty()) {
+                HraApplicantInterview latest = interviews.get(interviews.size() - 1);
+                interviewDate = latest.getInterviewDate();
+            }
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", emp.getId());
+            map.put("candidateCode", emp.getEmpCode());
+            map.put("candidateName", (emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : "")).trim());
+            map.put("department", emp.getDepartment());
+            map.put("positionLookFor", emp.getPositionLookFor());
+            map.put("totalRounds", totalRounds);
+            map.put("latestRound", latestRound);
+            map.put("latestRoundStatus", latestRoundStatus);
+            map.put("status", emp.getStatus());
+            map.put("comments", emp.getReferenceComments());
+            map.put("emailId", email);
+            map.put("interviewDate", interviewDate);
+            
+            result.add(map);
+        }
+        return result;
+    }
+
+    @PutMapping("/final-process/{id}")
+    @RequirePagePermission(pageCode = "HA1110", action = "write")
+    @Operation(summary = "Finalize applicant decision")
+    @Transactional
+    public ResponseEntity<?> finalizeApplicant(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+        return employeeRepo.findById(id).map(emp -> {
+            if (payload.containsKey("status")) {
+                emp.setStatus(getStringValue(payload, "status"));
+            }
+            if (payload.containsKey("comments")) {
+                emp.setReferenceComments(getStringValue(payload, "comments"));
+            }
+            employeeRepo.save(emp);
+            return ResponseEntity.ok(Map.of("message", "Applicant finalized successfully."));
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
