@@ -540,7 +540,7 @@ export default function AuditNcrClose() {
 
               <BOSTextField label="Observation" value={selectedFinding?.clause || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
               <BOSTextField label="Audit Criteria Details" value={selectedFinding?.criteriaDetails || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
-              <BOSTextField label="Observation Comment" value={selectedFinding?.remarks || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
+              <BOSTextField label="Comments" value={selectedFinding?.remarks || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

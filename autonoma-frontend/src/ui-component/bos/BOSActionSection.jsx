@@ -44,7 +44,7 @@ const BOSActionSection = ({
                     inputProps={{ readOnly }}
                 />
                 {!readOnly && (
-                    <Stack direction="row" spacing={1.5} sx={{ mt: 3.5 }}>
+                    <Stack direction="row" spacing={1.5} sx={{ mt: 3.5, width: 162, flexShrink: 0, justifyContent: 'flex-start' }}>
                         <Tooltip title="Upload Evidence">
                             <IconButton 
                                 component="label" 
