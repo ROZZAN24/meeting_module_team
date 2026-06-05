@@ -77,6 +77,17 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
         dispatch(openSnackbar({ open: true, message: 'Action Taken is mandatory to submit for closure.', variant: 'alert', severity: 'error' }));
         return;
       }
+      if (isAttachmentRequired && (!attachments || attachments.length === 0)) {
+        dispatch(
+          openSnackbar({
+            open: true,
+            message: 'Attachment is mandatory to submit for closure.',
+            variant: 'alert',
+            severity: 'error'
+          })
+        );
+        return;
+      }
     }
 
     setLoading(true);
@@ -118,7 +129,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
           </Tooltip>
         )}
         {item.status === 'PENDING FOR APPROVAL' && (
-          <Typography variant="subtitle2" sx={{ px: 2, py: 1, bgcolor: 'warning.lighter', color: 'warning.dark', fontWeight: 800, borderRadius: 2, border: '1px solid', borderColor: 'warning.main' }}>
+          <Typography variant="subtitle2" sx={{ px: 2, py: 1, bgcolor: 'warning.light', color: '#000000', fontWeight: 800, borderRadius: 2, border: '1px solid', borderColor: 'warning.main' }}>
             ⏳ Awaiting Approver Action
           </Typography>
         )}

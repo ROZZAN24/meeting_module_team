@@ -245,6 +245,13 @@ public class QmsMomMasterService {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Detail not found"));
 
+        if ("YES".equalsIgnoreCase(detail.getAttachmentRequired())) {
+            String attachmentInfo = (data.get("attachmentInfo") != null) ? String.valueOf(data.get("attachmentInfo")) : "";
+            if (attachmentInfo.trim().isEmpty() || "[]".equals(attachmentInfo.trim())) {
+                throw new RuntimeException("Attachment is required to submit this action for closure.");
+            }
+        }
+
         detail.setStatus("PENDING FOR APPROVAL");
         if (data.containsKey("actionTaken") && data.get("actionTaken") != null) {
             detail.setActionTaken(String.valueOf(data.get("actionTaken")));
@@ -304,7 +311,7 @@ public class QmsMomMasterService {
         }
         int year = LocalDate.now().getYear();
         String yearRange = year + "-" + (year + 1);
-        Long nextId = repository.findMaxId().orElse(0L) + 1;
+        Long nextId = repository.findMaxIdWithLock().orElse(0L) + 1;
         return String.format("MM/%s/%s/%03d", typePrefix, yearRange, nextId);
     }
 }

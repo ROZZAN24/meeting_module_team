@@ -99,23 +99,7 @@ const INITIAL_FORM = {
   startTime: '09:00',
   endTime: '10:00',
   attendanceList: [],
-  details: [
-    {
-      meetNo: `${DEFAULT_MOM_NO}/001`,
-      amendMeetNo: '',
-      discussedPoint: '',
-      type: '',
-      materialList: '',
-      processType: 'INFO',
-      assignedBy: null,
-      assignedTo: null,
-      targetDate: '',
-      reviewDate: '',
-      attachmentRequired: 'NO',
-      status: 'OPEN',
-      isAmended: false
-    }
-  ]
+  details: []
 };
 
 export default function AddMeetingMinutes() {
@@ -232,6 +216,17 @@ export default function AddMeetingMinutes() {
           openSnackbar({
             open: true,
             message: 'Assignee and Assignor are required for ACTION points.',
+            variant: 'alert',
+            severity: 'error'
+          })
+        );
+        return;
+      }
+      if (dialogForm.assignedTo.id === dialogForm.assignedBy.id) {
+        dispatch(
+          openSnackbar({
+            open: true,
+            message: 'Assigned To and Assigned By cannot be the same person.',
             variant: 'alert',
             severity: 'error'
           })
@@ -629,6 +624,22 @@ export default function AddMeetingMinutes() {
         openSnackbar({
           open: true,
           message: 'Assignor and Assignee are mandatory for ACTION points. Please assign or change Process to INFO.',
+          variant: 'alert',
+          severity: 'error'
+        })
+      );
+      return;
+    }
+
+    // SOP: ACTION assignedTo and assignedBy must be different people
+    const sameAssigneeAssignor = form.details.filter(
+      (d) => d.processType === 'ACTION' && d.assignedTo && d.assignedBy && d.assignedTo.id === d.assignedBy.id
+    );
+    if (sameAssigneeAssignor.length > 0) {
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: 'Assigned To and Assigned By cannot be the same person for ACTION points.',
           variant: 'alert',
           severity: 'error'
         })
@@ -1152,212 +1163,224 @@ export default function AddMeetingMinutes() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {form.details.map((det, idx) => (
-                    <TableRow key={idx} sx={{ '&:nth-of-type(odd)': { bgcolor: 'grey.50' }, '&:hover': { bgcolor: 'primary.lighter' } }}>
-                      {/* Action Left: Edit Icon */}
-                      <TableCell sx={{ position: 'sticky', left: 0, bgcolor: 'inherit', zIndex: 10, textAlign: 'center', p: 0.5 }}>
-                        {perms.write ? (
-                          <Tooltip title="Edit Row" placement="top" arrow>
-                            <IconButton
-                              size="small"
-                              color="secondary"
-                              onClick={() => handleOpenDetailDialog(idx)}
-                              sx={{ bgcolor: 'secondary.lighter', '&:hover': { bgcolor: 'secondary.main', color: 'white' }, p: 0.3 }}
-                            >
-                              <IconEdit size={14} />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-
-                      {/* Sticky Sl No Body */}
-                      <TableCell align="center" sx={{ fontSize: '0.75rem', fontWeight: 800, p: 0.5 }}>
-                        {form.details.length - idx}
-                      </TableCell>
-
-                      {/* References */}
+                  {form.details.length === 0 ? (
+                    <TableRow>
                       <TableCell
-                        sx={{
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          color: 'text.secondary',
-                          px: 0.5,
-                          py: 1,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                        title={det.meetNo || ''}
-                      >
-                        {det.meetNo || '-'}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          color: 'text.secondary',
-                          px: 0.5,
-                          py: 1,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                        title={det.amendMeetNo || ''}
-                      >
-                        {det.amendMeetNo || '-'}
-                      </TableCell>
-
-                      {/* Discussed Point (Truncated, Clickable) */}
-                      <TableCell
-                        onClick={() => perms.write && handleOpenDetailDialog(idx)}
-                        sx={{
-                          p: 1,
-                          cursor: perms.write ? 'pointer' : 'default',
-                          '&:hover': perms.write ? { bgcolor: 'action.hover' } : {}
-                        }}
-                      >
-                        <Tooltip title={det.discussedPoint || (perms.write ? 'Click to Edit' : '')} placement="top" arrow>
-                          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontSize: '0.75rem',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                color: det.discussedPoint ? 'text.primary' : 'text.disabled',
-                                fontStyle: det.discussedPoint ? 'normal' : 'italic',
-                                fontWeight: 500,
-                                pr: 1,
-                                width: '100%',
-                                display: 'block'
-                              }}
-                            >
-                              {det.discussedPoint || 'Click to enter discussed point...'}
-                            </Typography>
-                          </Stack>
-                        </Tooltip>
-                      </TableCell>
-
-                      {/* Details */}
-                      <TableCell
-                        sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                        title={det.type || ''}
-                      >
-                        {det.type || '-'}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: '0.75rem',
-                          px: 0.5,
-                          py: 1,
-                          color: 'text.secondary',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                        title={det.materialList || ''}
-                      >
-                        {det.materialList || '-'}
-                      </TableCell>
-
-                      {/* Responsibility */}
-                      <TableCell align="center" sx={{ p: 0.5 }}>
-                        <Chip
-                          label={det.processType || 'INFO'}
-                          size="small"
-                          sx={{
-                            fontSize: '0.65rem',
-                            fontWeight: 800,
-                            bgcolor: det.processType === 'ACTION' ? 'secondary.lighter' : 'primary.lighter',
-                            color: det.processType === 'ACTION' ? 'secondary.dark' : 'primary.dark',
-                            border: '1px solid',
-                            borderColor: det.processType === 'ACTION' ? 'secondary.main' : 'primary.main',
-                            height: '18px',
-                            '& .MuiChip-label': {
-                              px: 1,
-                              py: 0
-                            }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell
-                        sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                        title={det.assignedTo?.employeeName || ''}
-                      >
-                        {det.assignedTo?.employeeName || '-'}
-                      </TableCell>
-                      <TableCell
-                        sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                        title={det.assignedBy?.employeeName || ''}
-                      >
-                        {det.assignedBy?.employeeName || '-'}
-                      </TableCell>
-
-                      {/* Timeline */}
-                      <TableCell
-                        sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                      >
-                        {det.targetDate ? det.targetDate.split('-').reverse().join('/') : '-'}
-                      </TableCell>
-                      <TableCell
-                        sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                      >
-                        {det.reviewDate ? det.reviewDate.split('-').reverse().join('/') : '-'}
-                      </TableCell>
-
-                      {/* Closure */}
-                      <TableCell
+                        colSpan={14}
                         align="center"
-                        sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        sx={{ py: 6, fontStyle: 'italic', color: 'text.secondary', fontSize: '0.75rem' }}
                       >
-                        {det.attachmentRequired || 'NO'}
+                        No discussion & action points added. Click the '+' button in the header to add.
                       </TableCell>
-
-                      {/* Sticky Actions Body */}
-                      <TableCell
-                        sx={{
-                          position: 'sticky',
-                          right: 0,
-                          bgcolor: 'inherit',
-                          zIndex: 10,
-                          borderRight: 'none',
-                          textAlign: 'center',
-                          p: 0.5
-                        }}
-                      >
-                        {perms.write ? (
-                          <Stack direction="row" spacing={0.5} justifyContent="center">
-                            <Tooltip title={det.isAmended ? 'Revert Amendment' : 'Mark as Amendment'}>
+                    </TableRow>
+                  ) : (
+                    form.details.map((det, idx) => (
+                      <TableRow key={idx} sx={{ '&:nth-of-type(odd)': { bgcolor: 'grey.50' }, '&:hover': { bgcolor: 'primary.lighter' } }}>
+                        {/* Action Left: Edit Icon */}
+                        <TableCell sx={{ position: 'sticky', left: 0, bgcolor: 'inherit', zIndex: 10, textAlign: 'center', p: 0.5 }}>
+                          {perms.write ? (
+                            <Tooltip title="Edit Row" placement="top" arrow>
                               <IconButton
                                 size="small"
-                                color={det.isAmended ? 'warning' : 'primary'}
-                                onClick={() => toggleAmendment(idx)}
-                                sx={{ bgcolor: det.isAmended ? 'warning.lighter' : 'primary.lighter', p: 0.3 }}
+                                color="secondary"
+                                onClick={() => handleOpenDetailDialog(idx)}
+                                sx={{ bgcolor: 'secondary.lighter', '&:hover': { bgcolor: 'secondary.main', color: 'white' }, p: 0.3 }}
                               >
                                 <IconEdit size={14} />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Delete Row">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => removeDetailRow(idx)}
-                                disabled={form.details.length === 1}
-                                sx={{ bgcolor: 'error.lighter', p: 0.3 }}
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+
+                        {/* Sticky Sl No Body */}
+                        <TableCell align="center" sx={{ fontSize: '0.75rem', fontWeight: 800, p: 0.5 }}>
+                          {form.details.length - idx}
+                        </TableCell>
+
+                        {/* References */}
+                        <TableCell
+                          sx={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: 'text.secondary',
+                            px: 0.5,
+                            py: 1,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                          title={det.meetNo || ''}
+                        >
+                          {det.meetNo || '-'}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: 'text.secondary',
+                            px: 0.5,
+                            py: 1,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                          title={det.amendMeetNo || ''}
+                        >
+                          {det.amendMeetNo || '-'}
+                        </TableCell>
+
+                        {/* Discussed Point (Truncated, Clickable) */}
+                        <TableCell
+                          onClick={() => perms.write && handleOpenDetailDialog(idx)}
+                          sx={{
+                            p: 1,
+                            cursor: perms.write ? 'pointer' : 'default',
+                            '&:hover': perms.write ? { bgcolor: 'action.hover' } : {}
+                          }}
+                        >
+                          <Tooltip title={det.discussedPoint || (perms.write ? 'Click to Edit' : '')} placement="top" arrow>
+                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  color: det.discussedPoint ? 'text.primary' : 'text.disabled',
+                                  fontStyle: det.discussedPoint ? 'normal' : 'italic',
+                                  fontWeight: 500,
+                                  pr: 1,
+                                  width: '100%',
+                                  display: 'block'
+                                }}
                               >
-                                <IconTrash size={14} />
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                {det.discussedPoint || 'Click to enter discussed point...'}
+                              </Typography>
+                            </Stack>
+                          </Tooltip>
+                        </TableCell>
+
+                        {/* Details */}
+                        <TableCell
+                          sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          title={det.type || ''}
+                        >
+                          {det.type || '-'}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontSize: '0.75rem',
+                            px: 0.5,
+                            py: 1,
+                            color: 'text.secondary',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                          title={(det.type === 'RM' || det.type === 'PRODUCT') ? (det.materialList || '') : ''}
+                        >
+                          {(det.type === 'RM' || det.type === 'PRODUCT') ? (det.materialList || '-') : '-'}
+                        </TableCell>
+
+                        {/* Responsibility */}
+                        <TableCell align="center" sx={{ p: 0.5 }}>
+                          <Chip
+                            label={det.processType || 'INFO'}
+                            size="small"
+                            sx={{
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              bgcolor: det.processType === 'ACTION' ? 'secondary.lighter' : 'primary.lighter',
+                              color: det.processType === 'ACTION' ? 'secondary.dark' : 'primary.dark',
+                              border: '1px solid',
+                              borderColor: det.processType === 'ACTION' ? 'secondary.main' : 'primary.main',
+                              height: '18px',
+                              '& .MuiChip-label': {
+                                px: 1,
+                                py: 0
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell
+                          sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          title={det.assignedTo?.employeeName || ''}
+                        >
+                          {det.assignedTo?.employeeName || '-'}
+                        </TableCell>
+                        <TableCell
+                          sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          title={det.assignedBy?.employeeName || ''}
+                        >
+                          {det.assignedBy?.employeeName || '-'}
+                        </TableCell>
+
+                        {/* Timeline */}
+                        <TableCell
+                          sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        >
+                          {det.targetDate ? det.targetDate.split('-').reverse().join('/') : '-'}
+                        </TableCell>
+                        <TableCell
+                          sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        >
+                          {det.reviewDate ? det.reviewDate.split('-').reverse().join('/') : '-'}
+                        </TableCell>
+
+                        {/* Closure */}
+                        <TableCell
+                          align="center"
+                          sx={{ fontSize: '0.75rem', px: 0.5, py: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        >
+                          {det.attachmentRequired || 'NO'}
+                        </TableCell>
+
+                        {/* Sticky Actions Body */}
+                        <TableCell
+                          sx={{
+                            position: 'sticky',
+                            right: 0,
+                            bgcolor: 'inherit',
+                            zIndex: 10,
+                            borderRight: 'none',
+                            textAlign: 'center',
+                            p: 0.5
+                          }}
+                        >
+                          {perms.write ? (
+                            <Stack direction="row" spacing={0.5} justifyContent="center">
+                              <Tooltip title={det.isAmended ? 'Revert Amendment' : 'Mark as Amendment'}>
+                                <IconButton
+                                  size="small"
+                                  color={det.isAmended ? 'warning' : 'primary'}
+                                  onClick={() => toggleAmendment(idx)}
+                                  sx={{ bgcolor: det.isAmended ? 'warning.lighter' : 'primary.lighter', p: 0.3 }}
+                                >
+                                  <IconEdit size={14} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete Row">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => removeDetailRow(idx)}
+                                  disabled={form.details.length === 1}
+                                  sx={{ bgcolor: 'error.lighter', p: 0.3 }}
+                                >
+                                  <IconTrash size={14} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -1543,12 +1566,17 @@ export default function AddMeetingMinutes() {
                 fullWidth
                 label="Type"
                 value={detailDialog.form.type || ''}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const newType = e.target.value;
                   setDetailDialog((prev) => ({
                     ...prev,
-                    form: { ...prev.form, type: e.target.value }
-                  }))
-                }
+                    form: {
+                      ...prev.form,
+                      type: newType,
+                      materialList: (newType === 'RM' || newType === 'PRODUCT') ? prev.form.materialList : ''
+                    }
+                  }));
+                }}
               >
                 <MenuItem value="" sx={{ display: 'none' }}></MenuItem>
                 <MenuItem value="RM">RM</MenuItem>
@@ -1556,17 +1584,19 @@ export default function AddMeetingMinutes() {
               </BOSTextField>
 
               {/* Material List */}
-              <BOSTextField
-                fullWidth
-                label="Material List"
-                value={detailDialog.form.materialList}
-                placeholder="Click to select material..."
-                onClick={() => perms.write && setMaterialDialog({ open: true, rowIdx: 'dialog', type: detailDialog.form.type || 'RM' })}
-                InputProps={{
-                  readOnly: true,
-                  sx: { cursor: perms.write ? 'pointer' : 'default' }
-                }}
-              />
+              {(detailDialog.form.type === 'RM' || detailDialog.form.type === 'PRODUCT') && (
+                <BOSTextField
+                  fullWidth
+                  label="Material List"
+                  value={detailDialog.form.materialList}
+                  placeholder="Click to select material..."
+                  onClick={() => perms.write && setMaterialDialog({ open: true, rowIdx: 'dialog', type: detailDialog.form.type || 'RM' })}
+                  InputProps={{
+                    readOnly: true,
+                    sx: { cursor: perms.write ? 'pointer' : 'default' }
+                  }}
+                />
+              )}
 
               {/* Process */}
               <BOSTextField
@@ -1652,6 +1682,7 @@ export default function AddMeetingMinutes() {
                   }))
                 }
                 disabled={detailDialog.form.processType === 'INFO'}
+                minDate={new Date()}
                 error={isSunday(detailDialog.form.targetDate) || (detailDialog.form.targetDate && detailDialog.form.targetDate < TODAY)}
                 helperText={
                   isSunday(detailDialog.form.targetDate)
@@ -1674,6 +1705,7 @@ export default function AddMeetingMinutes() {
                   }))
                 }
                 disabled={detailDialog.form.processType === 'INFO'}
+                minDate={new Date()}
                 error={
                   (detailDialog.form.reviewDate &&
                     detailDialog.form.targetDate &&

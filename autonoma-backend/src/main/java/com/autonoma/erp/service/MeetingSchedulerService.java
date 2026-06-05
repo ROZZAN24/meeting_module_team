@@ -124,14 +124,12 @@ public class MeetingSchedulerService {
      *    - Meeting date is before today (or today but past end time)
      */
     public void autoCloseExpiredSchedules() {
-        List<QmsMeetingSchedule> allSchedules = scheduleRepository.findAll();
+        List<QmsMeetingSchedule> openSchedules = scheduleRepository.findByStatusIgnoreCase("OPEN");
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
         int closed = 0;
 
-        for (QmsMeetingSchedule schedule : allSchedules) {
-            if (!"OPEN".equalsIgnoreCase(schedule.getStatus())) continue;
-
+        for (QmsMeetingSchedule schedule : openSchedules) {
             boolean expired = false;
             if (schedule.getMeetingDate() != null) {
                 if (schedule.getMeetingDate().isBefore(today)) {

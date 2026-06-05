@@ -351,7 +351,21 @@ export default function MomList() {
           onReassign={perms.write ? handleReassignClick : null}
           reassignDisabled={!selectedRow}
           reassignTooltip="Reassign selected action"
-         columns={columns} />
+          reassignVariant="contained"
+          reassignSx={{
+            bgcolor: '#FFD700', // Vibrant Gold/Yellow
+            color: '#000000',   // Black text
+            fontWeight: 'bold',
+            '&:hover': {
+              bgcolor: '#E6BE00', // Darker yellow/gold on hover
+              color: '#000000'
+            },
+            '&.Mui-disabled': {
+              bgcolor: 'rgba(0, 0, 0, 0.12)',
+              color: 'rgba(0, 0, 0, 0.26)'
+            }
+          }}
+          columns={columns} />
       }
     >
       <BOSDataTable

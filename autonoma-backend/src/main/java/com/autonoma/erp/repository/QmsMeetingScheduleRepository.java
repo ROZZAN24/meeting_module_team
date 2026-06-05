@@ -14,4 +14,6 @@ public interface QmsMeetingScheduleRepository extends JpaRepository<QmsMeetingSc
     Optional<QmsMeetingSchedule> findByScheduleNo(String scheduleNo);
     
     java.util.List<QmsMeetingSchedule> findByScheduleNoStartingWith(String prefix);
+    
+    java.util.List<QmsMeetingSchedule> findByStatusIgnoreCase(String status);
 }

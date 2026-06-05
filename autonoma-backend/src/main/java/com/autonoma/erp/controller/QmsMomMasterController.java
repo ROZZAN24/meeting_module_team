@@ -35,11 +35,20 @@ public class QmsMomMasterController {
     @Autowired private DivisionService divService;
 
     @GetMapping("/fix-users")
-    public String fixUsers() {
+    public ResponseEntity<String> fixUsers() {
+        String userId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body("Authentication required");
+        }
+        java.util.Optional<UserCredential> userOpt = userRepo.findByUserId(userId);
+        if (!userOpt.isPresent() || userOpt.get().getUserLevel() == null || userOpt.get().getUserLevel() < AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body("Access denied: Admin privileges required");
+        }
+
         com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
         List<UserCredential> users = userRepo.findAll();
         List<CompanyCredential> comps = compRepo.findAll();
-        if (comps.isEmpty()) return "No companies found";
+        if (comps.isEmpty()) return ResponseEntity.ok("No companies found");
         
         for (UserCredential u : users) {
             for (CompanyCredential c : comps) {
@@ -61,7 +70,7 @@ public class QmsMomMasterController {
                 }
             }
         }
-        return "Done mapping all users to all companies and divisions";
+        return ResponseEntity.ok("Done mapping all users to all companies and divisions");
     }
 
     @GetMapping
