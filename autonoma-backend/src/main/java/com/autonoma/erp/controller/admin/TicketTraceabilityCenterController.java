@@ -293,6 +293,8 @@ public class TicketTraceabilityCenterController {
                 existingTicket.setSeverityLevel(ticketDetails.getSeverityLevel());
             if (ticketDetails.getVerifiedBy() != null)
                 existingTicket.setVerifiedBy(ticketDetails.getVerifiedBy());
+            if (ticketDetails.getTestedBy() != null)
+                existingTicket.setTestedBy(ticketDetails.getTestedBy());
 
             // Workflow details
             if (ticketDetails.getAssignedTo() != null) {

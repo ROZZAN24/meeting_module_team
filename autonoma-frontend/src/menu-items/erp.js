@@ -47,7 +47,10 @@ import {
   IconMoodSmile,
   IconSearch,
   IconCategory,
-  IconRotate2
+  IconRotate2,
+  IconTicTac,
+  IconTicket,
+  IconTicketOff
 } from '@tabler/icons-react';
 
 const icons = {
@@ -128,6 +131,22 @@ export const masters = {
               type: 'item',
               url: '/hra/ats',
               icon: icons.IconSearch,
+              pageCode: 'HA1110'
+            },
+            {
+              id: 'hra-ats-interview-process',
+              title: 'Interview Process',
+              type: 'item',
+              url: '/hra/ats/interview-process',
+              icon: icons.IconRotate2,
+              pageCode: 'HA1110'
+            },
+            {
+              id: 'hra-ats-interview-final-process',
+              title: 'Interview Final Process',
+              type: 'item',
+              url: '/hra/ats/interview-final-process',
+              icon: icons.IconUserCheck,
               pageCode: 'HA1110'
             },
             {
@@ -968,7 +987,8 @@ export const erpSupport = {
           type: 'item',
           url: '/support/ticket-by-me',
           breadcrumbs: false,
-          pageCode: 'S1110'
+          pageCode: 'S1110',
+          icon: IconTicketOff
         },
         {
           id: 'support-raised-for-me',
@@ -976,7 +996,8 @@ export const erpSupport = {
           type: 'item',
           url: '/support/raised-for-me',
           breadcrumbs: false,
-          pageCode: 'S1120'
+          pageCode: 'S1120',
+          icon: IconTicket
         }
       ]
     }

@@ -2,47 +2,101 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Grid,
   alpha,
-  useTheme
+  useTheme,
+  CircularProgress,
+  Fade,
+  Slide,
+  Button
 } from '@mui/material';
+import { keyframes, styled } from '@mui/material/styles';
 import {
   IconShieldCheck,
   IconCheck,
   IconFaceId,
   IconActivity,
   IconUserCheck,
-  IconLock,
+  IconX,
   IconCameraOff,
-  IconCalendar,
-  IconX
+  IconLock
 } from '@tabler/icons-react';
 import { drawFaceDetection } from 'utils/faceApi';
 
+// ─── Keyframes ────────────────────────────────────────────────────────────────
+const pulseGlow = keyframes`
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  50%      { box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
+`;
+
+const scanLine = keyframes`
+  0%   { top: 0%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+`;
+
+const rotate = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+`;
+
+// ─── Styled Components ────────────────────────────────────────────────────────
+const ScannerRing = styled(Box)(({ theme, statuscolor }) => ({
+  position: 'absolute',
+  top: -6,
+  left: -6,
+  right: -6,
+  bottom: -6,
+  borderRadius: '50%',
+  border: `3px dashed ${statuscolor}`,
+  animation: `${rotate} 8s linear infinite`,
+  opacity: 0.8,
+  zIndex: 1,
+}));
+
+const ScanLaser = styled(Box)(({ theme, statuscolor }) => ({
+  position: 'absolute',
+  left: '10%',
+  right: '10%',
+  height: 3,
+  background: `linear-gradient(90deg, transparent, ${statuscolor}, transparent)`,
+  boxShadow: `0 0 15px ${statuscolor}, 0 0 30px ${statuscolor}`,
+  zIndex: 10,
+  animation: `${scanLine} 2.5s ease-in-out infinite`,
+}));
+
+const StatusPill = styled(Box)(({ theme, active, error }) => {
+  let bg = alpha(theme.palette.text.secondary, 0.05);
+  let color = theme.palette.text.secondary;
+  let borderColor = 'transparent';
+
+  if (error) {
+    bg = alpha(theme.palette.error.main, 0.1);
+    color = theme.palette.error.main;
+    borderColor = alpha(theme.palette.error.main, 0.3);
+  } else if (active) {
+    bg = alpha(theme.palette.primary.main, 0.1);
+    color = theme.palette.primary.main;
+    borderColor = alpha(theme.palette.primary.main, 0.3);
+  }
+
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '12px 20px',
+    borderRadius: '16px',
+    background: bg,
+    border: `1px solid ${borderColor}`,
+    color: color,
+    transition: 'all 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+    transform: active && !error ? 'scale(1.02)' : 'scale(1)',
+  };
+});
+
+// ─── Main Component ─────────────────────────────────────────────────────────
 const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFaceScanning, success, errorMessage, userId }) => {
   const theme = useTheme();
-
-  const getFormattedDate = () => {
-    const d = new Date();
-    const day = String(d.getDate()).padStart(2, '0');
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const month = months[d.getMonth()];
-    const year = d.getFullYear();
-    return `${day} ${month} ${year}`;
-  };
-
-  const getFormattedTime = () => {
-    const d = new Date();
-    let hours = d.getHours();
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const strHours = String(hours).padStart(2, '0');
-    return `${strHours}:${minutes} ${ampm}`;
-  };
-
-  // Animation state for status items
   const [scanStep, setScanStep] = useState(0);
 
   useEffect(() => {
@@ -55,18 +109,10 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
     } else if (!isFaceScanning && !errorMessage && !success) {
       setScanStep(0);
     }
-
     if (errorMessage) {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
+      clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3);
     }
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
+    return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
   }, [open, isFaceScanning, errorMessage, success]);
 
   useEffect(() => {
@@ -79,469 +125,162 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
       const canvas = document.getElementById('webcam-canvas');
 
       if (video && canvas && video.readyState >= 2) {
-        try {
-          await drawFaceDetection(video, canvas);
-        } catch (e) {
-          // ignore transient drawing errors
-        }
+        try { await drawFaceDetection(video, canvas); } catch (e) { /* ignore */ }
       }
-      
-      if (isDrawing) {
-        animationFrameId = requestAnimationFrame(renderLoop);
-      }
+      if (isDrawing) { animationFrameId = requestAnimationFrame(renderLoop); }
     };
 
-    if (webcamActive) {
-      renderLoop();
-    }
-
-    return () => {
-      isDrawing = false;
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    };
+    if (webcamActive) { renderLoop(); }
+    return () => { isDrawing = false; if (animationFrameId) cancelAnimationFrame(animationFrameId); };
   }, [webcamActive]);
 
-  // Derive effective scan step and error states
   let effectiveScanStep = scanStep;
   let errorStep = -1;
 
   if (errorMessage) {
     const errStr = errorMessage.toLowerCase();
-    if (errStr.includes('no face detected') || errStr.includes('camera')) {
-      effectiveScanStep = 0;
-      errorStep = 0;
-    } else if (errStr.includes('liveness') || errStr.includes('fake') || errStr.includes('spoof')) {
-      effectiveScanStep = 1;
-      errorStep = 1;
-    } else if (errStr.includes('match') || errStr.includes('recognize') || errStr.includes('mismatch') || errStr.includes('invalid face')) {
-      effectiveScanStep = 2; // Face Matched failed
-      errorStep = 2;
-    } else {
-      // e.g., "Face ID login is disabled", "Account suspended", "User not found"
-      effectiveScanStep = 3; // Verification failed
-      errorStep = 3;
-    }
-  } else if (success) {
-    effectiveScanStep = 4;
-  } else {
-    if (effectiveScanStep > 1) {
-      effectiveScanStep = 1;
-    }
-  }
+    if (errStr.includes('no face') || errStr.includes('camera')) { effectiveScanStep = 0; }
+    else if (errStr.includes('liveness') || errStr.includes('fake') || errStr.includes('spoof')) { effectiveScanStep = 1; }
+    else if (errStr.includes('match') || errStr.includes('recognize') || errStr.includes('mismatch') || errStr.includes('invalid')) { effectiveScanStep = 2; }
+    else { effectiveScanStep = 3; }
+  } else if (success) { effectiveScanStep = 4; }
+  else if (effectiveScanStep > 1) { effectiveScanStep = 1; }
 
-  const statusItems = [
-    {
-      title: 'Face Detected',
-      subtitle: effectiveScanStep > 0 || success ? 'High Quality' : (errorStep === 0 ? 'No Face Found' : 'Scanning...'),
-      icon: <IconFaceId size={16} color="#00e676" />
-    },
-    {
-      title: 'Liveness Check',
-      subtitle: effectiveScanStep > 1 || success ? 'Real Person' : (errorStep === 1 ? 'Check Failed' : 'Analyzing...'),
-      icon: <IconActivity size={16} color="#00e676" />
-    },
-    {
-      title: 'Face Matched',
-      subtitle: effectiveScanStep > 2 || success ? '100% Match' : (errorStep === 2 ? 'Mismatch' : 'Comparing...'),
-      icon: <IconUserCheck size={16} color="#00e676" />
-    },
-    {
-      title: 'Verification',
-      subtitle: effectiveScanStep === 4 ? 'Completed' : (errorMessage ? 'Denied' : 'Pending...'),
-      icon: <IconShieldCheck size={16} color="#00e676" />
-    }
-  ];
+  const statusColor = errorMessage ? theme.palette.error.main : success ? theme.palette.success.main : '#00B0FF';
 
   return (
-    <Box
-      sx={{
-        background: '#ffffffd9',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '18px',
-        border: '1.5px solid rgba(0,0,0,0.05)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        p: 2,
+    <Box sx={{
+      width: '100%',
+      p: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative'
+    }}>
+      {/* Massive Glowing Camera Container */}
+      <Box sx={{
         position: 'relative',
-        overflow: 'hidden',
-        color: '#111'
-      }}
-    >
-      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mb: 1.5 }}>
-        {/* Left Column */}
-        <Box sx={{ flex: '0 0 48%', display: 'flex', flexDirection: 'column' }}>
-          {/* Header - Icon */}
-          {/* <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5, position: 'relative' }}>
-            <Box
-              sx={{
-                width: 60,
-                height: 60,
-                background: 'linear-gradient(135deg, #152238 0%, #080d1a 100%)',
-                borderRadius: '14px',
-                border: '1.5px solid #a88444',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 12px rgba(168, 132, 68, 0.3)',
-                transform: 'rotate(45deg)',
-                overflow: 'hidden'
-              }}
-            >
-              <Box sx={{ transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <IconFaceId size={32} color="#00f0ff" stroke={1.5} />
-              </Box>
-            </Box>
-          </Box> */}
+        width: { xs: 160, sm: 180, md: 180 },
+        height: { xs: 160, sm: 180, md: 180 },
+        mb: 2
+      }}>
+        {/* Outer Glowing Ring */}
+        <Box sx={{
+          position: 'absolute', inset: -15,
+          borderRadius: '50%',
+          border: '1px solid rgba(0, 176, 255, 0.2)',
+          boxShadow: '0 0 40px rgba(0, 176, 255, 0.1)',
+          animation: `${pulseGlow} 3s infinite alternate`
+        }} />
 
-          {/* Title */}
-          <Box sx={{ mb: 2, textAlign: 'center' }}>
-            <Typography sx={{ color: '#333', fontWeight: 700, letterSpacing: '0.8px', fontSize: '0.75rem', mb: 0.2 }}>
-              FACE DETECTION &
-            </Typography>
-            <Typography
-              sx={{
-                fontWeight: 800,
-                letterSpacing: '1.5px',
-                fontSize: '1.1rem',
-                color: '#00e676',
-                mb: 0.5,
-                lineHeight: 1.1
-              }}
-            >
-              VERIFICATION
-            </Typography>
-            <Typography sx={{ color: effectiveScanStep === 4 ? '#00e676' : (errorMessage ? '#ff5252' : '#00f0ff'), fontSize: '0.65rem', fontWeight: 700 }}>
-              {effectiveScanStep === 4 ? 'Identity Verified Successfully' : (errorMessage ? 'Verification Failed' : 'Scanning Protocol Initiated...')}
-            </Typography>
-          </Box>
+        {/* Thick Inner Ring */}
+        <Box sx={{
+          position: 'absolute', inset: -4,
+          borderRadius: '50%',
+          border: '2px solid rgba(0, 176, 255, 0.6)',
+          borderTopColor: 'transparent',
+          borderBottomColor: 'transparent',
+          animation: `${rotate} 10s linear infinite`
+        }} />
 
-          {/* Status Items - Vertical List */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-            {statusItems.map((item, index) => {
-              const isActive = effectiveScanStep > index || success;
-              const isError = errorStep === index;
-
-              let outerBorder = '1px solid rgba(0,0,0,0.06)';
-              let iconBg = 'rgba(0,0,0,0.03)';
-              let iconBorder = '1px solid transparent';
-              let iconColor = '#888';
-              let circleBorder = '1.5px solid #ccc';
-              let circleShadow = 'none';
-
-              if (isActive && !isError) {
-                outerBorder = '1px solid rgba(0, 230, 118, 0.3)';
-                iconBg = 'rgba(0, 230, 118, 0.1)';
-                iconBorder = '1px solid rgba(0, 230, 118, 0.3)';
-                iconColor = '#00e676';
-                circleBorder = '1.5px solid #00e676';
-                circleShadow = '0 0 6px rgba(0, 230, 118, 0.3)';
-              } else if (isError) {
-                outerBorder = '1px solid rgba(255, 82, 82, 0.3)';
-                iconBg = 'rgba(255, 82, 82, 0.1)';
-                iconBorder = '1px solid rgba(255, 82, 82, 0.3)';
-                iconColor = '#ff5252';
-                circleBorder = '1.5px solid #ff5252';
-                circleShadow = '0 0 6px rgba(255, 82, 82, 0.3)';
-              }
-
-              return (
-                <Box
-                  key={index}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    py: 0.8,
-                    px: 1,
-                    borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.02)',
-                    border: outerBorder,
-                    transition: 'all 0.4s ease'
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box
-                      sx={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '6px',
-                        background: iconBg,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: iconBorder
-                      }}
-                    >
-                      {React.cloneElement(item.icon, { size: 14, color: iconColor })}
-                    </Box>
-                    <Box>
-                      <Typography sx={{ color: isActive || isError ? '#222' : '#999', fontWeight: 600, fontSize: '0.7rem', lineHeight: 1.2 }}>
-                        {item.title}
-                      </Typography>
-                      <Typography sx={{ color: isActive ? '#666' : (isError ? '#ff5252' : '#aaa'), fontSize: '0.55rem', lineHeight: 1, display: 'block', mt: 0.3 }}>
-                        {isError ? 'Failed' : item.subtitle}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Checkmark / Error Circle */}
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      border: circleBorder,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.3s ease',
-                      boxShadow: circleShadow,
-                      flexShrink: 0
-                    }}
-                  >
-                    {isActive && !isError && <IconCheck size={10} color="#00e676" stroke={3} />}
-                    {isError && <IconX size={10} color="#ff5252" stroke={3} />}
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-        </Box>
-
-        {/* Right Column - Camera Area */}
-        <Box sx={{ flex: '1', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-          <Box
-            sx={{
-              width: '100%',
-              height: '100%',
-              minHeight: '260px',
-              borderRadius: '14px',
-              border: '1.5px solid rgba(0, 240, 255, 0.15)',
-              background: '#040b17',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: '0 0 20px rgba(0,0,0,0.5)'
-            }}
-          >
-            {/* Cyan Tech Corner Brackets */}
-            <Box sx={{ position: 'absolute', top: 10, left: 10, width: 24, height: 24, borderTop: '3px solid #00f0ff', borderLeft: '3px solid #00f0ff', borderRadius: '3px 0 0 0', zIndex: 10, filter: 'drop-shadow(0 0 4px #00f0ff)' }} />
-            <Box sx={{ position: 'absolute', top: 10, right: 10, width: 24, height: 24, borderTop: '3px solid #00f0ff', borderRight: '3px solid #00f0ff', borderRadius: '0 3px 0 0', zIndex: 10, filter: 'drop-shadow(0 0 4px #00f0ff)' }} />
-            <Box sx={{ position: 'absolute', bottom: 10, left: 10, width: 24, height: 24, borderBottom: '3px solid #00f0ff', borderLeft: '3px solid #00f0ff', borderRadius: '0 0 0 3px', zIndex: 10, filter: 'drop-shadow(0 0 4px #00f0ff)' }} />
-            <Box sx={{ position: 'absolute', bottom: 10, right: 10, width: 24, height: 24, borderBottom: '3px solid #00f0ff', borderRight: '3px solid #00f0ff', borderRadius: '0 0 3px 0', zIndex: 10, filter: 'drop-shadow(0 0 4px #00f0ff)' }} />
-
-            {/* Scanning Laser */}
-            {isFaceScanning && effectiveScanStep < 4 && !errorMessage && (
-              <>
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    height: '1.5px',
-                    background: '#00f0ff',
-                    boxShadow: '0 0 10px 2px #00f0ff',
-                    zIndex: 10,
-                    animation: 'scanVertical 2s ease-in-out infinite',
-                    '@keyframes scanVertical': {
-                      '0%, 100%': { top: '10%' },
-                      '50%': { top: '90%' }
-                    }
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundImage: `radial-gradient(circle at center, transparent 30%, rgba(0, 240, 255, 0.05) 70%)`,
-                    zIndex: 9
-                  }}
-                />
-              </>
-            )}
-
-            {/* Video Feed */}
+        {/* Video Viewport */}
+        <Box sx={{
+          width: '100%',
+          height: '100%',
+          borderRadius: '50%',
+          overflow: 'hidden',
+          background: 'rgba(10, 14, 23, 0.8)',
+          position: 'relative',
+          border: `2px solid rgba(0, 176, 255, 0.4)`,
+          zIndex: 2
+        }}>
+          {/* Zoom Wrapper */}
+          <Box sx={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            transform: isFaceScanning && !success && !errorMessage ? 'scale(1.25)' : 'scale(1)',
+            transition: 'transform 3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+          }}>
             {webcamActive ? (
               <>
-                <video
-                  id="webcam-video"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transform: 'scaleX(-1)',
-                    position: 'relative',
-                    zIndex: 2
-                  }}
-                  autoPlay
-                  playsInline
-                  muted
-                />
-                <canvas
-                  id="webcam-canvas"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    transform: 'scaleX(-1)',
-                    zIndex: 3,
-                    pointerEvents: 'none'
-                  }}
-                />
+                <video id="webcam-video" autoPlay playsInline muted style={{
+                  width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', zIndex: 1
+                }} />
+                <canvas id="webcam-canvas" style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', zIndex: 2
+                }} />
+                {isFaceScanning && !success && !errorMessage && <ScanLaser statuscolor="#00B0FF" />}
               </>
             ) : (
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', zIndex: 4, position: 'relative' }}>
-                <IconCameraOff size={56} color="#333" stroke={1.2} />
-              </Box>
+              <IconCameraOff size={48} color="rgba(255,255,255,0.3)" stroke={1.5} />
             )}
           </Box>
 
-          {/* Giant Overlapping Checkmark or Cross */}
-          {effectiveScanStep === 4 && (
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: -30,
-                left: '50%',
-                width: 60,
-                height: 60,
-                borderRadius: '50%',
-                background: '#040b17',
-                border: '4px solid #00e676',
-                boxShadow: '0 0 20px rgba(0,230,118,0.5), inset 0 0 10px rgba(0,230,118,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 20,
-                animation: 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                '@keyframes popIn': {
-                  '0%': { transform: 'translateX(-50%) scale(0)', opacity: 0 },
-                  '100%': { transform: 'translateX(-50%) scale(1)', opacity: 1 }
-                }
-              }}
-            >
-              <IconCheck size={40} color="#00e676" stroke={4} style={{ filter: 'drop-shadow(0 0 10px rgba(0, 230, 118, 0.8))' }} />
+          {/* Overlay on Success/Error */}
+          <Fade in={success || !!errorMessage}>
+            <Box sx={{
+              position: 'absolute', inset: 0, zIndex: 10,
+              background: success ? 'rgba(0, 230, 118, 0.8)' : 'rgba(255, 23, 68, 0.8)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {success ? <IconCheck size={64} color="#fff" /> : <IconX size={64} color="#fff" />}
             </Box>
-          )}
-          {errorMessage && (
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: -26,
-                left: '50%',
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                background: '#040b17',
-                border: '3px solid #ff5252',
-                boxShadow: '0 0 20px rgba(255,82,82,0.5), inset 0 0 10px rgba(255,82,82,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 20,
-                animation: 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                '@keyframes popIn': {
-                  '0%': { transform: 'translateX(-50%) scale(0)', opacity: 0 },
-                  '100%': { transform: 'translateX(-50%) scale(1)', opacity: 1 }
-                }
-              }}
-            >
-              <IconX size={32} color="#ff5252" stroke={4} style={{ filter: 'drop-shadow(0 0 8px rgba(255, 82, 82, 0.6))' }} />
-            </Box>
-          )}
+          </Fade>
         </Box>
       </Box>
+      {/* Status Indicators */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          {success ? <IconCheck size={20} color="#00e676" /> :
+            errorMessage ? <IconX size={20} color="#ff1744" /> :
+              <IconFaceId size={20} color="#00B0FF" />}
+          <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '1rem' }}>
+            {success ? 'Identity Verified' :
+              errorMessage ? 'Verification Failed' :
+                'Position your face in the frame'}
+          </Typography>
+        </Box>
+        <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
+          {success ? 'You are successfully authenticated' :
+            errorMessage ? errorMessage :
+              'Make sure your face is clearly visible'}
+        </Typography>
+      </Box>
 
-      {/* Bottom Bar */}
-      <Box
+      {/* Authenticate Button Mock */}
+      <Button
+        disabled={!webcamActive || !!errorMessage || success}
+        fullWidth
+        size="large"
+        variant="contained"
+        startIcon={isFaceScanning ? <CircularProgress size={18} color="inherit" /> : <IconFaceId size={18} />}
         sx={{
-          width: '100%',
-          background: effectiveScanStep === 4
-            ? 'linear-gradient(90deg, rgba(4,32,48,1) 0%, rgba(9,45,68,1) 50%, rgba(4,32,48,1) 100%)'
-            : (errorMessage ? 'linear-gradient(90deg, rgba(48,4,4,1) 0%, rgba(68,9,9,1) 50%, rgba(48,4,4,1) 100%)' : 'linear-gradient(90deg, rgba(10,17,40,1) 0%, rgba(15,25,55,1) 50%, rgba(10,17,40,1) 100%)'),
           borderRadius: '12px',
-          border: effectiveScanStep === 4 ? '1.5px solid #00e676' : (errorMessage ? '1.5px solid #ff5252' : '1.5px solid rgba(255, 255, 255, 0.05)'),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 2,
-          py: 1.2,
-          overflow: 'hidden',
-          boxShadow: effectiveScanStep === 4
-            ? '0 0 20px rgba(0, 230, 118, 0.2), inset 0 0 20px rgba(0, 230, 118, 0.1)'
-            : (errorMessage ? '0 0 20px rgba(255, 82, 82, 0.2), inset 0 0 20px rgba(255, 82, 82, 0.1)' : 'inset 0 0 20px rgba(0, 240, 255, 0.05)'),
-          transition: 'all 0.5s ease'
+          fontWeight: 700,
+          py: 1,
+          fontSize: '0.9rem',
+          color: '#000',
+          background: 'linear-gradient(90deg, #D4AF37 0%, #FFDF73 100%)',
+          boxShadow: '0 8px 20px rgba(212, 175, 55, 0.3)',
+          '&:hover': {
+            background: 'linear-gradient(90deg, #C29B27 0%, #E6C858 100%)',
+            boxShadow: '0 10px 25px rgba(212, 175, 55, 0.5)',
+          },
+          '&.Mui-disabled': {
+            background: 'rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.3)'
+          }
         }}
       >
-        {/* Left Side */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 38,
-              height: 38,
-              background: effectiveScanStep === 4
-                ? 'linear-gradient(135deg, #00b0ff 0%, #00e676 100%)'
-                : (errorMessage ? 'linear-gradient(135deg, #ff5252 0%, #d50000 100%)' : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'),
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: effectiveScanStep === 4 ? '1.5px solid #00e676' : (errorMessage ? '1.5px solid #ff5252' : '1.5px solid rgba(255,255,255,0.1)'),
-              boxShadow: effectiveScanStep === 4 ? '0 0 15px rgba(0, 230, 118, 0.5)' : (errorMessage ? '0 0 15px rgba(255, 82, 82, 0.5)' : 'none'),
-              transition: 'all 0.5s ease'
-            }}
-          >
-            {effectiveScanStep === 4 ? (
-              <IconShieldCheck size={20} color="#fff" />
-            ) : (errorMessage ? (
-              <IconX size={20} color="#fff" />
-            ) : (
-              <IconLock size={20} color="#555" />
-            ))}
-          </Box>
-          <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-            <Typography
-              sx={{
-                color: effectiveScanStep === 4 ? '#00e676' : (errorMessage ? '#ff5252' : '#888'),
-                fontWeight: 800,
-                letterSpacing: '0.5px',
-                lineHeight: 1.2,
-                fontSize: '0.8rem',
-                transition: 'all 0.5s ease'
-              }}
-            >
-              {effectiveScanStep === 4 ? 'VERIFIED' : (errorMessage ? 'FAILED' : 'PENDING')}
-            </Typography>
-            <Typography
-              sx={{
-                color: errorMessage ? '#ff5252' : '#fff',
-                letterSpacing: '0.5px',
-                fontSize: '0.6rem',
-                opacity: effectiveScanStep === 4 || errorMessage ? 0.9 : 0.4,
-                transition: 'all 0.5s ease',
-                maxWidth: '180px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}
-              title={errorMessage || ''}
-            >
-              {effectiveScanStep === 4 ? 'ACCESS GRANTED' : (errorMessage ? errorMessage : 'AUTHORIZATION...')}
-            </Typography>
-          </Box>
-        </Box>
+        {isFaceScanning ? 'Verifying...' : 'Authenticate'}
+      </Button>
 
-        {/* Right Side */}
-        <Box sx={{ textAlign: 'right' }}>
-          <Typography sx={{ color: '#aaa', display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end', mb: 0.3, fontSize: '0.6rem' }}>
-            <IconCalendar size={12} color="#aaa" stroke={1.5} />
-            {getFormattedDate()} &bull; {getFormattedTime()}
-          </Typography>
-          <Typography sx={{ color: '#aaa', fontWeight: 600, fontSize: '0.6rem', textTransform: 'uppercase' }}>
-            {userId ? `USER ID: ${userId}` : 'IDENTIFYING...'} &nbsp;&bull;&nbsp; <span style={{ color: effectiveScanStep === 4 ? '#00e676' : (errorMessage ? '#ff5252' : '#888') }}>KYC LEVEL 1</span>
-          </Typography>
-        </Box>
-      </Box>
     </Box>
   );
 };

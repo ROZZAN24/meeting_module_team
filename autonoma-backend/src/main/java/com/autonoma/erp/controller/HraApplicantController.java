@@ -9,6 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
+import com.autonoma.erp.repository.admin.CompanyCredentialRepository;
+import com.autonoma.erp.repository.admin.UserRepository;
+import com.autonoma.erp.model.admin.CompanyCredential;
+import com.autonoma.erp.service.JwtService;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import jakarta.mail.internet.MimeMessage;
+import java.util.Properties;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -50,7 +58,22 @@ public class HraApplicantController {
     private EmployeeActivityRepository activityRepo;
 
     @Autowired
+    private HraApplicantInterviewRepository applicantInterviewRepo;
+
+    @Autowired
     private com.autonoma.erp.service.EmployeeMasterService employeeMasterService;
+
+    @Autowired
+    private CompanyCredentialRepository companyCredentialRepo;
+
+    @Autowired
+    private UserRepository userRepo;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private DepartmentRepository departmentRepo;
 
     @GetMapping
     @RequirePagePermission(pageCode = "HA1110", action = "read")
@@ -71,6 +94,13 @@ public class HraApplicantController {
         return employeeRepo.findById(id)
                 .map(emp -> ResponseEntity.ok(mapEmployeeToFullMap(emp)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/interviews")
+    @RequirePagePermission(pageCode = "HA1110", action = "read")
+    @Operation(summary = "Get candidate interview history")
+    public List<HraApplicantInterview> getApplicantInterviews(@PathVariable Long id) {
+        return applicantInterviewRepo.findByEmployeeId(id);
     }
 
     @GetMapping("/next-code")
@@ -130,6 +160,326 @@ public class HraApplicantController {
         return ResponseEntity.ok(mapEmployeeToFullMap(emp));
     }
 
+    @PostMapping("/send-call-letter")
+    @RequirePagePermission(pageCode = "HA1110", action = "write")
+    @Operation(summary = "Send applicant call letter email")
+    @Transactional
+    public ResponseEntity<?> sendCallLetter(@RequestBody Map<String, Object> payload) {
+        Long applicantId = Long.valueOf(payload.get("id").toString());
+        String interviewDateStr = getStringValue(payload, "interviewDate");
+        String interviewTimeStr = getStringValue(payload, "interviewTime");
+        String fromEmail = getStringValue(payload, "fromEmail");
+        String toEmail = getStringValue(payload, "toEmail");
+        String ccEmail = getStringValue(payload, "ccEmail");
+
+        EmployeeMaster applicant = employeeRepo.findById(applicantId)
+                .orElseThrow(() -> new RuntimeException("Applicant not found with ID: " + applicantId));
+
+        // Format Date nicely for display (e.g. from yyyy-MM-dd to dd-MM-yyyy)
+        String formattedDate = interviewDateStr;
+        try {
+            Date parsedDate = new SimpleDateFormat("yyyy-MM-dd").parse(interviewDateStr);
+            formattedDate = new SimpleDateFormat("dd-MM-yyyy").format(parsedDate);
+        } catch (Exception e) {
+            // fallback to original
+        }
+
+        // Get sender name (logged-in user)
+        String currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        String senderName = "HR TEAM";
+        if (currentUserId != null) {
+            Optional<com.autonoma.erp.model.admin.UserCredential> userCredOpt = userRepo.findByUserId(currentUserId);
+            if (userCredOpt.isPresent() && userCredOpt.get().getEmpId() != null) {
+                Optional<EmployeeMaster> senderEmpOpt = employeeRepo.findById(userCredOpt.get().getEmpId());
+                if (senderEmpOpt.isPresent()) {
+                    senderName = senderEmpOpt.get().getEmployeeName();
+                }
+            }
+        }
+
+        // Get department name
+        String departmentName = "HR";
+        if (applicant.getDepartmentId() != null) {
+            Optional<Department> deptOpt = departmentRepo.findById(applicant.getDepartmentId());
+            if (deptOpt.isPresent()) {
+                departmentName = deptOpt.get().getDepartmentName();
+            }
+        }
+
+        // Get company credentials for SMTP configuration & Venue details
+        List<CompanyCredential> companyList = companyCredentialRepo.findAll();
+        if (companyList.isEmpty()) {
+            return ResponseEntity.badRequest().body("Company Profile credentials are not configured! Cannot send email.");
+        }
+        CompanyCredential company = companyList.get(0);
+
+        // Verify SMTP configuration is present
+        if (company.getSmtpHost() == null || company.getSmtpHost().isEmpty() ||
+            company.getSmtpUsername() == null || company.getSmtpUsername().isEmpty()) {
+            return ResponseEntity.badRequest().body("SMTP host or username is not configured in the Company Profile!");
+        }
+
+        // Generate temporary portal access link with JWT token (2 hours expiration)
+        String token = jwtService.generateApplicantToken(applicant.getEmpCode());
+        String portalLink = String.format("%s/candidate/login?token=%s", company.getWebsite() != null && !company.getWebsite().isEmpty() ? company.getWebsite() : "http://localhost:3000", token);
+
+        // Update applicant call letter status and interview details
+        applicant.setCallStatus("SENT");
+        applicant.setStatus("INTERVIEWING");
+        employeeRepo.save(applicant);
+
+        // Configure JavaMailSender dynamically
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost(company.getSmtpHost());
+        if (company.getSmtpPort() != null) {
+            mailSender.setPort(company.getSmtpPort());
+        }
+        mailSender.setUsername(company.getSmtpUsername());
+        mailSender.setPassword(company.getSmtpPassword());
+
+        Properties props = mailSender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        if (Boolean.TRUE.equals(company.getSmtpSslEnabled())) {
+            props.put("mail.smtp.ssl.enable", "true");
+        }
+
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            if (ccEmail != null && !ccEmail.trim().isEmpty()) {
+                helper.setCc(ccEmail);
+            }
+            helper.setSubject("CALL LETTER FOR INTERVIEW SCHEDULE");
+
+            // Build HTML content using template details
+            String candidateFullName = (applicant.getFirstName() != null ? applicant.getFirstName() : "") + " " + (applicant.getLastName() != null ? applicant.getLastName() : "");
+            candidateFullName = candidateFullName.trim();
+            if (candidateFullName.isEmpty()) {
+                candidateFullName = "Shortlisted Candidate";
+            }
+
+            String positionName = applicant.getPositionLookFor() != null ? applicant.getPositionLookFor() : "Shortlisted Position";
+
+            String companyAddress = (company.getAddress() != null ? company.getAddress() : "") + ", " + 
+                                    (company.getCity() != null ? company.getCity() : "") + " - " + 
+                                    (company.getPincode() != null ? company.getPincode() : "");
+
+            String htmlBody = "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "    <meta charset=\"utf-8\">\n" +
+                "</head>\n" +
+                "<body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333333;\">\n" +
+                "    <div style=\"max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;\">\n" +
+                "        <h2 style=\"color: #2b3a42; border-bottom: 2px solid #2b3a42; padding-bottom: 10px; margin-top: 0;\">\n" +
+                "            Interview Invitation (" + positionName.toUpperCase() + ")\n" +
+                "        </h2>\n" +
+                "        <p>Dear Mr./Ms. " + candidateFullName.toUpperCase() + ",</p>\n" +
+                "        <p>Greetings of the day!</p>\n" +
+                "        <p>We are pleased to inform you that your profile has been shortlisted for one of our vacant positions. Congratulations!</p>\n" +
+                "        \n" +
+                "        <table style=\"width: 100%; border-collapse: collapse; margin: 20px 0;\">\n" +
+                "            <tr>\n" +
+                "                <td style=\"padding: 8px; font-weight: bold; width: 150px; border-bottom: 1px solid #f0f0f0;\">Position:</td>\n" +
+                "                <td style=\"padding: 8px; border-bottom: 1px solid #f0f0f0;\">" + positionName + "</td>\n" +
+                "            </tr>\n" +
+                "            <tr>\n" +
+                "                <td style=\"padding: 8px; font-weight: bold; border-bottom: 1px solid #f0f0f0;\">Department:</td>\n" +
+                "                <td style=\"padding: 8px; border-bottom: 1px solid #f0f0f0;\">" + departmentName + "</td>\n" +
+                "            </tr>\n" +
+                "            <tr>\n" +
+                "                <td style=\"padding: 8px; font-weight: bold; border-bottom: 1px solid #f0f0f0;\">Interview Date:</td>\n" +
+                "                <td style=\"padding: 8px; border-bottom: 1px solid #f0f0f0;\">" + formattedDate + "</td>\n" +
+                "            </tr>\n" +
+                "            <tr>\n" +
+                "                <td style=\"padding: 8px; font-weight: bold; border-bottom: 1px solid #f0f0f0;\">Interview Time:</td>\n" +
+                "                <td style=\"padding: 8px; border-bottom: 1px solid #f0f0f0;\">" + interviewTimeStr + "</td>\n" +
+                "            </tr>\n" +
+                "            <tr>\n" +
+                "                <td style=\"padding: 8px; font-weight: bold; border-bottom: 1px solid #f0f0f0;\">Venue:</td>\n" +
+                "                <td style=\"padding: 8px; border-bottom: 1px solid #f0f0f0;\">\n" +
+                "                    <strong>" + company.getCompanyName() + "</strong><br/>\n" +
+                "                    " + companyAddress + "\n" +
+                "                </td>\n" +
+                "            </tr>\n" +
+                "        </table>\n" +
+                "\n" +
+                "        <div style=\"margin: 25px 0; padding: 15px; background-color: #f7f9fa; border-left: 4px solid #17a2b8; border-radius: 4px;\">\n" +
+                "            <h4 style=\"margin-top: 0; color: #2b3a42;\">Portal Access (Valid for 2 Hours)</h4>\n" +
+                "            <p style=\"margin-bottom: 15px;\">Before the interview, kindly fill your details through the below portal:</p>\n" +
+                "            <p style=\"margin-bottom: 20px; text-align: center;\">\n" +
+                "                <a href=\"" + portalLink + "\" style=\"background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">\n" +
+                "                    Click here to access the portal\n" +
+                "                </a>\n" +
+                "            </p>\n" +
+                "            <p style=\"margin-bottom: 5px;\"><strong>Login Credentials:</strong></p>\n" +
+                "            <p style=\"margin: 0;\"><strong>User ID:</strong> " + applicant.getEmpCode() + "</p>\n" +
+                "            <p style=\"margin: 0;\"><strong>Password:</strong> Last 4 digits of your mobile number</p>\n" +
+                "        </div>\n" +
+                "\n" +
+                "        <div style=\"margin: 20px 0; font-size: 0.9em; color: #666666;\">\n" +
+                "            <p style=\"margin-bottom: 5px;\"><strong>Important Instructions:</strong></p>\n" +
+                "            <ul style=\"margin-top: 0; padding-left: 20px;\">\n" +
+                "                <li>Use a laptop/desktop/mobile (if using Mobile, please enable desktop mode).</li>\n" +
+                "                <li>Prepare these documents for upload:\n" +
+                "                    <ul style=\"margin-top: 5px;\">\n" +
+                "                        <li>Latest passport-sized photo</li>\n" +
+                "                        <li>Aadhaar card</li>\n" +
+                "                        <li>Current/previous company salary slip</li>\n" +
+                "                        <li>Latest resume</li>\n" +
+                "                    </ul>\n" +
+                "                </li>\n" +
+                "                <li>If you face issues or need a fresh link, contact us for assistance.</li>\n" +
+                "            </ul>\n" +
+                "        </div>\n" +
+                "\n" +
+                "        <p>We look forward to meeting you.</p>\n" +
+                "        \n" +
+                "        <p style=\"margin-top: 25px; margin-bottom: 0;\">Yours Windfully,</p>\n" +
+                "        <p style=\"margin: 0; font-weight: bold; color: #2b3a42;\">" + senderName + "</p>\n" +
+                "        <p style=\"margin: 0; font-size: 0.9em; color: #666666;\">HR Department</p>\n" +
+                "        <p style=\"margin: 0; font-size: 0.9em; color: #666666;\">Email: " + fromEmail + "</p>\n" +
+                "\n" +
+                "        <p style=\"margin-top: 20px; border-top: 1px solid #f0f0f0; padding-top: 15px; font-size: 0.8em; color: #999999; text-align: center;\">\n" +
+                "            Note: This is a system-generated email. Please do not reply to this email ID.\n" +
+                "        </p>\n" +
+                "    </div>\n" +
+                "</body>\n" +
+                "</html>";
+
+            helper.setText(htmlBody, true);
+            mailSender.send(mimeMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Failed to send call letter email: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Call letter email successfully sent."));
+    }
+
+    @PostMapping("/portal/login")
+    @Operation(summary = "Login to candidate portal")
+    public ResponseEntity<?> portalLogin(@RequestBody Map<String, Object> payload) {
+        String token = getStringValue(payload, "token");
+        String userId = getStringValue(payload, "userId"); // ATS-2026-001
+        String password = getStringValue(payload, "password"); // last 4 digits of phone
+
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(401).body("Missing verification token!");
+        }
+
+        try {
+            // Validate the token signature and expiration
+            String subject = jwtService.extractUsername(token);
+            if (subject == null || !subject.equals(userId)) {
+                return ResponseEntity.status(401).body("Invalid or expired session token!");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Invalid or expired session token!");
+        }
+
+        // Load the candidate
+        EmployeeMaster applicant = employeeRepo.findByEmpCode(userId)
+                .orElse(null);
+        if (applicant == null) {
+            return ResponseEntity.status(401).body("Invalid User ID!");
+        }
+
+        // Load contact information to verify last 4 digits of phone
+        Optional<EmployeeContact> contactOpt = contactRepo.findByEmployeeId(applicant.getId());
+        if (contactOpt.isEmpty()) {
+            return ResponseEntity.status(401).body("Candidate contact information not found!");
+        }
+
+        String phone = contactOpt.get().getMobile();
+        if (phone == null || phone.length() < 4) {
+            return ResponseEntity.status(401).body("Candidate phone number not set in records!");
+        }
+
+        String lastFour = phone.substring(phone.length() - 4);
+        if (!lastFour.equals(password)) {
+            return ResponseEntity.status(401).body("Invalid password! Hint: Last 4 digits of your mobile number.");
+        }
+
+        // Return confirmation details and a candidate session token
+        String candidateSessionToken = jwtService.generateApplicantToken(userId); // Re-use 2 hour token
+        return ResponseEntity.ok(Map.of(
+            "token", candidateSessionToken,
+            "applicant", mapEmployeeToFullMap(applicant)
+        ));
+    }
+
+    @PostMapping("/portal/submit")
+    @Operation(summary = "Submit candidate self-assessment answers")
+    @Transactional
+    public ResponseEntity<?> portalSubmit(@RequestBody Map<String, Object> payload) {
+        String token = getStringValue(payload, "token");
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(401).body("Authentication token missing!");
+        }
+
+        String applicantCode;
+        try {
+            applicantCode = jwtService.extractUsername(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Session expired or invalid!");
+        }
+
+        EmployeeMaster applicant = employeeRepo.findByEmpCode(applicantCode)
+                .orElseThrow(() -> new RuntimeException("Applicant not found"));
+
+        // Save self assessment fields (Q1 to Q40)
+        applicant.setQ1_native(getStringValue(payload, "q1_native"));
+        applicant.setQ2_presentAddress(getStringValue(payload, "q2_present_address"));
+        applicant.setQ3_permanentAddress(getStringValue(payload, "q3_permanent_address"));
+        applicant.setQ4_fatherOccupation(getStringValue(payload, "q4_father_occupation"));
+        applicant.setQ5_motherOccupation(getStringValue(payload, "q5_mother_occupation"));
+        applicant.setQ6_maritalStatus(getStringValue(payload, "q6_marital_status"));
+        applicant.setQ7_spouseOccupation(getStringValue(payload, "q7_spouse_occupation"));
+        applicant.setQ8_children(getStringValue(payload, "q8_children"));
+        applicant.setQ9_hasRelativesInCompany(getStringValue(payload, "q9_has_relatives"));
+        applicant.setQ10_relativesDetails(getStringValue(payload, "q10_relatives_details"));
+        applicant.setQ11_siblingsOccupations(getStringValue(payload, "q11_siblings_occupations"));
+        applicant.setQ12_hasTwoWheeler(getStringValue(payload, "q12_has_two_wheeler"));
+        applicant.setQ13_hasAndroidPhone(getStringValue(payload, "q13_has_android_phone"));
+        applicant.setQ14_knowsCarDriving(getStringValue(payload, "q14_knows_car_driving"));
+        applicant.setQ15_willingToTravel(getStringValue(payload, "q15_willing_to_travel"));
+        applicant.setQ16_covidVaccination(getStringValue(payload, "q16_covid_vaccination"));
+        applicant.setQ17_positivePoints(getStringValue(payload, "q17_positive_points"));
+        applicant.setQ18_negativePoints(getStringValue(payload, "q18_negative_points"));
+        applicant.setQ19_lifeGoals(getStringValue(payload, "q19_life_goals"));
+        applicant.setQ20_improvementSuggestions(getStringValue(payload, "q20_improvement_suggestions"));
+        applicant.setQ21_isExperienced(getStringValue(payload, "q21_is_experienced"));
+        applicant.setQ22_totalExperience(getStringValue(payload, "q22_total_experience"));
+        applicant.setQ23_coreExperience(getStringValue(payload, "q23_core_experience"));
+        applicant.setQ24_prevNetSalary(getStringValue(payload, "q24_prev_net_salary"));
+        applicant.setQ25_prevGrossSalary(getStringValue(payload, "q25_prev_gross_salary"));
+        applicant.setQ26_expectedNetSalary(getStringValue(payload, "q26_expected_net_salary"));
+        applicant.setQ27_expectedGrossSalary(getStringValue(payload, "q27_expected_gross_salary"));
+        applicant.setQ28_pfHigherPension(getStringValue(payload, "q28_pf_higher_pension"));
+        applicant.setQ29_pfDeductionAmount(getStringValue(payload, "q29_pf_deduction_amount"));
+        applicant.setQ30_alternativeDepartment(getStringValue(payload, "q30_alternative_department"));
+        applicant.setQ31_prevLocation(getStringValue(payload, "q31_prev_location"));
+        applicant.setQ32_prevShift(getStringValue(payload, "q32_prev_shift"));
+        applicant.setQ33_reasonForLeaving(getStringValue(payload, "q33_reason_for_leaving"));
+        applicant.setQ34_noticePeriod(getStringValue(payload, "q34_notice_period"));
+        applicant.setQ35_prevDeptPosition(getStringValue(payload, "q35_prev_dept_position"));
+        applicant.setQ36_prevDeptCount(getStringValue(payload, "q36_prev_dept_count"));
+        applicant.setQ37_prevReportingTo(getStringValue(payload, "q37_prev_reporting_to"));
+        applicant.setQ38_handleMistake(getStringValue(payload, "q38_handle_mistake"));
+        applicant.setQ39_handleOpinionDifference(getStringValue(payload, "q39_handle_opinion_difference"));
+        applicant.setQ40_computerSelfRating(getStringValue(payload, "q40_computer_self_rating"));
+
+        employeeRepo.save(applicant);
+
+        return ResponseEntity.ok(Map.of("message", "Self assessment submitted successfully!"));
+    }
+
     @PutMapping("/{id}")
     @RequirePagePermission(pageCode = "HA1110", action = "write")
     @Operation(summary = "Update applicant details")
@@ -163,6 +513,7 @@ public class HraApplicantController {
             experienceRepo.deleteByEmployeeId(id);
             kycDocumentRepo.deleteByEmployeeId(id);
             activityRepo.deleteByEmployeeId(id);
+            applicantInterviewRepo.deleteByEmployeeId(id);
             employeeRepo.deleteById(id);
             return ResponseEntity.ok().build();
         }
@@ -191,6 +542,30 @@ public class HraApplicantController {
                     case "INTERVIEW":
                         applicant.setInterviewStatus("SCHEDULED");
                         applicant.setStatus("INTERVIEWING");
+                        
+                        HraApplicantInterview interview = new HraApplicantInterview();
+                        interview.setEmployeeId(id);
+                        interview.setScreeningLevel(getStringValue(payload, "screeningLevel"));
+                        interview.setRound(getStringValue(payload, "round"));
+                        interview.setInterviewDate(getStringValue(payload, "interviewDate"));
+                        interview.setStartTime(getStringValue(payload, "startTime"));
+                        interview.setEndTime(getStringValue(payload, "endTime"));
+                        interview.setInterviewPerson(getStringValue(payload, "interviewPerson"));
+                        interview.setInterviewStatus("PENDING");
+                        
+                        String currentUser = "admin";
+                        try {
+                            currentUser = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+                        } catch (Exception ex) {}
+                        if (currentUser == null || currentUser.trim().isEmpty()) {
+                            currentUser = "admin";
+                        }
+                        interview.setCreatedBy(currentUser);
+                        interview.setCreatedDate(new Date());
+                        interview.setStatus("ACTIVE");
+                        interview.setIsActive(true);
+                        
+                        applicantInterviewRepo.save(interview);
                         break;
                     case "OFFER":
                         applicant.setOfferStatus("ISSUED");
@@ -210,6 +585,91 @@ public class HraApplicantController {
         }
 
         return ResponseEntity.ok(Map.of("message", "Bulk action executed successfully."));
+    }
+
+    @GetMapping("/all-interviews")
+    @RequirePagePermission(pageCode = "HA1110", action = "read")
+    @Operation(summary = "Get all applicant interviews with candidate info")
+    public List<Map<String, Object>> getAllApplicantInterviews() {
+        List<HraApplicantInterview> interviews = applicantInterviewRepo.findAll();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (HraApplicantInterview interview : interviews) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", interview.getId());
+            map.put("employeeId", interview.getEmployeeId());
+            map.put("screeningLevel", interview.getScreeningLevel());
+            map.put("round", interview.getRound());
+            map.put("interviewDate", interview.getInterviewDate());
+            map.put("startTime", interview.getStartTime());
+            map.put("endTime", interview.getEndTime());
+            map.put("interviewPerson", interview.getInterviewPerson());
+            map.put("interviewStatus", interview.getInterviewStatus());
+            map.put("createdBy", interview.getCreatedBy());
+            map.put("createdDate", interview.getCreatedDate());
+            map.put("status", interview.getStatus());
+
+            Optional<EmployeeMaster> empOpt = employeeRepo.findById(interview.getEmployeeId());
+            if (empOpt.isPresent()) {
+                EmployeeMaster emp = empOpt.get();
+                map.put("candidateName", (emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : "")).trim());
+                map.put("candidateCode", emp.getEmpCode());
+                map.put("positionLookFor", emp.getPositionLookFor());
+                map.put("department", emp.getDepartment());
+            } else {
+                map.put("candidateName", "Unknown");
+                map.put("candidateCode", "N/A");
+                map.put("positionLookFor", "");
+                map.put("department", "");
+            }
+            result.add(map);
+        }
+        return result;
+    }
+
+    @PutMapping("/interviews/{interviewId}")
+    @RequirePagePermission(pageCode = "HA1110", action = "write")
+    @Operation(summary = "Update applicant interview details and status")
+    @Transactional
+    public ResponseEntity<?> updateApplicantInterview(@PathVariable Long interviewId, @RequestBody Map<String, Object> payload) {
+        return applicantInterviewRepo.findById(interviewId).map(interview -> {
+            if (payload.containsKey("interviewStatus")) {
+                interview.setInterviewStatus(getStringValue(payload, "interviewStatus"));
+            }
+            if (payload.containsKey("screeningLevel")) {
+                interview.setScreeningLevel(getStringValue(payload, "screeningLevel"));
+            }
+            if (payload.containsKey("round")) {
+                interview.setRound(getStringValue(payload, "round"));
+            }
+            if (payload.containsKey("interviewDate")) {
+                interview.setInterviewDate(getStringValue(payload, "interviewDate"));
+            }
+            if (payload.containsKey("startTime")) {
+                interview.setStartTime(getStringValue(payload, "startTime"));
+            }
+            if (payload.containsKey("endTime")) {
+                interview.setEndTime(getStringValue(payload, "endTime"));
+            }
+            if (payload.containsKey("interviewPerson")) {
+                interview.setInterviewPerson(getStringValue(payload, "interviewPerson"));
+            }
+            if (payload.containsKey("status")) {
+                interview.setStatus(getStringValue(payload, "status"));
+            }
+            applicantInterviewRepo.save(interview);
+            return ResponseEntity.ok(interview);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/interviews/{interviewId}")
+    @RequirePagePermission(pageCode = "HA1110", action = "delete")
+    @Operation(summary = "Delete an interview record")
+    @Transactional
+    public ResponseEntity<?> deleteApplicantInterview(@PathVariable Long interviewId) {
+        return applicantInterviewRepo.findById(interviewId).map(interview -> {
+            applicantInterviewRepo.delete(interview);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     // Helper method to generate next Employee Code starting with EMP-
@@ -659,5 +1119,68 @@ public class HraApplicantController {
                 activityRepo.save(act);
             }
         }
+    }
+
+    @GetMapping("/final-process-candidates")
+    @RequirePagePermission(pageCode = "HA1110", action = "read")
+    @Operation(summary = "Get candidates for final interview decision processing")
+    public List<Map<String, Object>> getFinalProcessCandidates() {
+        List<EmployeeMaster> applicants = employeeRepo.findByEmpCodeStartingWith("ATS-");
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (EmployeeMaster emp : applicants) {
+            List<HraApplicantInterview> interviews = applicantInterviewRepo.findByEmployeeId(emp.getId());
+            
+            int totalRounds = interviews.size();
+            String latestRound = "-";
+            String latestRoundStatus = "-";
+            if (!interviews.isEmpty()) {
+                HraApplicantInterview latest = interviews.get(interviews.size() - 1);
+                latestRound = latest.getRound();
+                latestRoundStatus = latest.getInterviewStatus();
+            }
+
+            String email = personalRepo.findByEmployeeId(emp.getId())
+                    .map(EmployeePersonalDetail::getPersonalEmail)
+                    .orElse("-");
+            String interviewDate = "-";
+            if (!interviews.isEmpty()) {
+                HraApplicantInterview latest = interviews.get(interviews.size() - 1);
+                interviewDate = latest.getInterviewDate();
+            }
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", emp.getId());
+            map.put("candidateCode", emp.getEmpCode());
+            map.put("candidateName", (emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : "")).trim());
+            map.put("department", emp.getDepartment());
+            map.put("positionLookFor", emp.getPositionLookFor());
+            map.put("totalRounds", totalRounds);
+            map.put("latestRound", latestRound);
+            map.put("latestRoundStatus", latestRoundStatus);
+            map.put("status", emp.getStatus());
+            map.put("comments", emp.getReferenceComments());
+            map.put("emailId", email);
+            map.put("interviewDate", interviewDate);
+            
+            result.add(map);
+        }
+        return result;
+    }
+
+    @PutMapping("/final-process/{id}")
+    @RequirePagePermission(pageCode = "HA1110", action = "write")
+    @Operation(summary = "Finalize applicant decision")
+    @Transactional
+    public ResponseEntity<?> finalizeApplicant(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+        return employeeRepo.findById(id).map(emp -> {
+            if (payload.containsKey("status")) {
+                emp.setStatus(getStringValue(payload, "status"));
+            }
+            if (payload.containsKey("comments")) {
+                emp.setReferenceComments(getStringValue(payload, "comments"));
+            }
+            employeeRepo.save(emp);
+            return ResponseEntity.ok(Map.of("message", "Applicant finalized successfully."));
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

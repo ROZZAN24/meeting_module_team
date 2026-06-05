@@ -27,11 +27,16 @@ import HomeTwoToneIcon from '@mui/icons-material/HomeTwoTone';
 
 // ==============================|| BREADCRUMBS TITLE ||============================== //
 
-function BTitle({ title }) {
+function BTitle({ title, pageCode }) {
   return (
     <Grid>
-      <Typography variant="h4" sx={{ fontWeight: 500 }}>
+      <Typography variant="h4" sx={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 1 }}>
         <FormattedMessage id={title} />
+        {pageCode && (
+          <Box component="span" sx={{ ml: 1, color: 'text.secondary', fontWeight: 400, fontSize: '0.85em' }}>
+            ({pageCode})
+          </Box>
+        )}
       </Typography>
     </Grid>
   );
@@ -162,7 +167,7 @@ export default function Breadcrumbs({
             spacing={1}
           >
             {(title && !titleBottom) && (
-              <BTitle title={main.title} />
+              <BTitle title={main.title} pageCode={main?.pageCode} />
             )}
             <Grid>
               <MuiBreadcrumbs
@@ -184,7 +189,7 @@ export default function Breadcrumbs({
               </MuiBreadcrumbs>
             </Grid>
             {(title && titleBottom) && (
-              <BTitle title={main.title} />
+              <BTitle title={main.title} pageCode={main?.pageCode} />
             )}
           </Grid>
         </Box>
@@ -278,7 +283,7 @@ export default function Breadcrumbs({
     }
 
     // main
-    if (item?.breadcrumbs !== false || custom) {
+    if (item?.breadcrumbs !== false || item?.pageCode || custom) {
       breadcrumbContent = (
         <Card
           sx={
@@ -306,11 +311,11 @@ export default function Breadcrumbs({
               spacing={1}
             >
               {(title && !titleBottom) && (
-                <BTitle title={custom ? heading : item?.title} />
+                <BTitle title={custom ? heading : item?.title} pageCode={custom ? null : item?.pageCode} />
               )}
               <Grid>{tempContent}</Grid>
               {(title && titleBottom) && (
-                <BTitle title={custom ? heading : item?.title} />
+                <BTitle title={custom ? heading : item?.title} pageCode={custom ? null : item?.pageCode} />
               )}
             </Grid>
           </Box>
@@ -325,7 +330,7 @@ export default function Breadcrumbs({
   return breadcrumbContent;
 }
 
-BTitle.propTypes = { title: PropTypes.string };
+BTitle.propTypes = { title: PropTypes.string, pageCode: PropTypes.string };
 
 Breadcrumbs.propTypes = {
   card: PropTypes.bool,

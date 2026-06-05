@@ -7,7 +7,7 @@ const CustomTextField = forwardRef((props, ref) => {
   const handleChange = (e) => {
     const caseStyle = window.localStorage.getItem('inputCaseStyle') || 'CUSTOM';
     
-    // Only transform if it's a string value, target is standard, and not a select dropdown
+    // Only transform if it's a string value, event target is standard, and it is NOT a select dropdown
     if (!select && e && e.target && typeof e.target.value === 'string') {
       if (caseStyle === 'UPPER_CASE') {
         e.target.value = e.target.value.toUpperCase();
@@ -26,8 +26,8 @@ const CustomTextField = forwardRef((props, ref) => {
   };
 
   // Add the CSS text-transform to visually reflect it immediately, 
-  // preventing a brief flash of lowercase before React updates
-  const caseStyle = window.localStorage.getItem('inputCaseStyle') || 'CUSTOM';
+  // preventing a brief flash of lowercase before React updates (only for text fields)
+  const caseStyle = select ? 'CUSTOM' : (window.localStorage.getItem('inputCaseStyle') || 'CUSTOM');
   let textTransform = 'none';
   if (!select) {
     if (caseStyle === 'UPPER_CASE') textTransform = 'uppercase';

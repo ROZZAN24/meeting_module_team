@@ -32,11 +32,20 @@ public class AuditObservationController {
     @Autowired
     private com.autonoma.erp.repository.AuditScheduleRepository auditScheduleRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.admin.AppPreferenceRepository appPreferenceRepository;
+
     private void closeAuditSchedule(String scheduleNo) {
+        System.out.println("[AuditObservationController] closeAuditSchedule called with scheduleNo: " + scheduleNo);
         if (scheduleNo != null && !scheduleNo.trim().isEmpty()) {
-            auditScheduleRepository.findByScheduleNo(scheduleNo).ifPresent(schedule -> {
+            String trimmed = scheduleNo.trim();
+            auditScheduleRepository.findByScheduleNoIgnoreCase(trimmed).ifPresentOrElse(schedule -> {
+                System.out.println("[AuditObservationController] Found schedule " + schedule.getScheduleNo() + ", current status: " + schedule.getStatus() + ". Setting to CLOSED.");
                 schedule.setStatus("CLOSED");
                 auditScheduleRepository.save(schedule);
+                System.out.println("[AuditObservationController] Saved schedule status as CLOSED.");
+            }, () -> {
+                System.out.println("[AuditObservationController] WARNING: AuditSchedule not found for scheduleNo: " + trimmed);
             });
         }
     }
@@ -142,6 +151,12 @@ public class AuditObservationController {
         if (observation.getDetails() != null) {
             for (AuditObservationDetail detail : observation.getDetails()) {
                 detail.setAuditObservation(observation);
+                if (detail.getNcrStatus() == null && ("NC".equalsIgnoreCase(detail.getObservationStatus()) || "NCR".equalsIgnoreCase(detail.getObservationStatus()) || "OFI".equalsIgnoreCase(detail.getObservationStatus()))) {
+                    detail.setNcrStatus("OPEN");
+                }
+                if (detail.getApprovalStatus() == null) {
+                    detail.setApprovalStatus("PENDING");
+                }
             }
         }
         
@@ -171,12 +186,66 @@ public class AuditObservationController {
                     observation.setNcrCount(details.getNcrCount());
                     observation.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
 
-                    // Handle details update (clear and re-add for simplicity in this standard)
-                    observation.getDetails().clear();
+                    // Handle details update using Hibernate-friendly merge/sync
+                    java.util.Set<Long> incomingIds = new java.util.HashSet<>();
                     if (details.getDetails() != null) {
                         for (AuditObservationDetail d : details.getDetails()) {
-                            d.setAuditObservation(observation);
-                            observation.getDetails().add(d);
+                            if (d.getId() != null) {
+                                incomingIds.add(d.getId());
+                            }
+                        }
+                    }
+                    observation.getDetails().removeIf(d -> d.getId() != null && !incomingIds.contains(d.getId()));
+
+                    if (details.getDetails() != null) {
+                        for (AuditObservationDetail incomingDetail : details.getDetails()) {
+                            if (incomingDetail.getId() != null) {
+                                // Find and update existing
+                                for (AuditObservationDetail existingDetail : observation.getDetails()) {
+                                    if (existingDetail.getId().equals(incomingDetail.getId())) {
+                                        existingDetail.setSeqNo(incomingDetail.getSeqNo());
+                                        existingDetail.setClause(incomingDetail.getClause());
+                                        existingDetail.setCriteriaDetails(incomingDetail.getCriteriaDetails());
+                                        existingDetail.setAttachmentReq(incomingDetail.getAttachmentReq());
+                                        existingDetail.setAttachmentPath(incomingDetail.getAttachmentPath());
+                                        existingDetail.setObservationStatus(incomingDetail.getObservationStatus());
+                                        existingDetail.setComments(incomingDetail.getComments());
+                                        
+                                        if (incomingDetail.getNcrStatus() != null) {
+                                            existingDetail.setNcrStatus(incomingDetail.getNcrStatus());
+                                        }
+                                        if (incomingDetail.getApprovalStatus() != null) {
+                                            existingDetail.setApprovalStatus(incomingDetail.getApprovalStatus());
+                                        }
+                                        if (incomingDetail.getRootCause() != null) {
+                                            existingDetail.setRootCause(incomingDetail.getRootCause());
+                                        }
+                                        if (incomingDetail.getCorrectiveAction() != null) {
+                                            existingDetail.setCorrectiveAction(incomingDetail.getCorrectiveAction());
+                                        }
+                                        if (incomingDetail.getPreventiveAction() != null) {
+                                            existingDetail.setPreventiveAction(incomingDetail.getPreventiveAction());
+                                        }
+                                        if (incomingDetail.getTargetDate() != null) {
+                                            existingDetail.setTargetDate(incomingDetail.getTargetDate());
+                                        }
+                                        if (incomingDetail.getNcrNo() != null) {
+                                            existingDetail.setNcrNo(incomingDetail.getNcrNo());
+                                        }
+                                        break;
+                                    }
+                                }
+                            } else {
+                                // Add new detail
+                                incomingDetail.setAuditObservation(observation);
+                                if (incomingDetail.getNcrStatus() == null && ("NC".equalsIgnoreCase(incomingDetail.getObservationStatus()) || "NCR".equalsIgnoreCase(incomingDetail.getObservationStatus()) || "OFI".equalsIgnoreCase(incomingDetail.getObservationStatus()))) {
+                                    incomingDetail.setNcrStatus("OPEN");
+                                }
+                                if (incomingDetail.getApprovalStatus() == null) {
+                                    incomingDetail.setApprovalStatus("PENDING");
+                                }
+                                observation.getDetails().add(incomingDetail);
+                            }
                         }
                     }
 
@@ -235,9 +304,12 @@ public class AuditObservationController {
     @GetMapping("/next-no")
     @Operation(summary = "Get Next Observation Number", description = "Generates the next available OB-XXXX sequence")
     public String getNextNo() {
+        String prefix = appPreferenceRepository.findByPrefName("OBSERVATION_PREFIX")
+                .map(com.autonoma.erp.model.admin.AppPreference::getPrefValue)
+                .orElse("OB-");
         return auditObservationRepository.findFirstByOrderByObservationNoDesc()
-                .map(latest -> incrementSequence(latest.getObservationNo(), "OB-"))
-                .orElse("OB-001");
+                .map(latest -> incrementSequence(latest.getObservationNo(), prefix))
+                .orElse(prefix + "001");
     }
 
     private String incrementSequence(String latest, String prefix) {

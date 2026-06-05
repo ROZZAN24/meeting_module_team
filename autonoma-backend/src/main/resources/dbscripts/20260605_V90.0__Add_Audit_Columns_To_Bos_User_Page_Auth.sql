@@ -1,0 +1,12 @@
+-- Add audit columns to BOS_USER_PAGE_AUTH
+IF COL_LENGTH('dbo.BOS_USER_PAGE_AUTH', 'created_by') IS NULL
+    ALTER TABLE dbo.BOS_USER_PAGE_AUTH ADD created_by NVARCHAR(50);
+
+IF COL_LENGTH('dbo.BOS_USER_PAGE_AUTH', 'created_date') IS NULL
+    ALTER TABLE dbo.BOS_USER_PAGE_AUTH ADD created_date DATETIME;
+
+IF COL_LENGTH('dbo.BOS_USER_PAGE_AUTH', 'updated_by') IS NULL
+    ALTER TABLE dbo.BOS_USER_PAGE_AUTH ADD updated_by NVARCHAR(50);
+
+IF COL_LENGTH('dbo.BOS_USER_PAGE_AUTH', 'updated_date') IS NULL
+    ALTER TABLE dbo.BOS_USER_PAGE_AUTH ADD updated_date DATETIME;

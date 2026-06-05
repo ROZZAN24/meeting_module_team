@@ -35,6 +35,11 @@ export default function usePagePermissions(pageCode) {
   );
 
   return useMemo(() => {
+    // Find the permission record for this specific pageCode
+    const pageAuth = Array.isArray(auths)
+      ? auths.find((a) => a?.page?.pageCode === pageCode)
+      : null;
+
     // If the user is a BOS admin (SuperUser), grant all permissions unconditionally
     if (user?.userLevel === 5) {
       return {
@@ -51,10 +56,31 @@ export default function usePagePermissions(pageCode) {
       };
     }
 
-    // While loading, default to loading: true, and enabled/read: false (secure by default)
-    if (isLoading || !auths) {
+    // Admin (1) override: grant all EXCEPT for Super BOS(S) pages
+    if (user?.userLevel === 1) {
+      if (['AD1210', 'AD1220', 'AD1230', 'AD1240'].includes(pageCode)) {
+        // Fall back to actual permissions for Super BOS(S) pages
+      } else {
+        return {
+          loading: false,
+          enabled: true,
+          read: true,
+          write: true,
+          delete: true,
+          export: true,
+          approval: true,
+          manager: true,
+          additional1: true,
+          additional2: true
+        };
+      }
+    }
+
+    // Rule: For Normal Users (Level 0), disabled pages must not be accessible.
+    // If the backend didn't send the record (or it's explicitly enable=0), it's disabled.
+    if (auths && (!pageAuth || pageAuth.enable === 0)) {
       return {
-        loading: true,
+        loading: false,
         enabled: false,
         read: false,
         write: false,
@@ -67,17 +93,16 @@ export default function usePagePermissions(pageCode) {
       };
     }
 
-    // Find the permission record for this specific pageCode
-    const pageAuth = Array.isArray(auths)
-      ? auths.find((a) => a?.page?.pageCode === pageCode)
-      : null;
-
-    // If no record found (page not registered or not assigned), default to disabled
     if (!pageAuth) {
+      return { loading: false, enabled: false, read: false, write: false, delete: false, export: false, approval: false, manager: false, additional1: false, additional2: false };
+    }
+
+    // While loading, default to read-only (graceful degradation — don't block users)
+    if (isLoading || !auths) {
       return {
-        loading: false,
-        enabled: false,
-        read: false,
+        loading: isLoading,
+        enabled: true,
+        read: true,
         write: false,
         delete: false,
         export: false,
@@ -123,7 +148,8 @@ export default function usePagePermissions(pageCode) {
 /**
  * Canonical mapping of all BOS page codes.
  * Import this in view files: import { PAGE_CODES } from 'hooks/usePagePermissions';
- * Usage: const perms = usePagePermissions(PAGE_CODES.NPD_ITEM_GROUP);
+ * Usage: const pu
+ * erms = usePagePermissions(PAGE_CODES.NPD_ITEM_GROUP);
  */
 export const PAGE_CODES = {
   // ── HRA ──

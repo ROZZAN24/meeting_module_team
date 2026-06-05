@@ -145,8 +145,8 @@ export default function Header() {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.2 }}>
               <IconUser size={15} stroke={2} style={{ color: theme.palette.secondary.main, flexShrink: 0 }} />
-              <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem' }}>
-                {user?.name || 'User'}
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem', textTransform: 'capitalize' }}>
+                {user?.id || user?.name || 'User'}
               </Typography>
             </Box>
             <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.65rem' }}>

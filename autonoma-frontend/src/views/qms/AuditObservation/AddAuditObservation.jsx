@@ -41,6 +41,7 @@ import {
   BOSDatePicker,
   BOSTimePicker,
   btnSave,
+  btnCancel,
   btnClear,
   getStatusChipSx
 } from 'ui-component/bos';
@@ -136,6 +137,35 @@ export default function AddAuditObservation() {
     const sch = schedules.find(s => s.scheduleNo === formData.auditScheduleNo);
     return sch?.startTime || '';
   }, [formData.auditScheduleNo, schedules]);
+
+  const [existingObsScheduleNos, setExistingObsScheduleNos] = useState([]);
+
+  useEffect(() => {
+    const fetchExistingObservations = async () => {
+      try {
+        const res = await axios.get(API_PATHS.QMS.AUDIT_OBSERVATION);
+        const obsList = res.data || [];
+        const nos = obsList.map(o => o.auditScheduleNo).filter(Boolean);
+        setExistingObsScheduleNos(nos);
+      } catch (err) {
+        console.error('Failed to fetch existing observations:', err);
+      }
+    };
+    if (!isEditing) {
+      fetchExistingObservations();
+    }
+  }, [isEditing]);
+
+  const availableSchedules = useMemo(() => {
+    if (isEditing) {
+      return schedules;
+    }
+    return schedules.filter(s => !existingObsScheduleNos.includes(s.scheduleNo));
+  }, [schedules, existingObsScheduleNos, isEditing]);
+
+  const validDetailsCount = useMemo(() => {
+    return details.filter(d => d.observationStatus && d.observationStatus !== 'NO ENTRY' && d.observationStatus !== 'NO_ENTRY').length;
+  }, [details]);
 
   const [isAuditorEligible, setIsAuditorEligible] = useState(false);
 
@@ -360,11 +390,31 @@ export default function AddAuditObservation() {
     );
 
     // SOP: Mandatory Attachment Rule (SOP 5.1.4) - required for Compliance/OFI if marked
-    const missingAttachments = details.some(d => d.attachmentReq === 'YES' && d.observationStatus !== 'NC' && d.observationStatus !== 'NCR' && !d.attachmentPath);
+    const missingAttachments = details.some(d => d.attachmentReq === 'YES' && d.observationStatus !== 'NC' && d.observationStatus !== 'NCR' && d.observationStatus !== 'NO ENTRY' && d.observationStatus !== 'NO_ENTRY' && d.observationStatus && !d.attachmentPath);
     
-    if (hasSummaryErrors || missingComments || missingAttachments) {
+    if (hasSummaryErrors) {
+      return;
+    }
+
+    if (missingComments) {
       setShowTableErrors(true);
-      dispatch(openSnackbar({ open: true, message: 'Please correct the highlighted validation errors.', severity: 'error', variant: 'alert' }));
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: 'Please enter comments for all NC, NCR, and OFI observations.', 
+        severity: 'error', 
+        variant: 'alert' 
+      }));
+      return;
+    }
+
+    if (missingAttachments) {
+      setShowTableErrors(true);
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: 'Please upload attachments where required (marked as YES).', 
+        severity: 'error', 
+        variant: 'alert' 
+      }));
       return;
     }
 
@@ -397,7 +447,7 @@ export default function AddAuditObservation() {
       }
       secondary={
         <Stack direction="row" spacing={2}>
-          <Button variant="outlined" startIcon={<IconArrowLeft size={20} />} onClick={() => navigate('/qms/audit/observation')}>Back</Button>
+          <Button variant="contained" sx={btnCancel} startIcon={<IconArrowLeft size={20} />} onClick={() => navigate('/qms/audit/observation')}>Back</Button>
           {perms.write && <Button variant="contained" sx={btnSave} onClick={handleSave} startIcon={<IconCheck size={20} />}>Save</Button>}
         </Stack>
       }
@@ -427,11 +477,11 @@ export default function AddAuditObservation() {
               name="auditScheduleNo"
               value={formData.auditScheduleNo || ''}
               onChange={handleScheduleChange}
-              disabled={!perms.write}
+              disabled={!perms.write || isEditing}
               error={!!errors.auditScheduleNo}
               helperText={errors.auditScheduleNo}
             >
-              {schedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo}</MenuItem>)}
+              {availableSchedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo}</MenuItem>)}
             </BOSTextField>
             <BOSTextField label="Audit Type" value={formData.auditType || ''} inputProps={{ readOnly: true }} />
             <BOSTextField label="Department" value={formData.departmentName || ''} inputProps={{ readOnly: true }} />
@@ -468,9 +518,17 @@ export default function AddAuditObservation() {
                     <BOSTimePicker
                       size="small"
                       value={cleanedOutTime}
-                      disabled={!isAuditorUser}
-                      onChange={async (e) => {
+                      disabled={!perms.write || !isAuditorUser}
+                      onChange={(e) => {
                         const val = e.target.value;
+                        const updatedAttendance = attendance.map(item => 
+                          item.id === row.id ? { ...item, outTime: val } : item
+                        );
+                        setAttendance(updatedAttendance);
+                      }}
+                      onAccept={async (date) => {
+                        if (!date || isNaN(date.getTime())) return;
+                        const val = format(date, 'hh:mm a');
                         try {
                           const updatedRow = { ...row, outTime: val };
                           await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, updatedRow);
@@ -547,7 +605,7 @@ export default function AddAuditObservation() {
                   }}>
                     Audit Score
                   </Typography>
-                  <Typography variant="h1" sx={{ 
+                   <Typography variant="h1" sx={{ 
                     fontSize: '3.5rem', 
                     fontWeight: 900,
                     background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
@@ -555,10 +613,10 @@ export default function AddAuditObservation() {
                     WebkitTextFillColor: 'transparent',
                     lineHeight: 1.1
                   }}>
-                    {details.length > 0 ? `${Math.round((formData.auditScore / details.length) * 100)}%` : '0%'}
+                    {validDetailsCount > 0 ? `${Math.round((formData.auditScore / validDetailsCount) * 100)}%` : '0%'}
                   </Typography>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.secondary', mt: 0.5 }}>
-                    {formData.auditScore} / {details.length} Points
+                    {formData.auditScore} / {validDetailsCount} Points
                   </Typography>
                 </Stack>
                 <Box sx={{ 
@@ -625,8 +683,15 @@ export default function AddAuditObservation() {
                 );
               }
               if (col.id === 'approvalStatus') {
-                const chipStatus = row.approvalStatus === 'APPROVED' || row.approvalStatus === 'CLOSED' ? 'ACTIVE' : 'PENDING';
-                return <Chip label={row.approvalStatus} size="small" sx={getStatusChipSx(chipStatus)} />;
+                const status = row.approvalStatus || 'PENDING';
+                let chipStatus = 'INACTIVE'; // Red by default for Open/Rejected/Unresolved
+                if (status === 'CLOSED' || status === 'APPROVED') {
+                  chipStatus = 'ACTIVE'; // Green
+                } else if (status === 'WAITING_APPROVAL' || status === 'PENDING' || status === 'REWORK') {
+                  chipStatus = 'PENDING'; // Yellow
+                }
+                const displayLabel = status === 'CLOSED' ? 'APPROVED' : status.replace('_', ' ');
+                return <Chip label={displayLabel} size="small" sx={getStatusChipSx(chipStatus)} />;
               }
               if (col.id === 'attachment') {
                 const attachmentFiles = row.attachmentPath 
@@ -637,7 +702,7 @@ export default function AddAuditObservation() {
                       isServer: true
                     }] 
                   : [];
-                const isAttachmentMissing = showTableErrors && row.attachmentReq === 'YES' && row.observationStatus !== 'NC' && row.observationStatus !== 'NCR' && !row.attachmentPath;
+                const isAttachmentMissing = showTableErrors && row.attachmentReq === 'YES' && row.observationStatus !== 'NC' && row.observationStatus !== 'NCR' && row.observationStatus !== 'NO ENTRY' && row.observationStatus !== 'NO_ENTRY' && row.observationStatus && !row.attachmentPath;
                 return (
                   <Box sx={{ minWidth: 140, border: isAttachmentMissing ? '1px solid #f44336' : 'none', borderRadius: 2.5, p: isAttachmentMissing ? 0.5 : 0 }}>
                     <BOSFileUpload

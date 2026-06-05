@@ -84,7 +84,7 @@ export const matchDateRange = (row, globalFilters, filterId, rowDateKey = filter
   if (!globalFilters) return true;
   const startVal = globalFilters[`${filterId}Start`];
   const endVal = globalFilters[`${filterId}End`];
-  const considerVal = globalFilters[`${filterId}Consider`] || 'Yes';
+  const considerVal = globalFilters[`${filterId}Consider`] || 'No';
 
   if (!startVal && !endVal) return true;
   if (considerVal === 'No') return true;

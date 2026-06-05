@@ -8,9 +8,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import {
-  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, useBOSForm, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
+  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, useBOSForm, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, errorStyle } from 'ui-component/bos';
 import { getFileDownloadUrl, getFileViewUrl } from 'utils/upload-helper';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import useAuth from 'hooks/useAuth';
 
 // ==============================|| AUDIT NCR / OFI APPROVAL (REDESIGNED) ||============================== //
 
@@ -31,6 +32,7 @@ const columns = [
 export default function AuditNcrApproval() {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_NCR_APPROVAL);
@@ -111,14 +113,44 @@ export default function AuditNcrApproval() {
     };
   };
 
+  const filteredRows = useMemo(() => {
+    const activeType = globalFilters.type || 'mine';
+    return rows.filter((row) => {
+      if (activeType === 'mine') {
+        if (!user) return false;
+        const username = String(user.id || '').toLowerCase().trim();
+        const empCode = String(user.empCode || user.employeeCode || '').toLowerCase().trim();
+        const fullName = String(user.name || '').toLowerCase().trim();
+        const auditor = String(row.auditor || '').toLowerCase();
+        const approver = String(row.ncrApprovedBy || '').toLowerCase();
+        return (
+          (username && (approver.includes(username) || auditor.includes(username))) ||
+          (empCode && (approver.includes(empCode) || auditor.includes(empCode))) ||
+          (fullName && (approver.includes(fullName) || auditor.includes(fullName)))
+        );
+      }
+      if (activeType === 'team') {
+        if (!user || !user.departmentName) return false;
+        const userDept = String(user.departmentName).toLowerCase().trim();
+        const rowDept = String(row.departmentName || '').toLowerCase().trim();
+        return userDept && rowDept && (userDept === rowDept || rowDept.includes(userDept) || userDept.includes(rowDept));
+      }
+      return true; // company
+    });
+  }, [rows, globalFilters.type, user]);
+
   useEffect(() => {
-    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
-      { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
-      { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
-      { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NC' },
-      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' }, { value: 'CLOSED', label: 'CLOSED' }, { value: 'UNRESOLVED', label: 'UNRESOLVED' }], defaultValue: 'WAITING_APPROVAL' },
+    setPage(0);
+  }, [globalFilters.type]);
+
+  useEffect(() => {
+    dispatch(setFilterConfig([
+      { id: 'type', label: 'Type', type: 'select', options: [{ value: 'mine', label: 'Mine' }, { value: 'team', label: 'Team' }, { value: 'company', label: 'Company' }], defaultValue: 'mine', isStarred: true },
+      { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
+      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' }, { value: 'CLOSED', label: 'APPROVED' }, { value: 'UNRESOLVED', label: 'UNRESOLVED' }], defaultValue: 'WAITING_APPROVAL', isStarred: true },
       { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' },
-      ...getCommonDateFilters('createdDate', 'updatedAt')]));
+      ...getCommonDateFilters('createdDate', 'updatedAt')
+    ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -126,8 +158,20 @@ export default function AuditNcrApproval() {
     setLoading(true);
     setSelectedRecord(null);
     try {
+      const fromDate = globalFilters.createdDateStart || undefined;
+      const toDate = globalFilters.createdDateEnd || undefined;
+      const considerDate = globalFilters.createdDateConsider || 'No';
+
       const [fRes, eRes, cRes] = await Promise.all([
-        axios.get('/api/qms/audit/observation/ncr/findings', { params: { ...globalFilters, query: globalQuery } }),
+        axios.get('/api/qms/audit/observation/ncr/findings', {
+          params: {
+            ...globalFilters,
+            fromDate,
+            toDate,
+            considerDate,
+            query: globalQuery
+          }
+        }),
         axios.get('/api/master/hr/employees'),
         axios.get('/api/master/qms/audit-criteria')
       ]);
@@ -154,7 +198,7 @@ export default function AuditNcrApproval() {
   const handleOpenReview = async (row) => {
     setIsNewMode(false);
     setSelectedFinding(row);
-    updateForm({ remarks: row.remarks || '' });
+    updateForm({ remarks: '' });
     setErrors({});
     setNcrAttachments([]);
     fetchNcrAttachments(row.id);
@@ -175,7 +219,7 @@ export default function AuditNcrApproval() {
     const row = rows.find(r => r.id === findingId);
     if (row) {
       setSelectedFinding(row);
-      updateForm({ remarks: row.remarks || '' });
+      updateForm({ remarks: '' });
       setErrors({});
       setNcrAttachments([]);
       fetchNcrAttachments(row.id);
@@ -198,7 +242,17 @@ export default function AuditNcrApproval() {
   const handleProcessApproval = async (status) => {
     if (!selectedFinding) return;
     if (!formData.remarks || !formData.remarks.trim()) {
-      setErrors({ remarks: 'Comments are mandatory' });
+      setErrors({ remarks: 'Comments are required *' });
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: 'Comments are mandatory for approval or rejection',
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'error',
+          close: false
+        })
+      );
       return;
     }
     
@@ -208,7 +262,22 @@ export default function AuditNcrApproval() {
         params: { remarks: formData.remarks }
       });
       dispatch(openSnackbar({ open: true, message: `NC / OFI ${status} successfully!`, severity: status === 'APPROVED' ? 'success' : 'error' }));
+      
+      // Broadcast status update for reactive reload in other views
+      try {
+        const channel = new BroadcastChannel('ncr_status_channel');
+        channel.postMessage({
+          type: 'NCR_STATUS_UPDATED',
+          id: selectedFinding.id,
+          ncrStatus: status === 'APPROVED' ? 'CLOSED' : 'REJECTED'
+        });
+        channel.close();
+      } catch (err) {
+        console.error('Broadcast failed:', err);
+      }
+
       handleCloseDialog();
+      setRows((prevRows) => prevRows.filter((r) => r.id !== selectedFinding.id));
       fetchData();
     } catch (e) {
       let errorMsg = 'Process failed';
@@ -227,11 +296,18 @@ export default function AuditNcrApproval() {
     if (col.id === 'index') return idx + 1 + page * size;
     if (col.id === 'ncrStatus') {
         const status = row.ncrStatus || 'OPEN';
-        const displayLabel = status === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : status.replace('_', ' ');
-        return <Chip label={displayLabel} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' ? 'INACTIVE' : 'PENDING'))} />;
+        let displayLabel = status === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : status.replace('_', ' ');
+        if (status === 'CLOSED') {
+            displayLabel = 'APPROVED';
+        }
+        if (status === 'OPEN') {
+            displayLabel = 'PENDING';
+        }
+        return <Chip label={displayLabel} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' || status === 'WAITING_APPROVAL' ? 'PENDING' : 'INACTIVE'))} />;
     }
     const val = row[col.id];
-    if (['observationDate', 'targetDate', 'createdDate'].includes(col.id)) return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (['observationDate', 'targetDate'].includes(col.id)) return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'createdDate') return val ? format(new Date(val), 'dd/MM/yyyy HH:mm') : '-';
     return String(val || '-');
   };
 
@@ -340,7 +416,7 @@ export default function AuditNcrApproval() {
           closeNcrTooltip={selectedRecord ? "Close Selected NC / OFI" : "Select a record first to close"}
           closeNcrLabel="Close NC / OFI"
           hasWritePermission={perms.write}
-          exportData={rows}
+          exportData={filteredRows}
           exportFilename="NC_Approval_Report"
           hasExportPermission={perms.export}
           columns={columns}
@@ -349,10 +425,10 @@ export default function AuditNcrApproval() {
     >
       <BOSDataTable 
         columns={columns} 
-        rows={rows.slice(page * size, page * size + size)} 
+        rows={filteredRows.slice(page * size, page * size + size)} 
         page={page} 
         size={size} 
-        totalCount={rows.length} 
+        totalCount={filteredRows.length} 
         loading={loading} 
         onPageChange={setPage} 
         onSizeChange={setSize} 
@@ -503,7 +579,7 @@ export default function AuditNcrApproval() {
 
               <Box sx={{ position: 'relative' }}>
                 <BOSTextField 
-                  label="Observation Comment" 
+                  label="Comments" 
                   value={selectedFinding?.remarks || selectedFinding?.clause || ''} 
                   multiline 
                   rows={2} 
@@ -539,6 +615,7 @@ export default function AuditNcrApproval() {
                 error={!!errors.remarks}
                 helperText={errors.remarks}
                 placeholder="Enter approval / rejection remarks..."
+                sx={errorStyle(!!errors.remarks)}
               />
             </Box>
 

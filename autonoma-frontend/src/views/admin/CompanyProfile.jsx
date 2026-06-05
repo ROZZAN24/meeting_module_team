@@ -825,11 +825,11 @@ const CompanyProfile = () => {
           {/* Company Details Row (Always Visible at Top) */}
           <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
             <Grid container spacing={2} columns={24}>
-              <Grid item xs={24} md={8}><TextField {...fieldProps('companyName', 'Company Name*')} /></Grid>
-              <Grid item xs={24} md={4}><TextField {...fieldProps('shortName', 'Short Name')} /></Grid>
-              <Grid item xs={24} md={4}><TextField {...fieldProps('registrationNo', 'Registration No')} /></Grid>
-              <Grid item xs={24} md={4}><TextField {...fieldProps('panNo', 'PAN No')} /></Grid>
-              <Grid item xs={24} md={4}><TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} /></Grid>
+              <Grid item xs={24} md={8}><TextField {...fieldProps('companyName', 'Company Name*')} sx={{ width: '400px' }} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('shortName', 'Short Name')} sx={{ width: '200px' }} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('registrationNo', 'Registration No')} sx={{ width: '200px' }} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('panNo', 'PAN No')} sx={{ width: '200px' }} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} sx={{ width: '200px' }} /></Grid>
 
             </Grid>
           </Paper>
@@ -905,78 +905,82 @@ const CompanyProfile = () => {
                 {activeTab === 0 && (
                   <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
                     {sectionTitle('Contact & Web', IconBuilding)}
-                    <Grid container spacing={4}>
+                    <Grid container spacing={4} columns={12}>
 
+                      {/* Left Column: Address Details */}
                       {/* Left Column: Address Details */}
                       <Grid item xs={12} md={6}>
                         <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Address Details</Typography>
-                        <Grid container spacing={2}>
-                          <Grid item xs={12}><TextField {...fieldProps('address', 'Address')} multiline rows={3} fullWidth inputProps={{ maxLength: 500 }} /></Grid>
-                          <Grid item xs={12}><DropdownField name="country" label="Country *" options={COUNTRIES} fullWidth /></Grid>
-                          <Grid item xs={12} sm={6}><DropdownField name="state" label="State *" options={statesForCountry} disabled={!form.country} fullWidth /></Grid>
-                          <Grid item xs={12} sm={6}><DropdownField name="city" label="City *" options={citiesForState} disabled={!form.state} fullWidth /></Grid>
-                          <Grid item xs={12} sm={6}><TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 6 }} /></Grid>
-                        </Grid>
+                        <Stack spacing={2}>
+                          <TextField {...fieldProps('address', 'Address')} multiline rows={3} fullWidth inputProps={{ maxLength: 500 }} />
+                          <DropdownField name="country" label="Country *" options={COUNTRIES} sx={{ width: '250px' }} />
+                          <DropdownField name="state" label="State *" options={statesForCountry} disabled={!form.country} sx={{ width: '250px' }} />
+                          <DropdownField name="city" label="City *" options={citiesForState} disabled={!form.state} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 6 }} sx={{ width: '250px' }} />
+                        </Stack>
                       </Grid>
 
                       {/* Right Column: Other Details */}
                       <Grid item xs={12} md={6}>
                         <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Contact Details</Typography>
-                        <Grid container spacing={3} sx={{ height: '100%' }}>
-                          <Grid item xs={12} sm={5}>
-                            <Stack spacing={2.5}>
-                              <TextField {...fieldProps('mobileNo', 'Mobile No')} />
-                              <TextField {...fieldProps('phoneNo', 'Phone No')} />
-                              <TextField {...fieldProps('emailId', 'Email ID')} />
-                              <TextField {...fieldProps('website', 'Website')} />
-                              <TextField {...fieldProps('supportPhone', 'Support Phone')} />
-                              <TextField {...fieldProps('supportEmail', 'Support Email')} />
-                            </Stack>
-                          </Grid>
-                          <Grid item xs={12} sm={7}>
-                            <TextField
-                              name="gmaplink"
-                              value={form.gmaplink}
-                              onChange={handleChange}
-                              placeholder="Google Maps Link"
-                              multiline
-                              rows={14}
-                              fullWidth
-                              sx={{
+                        <Stack spacing={2}>
+                          <TextField {...fieldProps('mobileNo', 'Mobile No')} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('phoneNo', 'Phone No')} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('emailId', 'Email ID')} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('website', 'Website')} sx={{ width: '250px' }} />
 
-                                '& textarea': {
-                                  textAlign: 'center',
-                                  fontSize: '1.25rem',
-                                  fontWeight: 500,
-                                  color: '#64748b',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  marginTop: 'auto',
-                                  marginBottom: 'auto'
-                                }
-                              }}
-                              InputProps={{
-                                endAdornment: (
-                                  <InputAdornment position="end" sx={{ height: '100%', maxHeight: 'none', alignItems: 'center', ml: 1 }}>
-                                    {form.gmaplink && (
-                                      <Tooltip title="View Map">
-                                        <IconButton sx={{ color: '#0ea5e9', mr: 1 }} onClick={() => window.open(form.gmaplink, '_blank')}>
-                                          <IconExternalLink size={28} />
-                                        </IconButton>
-                                      </Tooltip>
-                                    )}
-                                    <Tooltip title="Pick Location">
-                                      <IconButton sx={{ color: '#2563eb', bgcolor: '#eff6ff', borderRadius: 2, p: 1.5 }} onClick={openMapDialog}>
-                                        <IconMapPin size={36} />
+                        </Stack>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Support</Typography>
+                        <Stack spacing={2}>
+                          <TextField {...fieldProps('supportPhone', 'Support Phone')} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('supportEmail', 'Support Email')} sx={{ width: '250px' }} />
+                        </Stack>
+                      </Grid>
+
+                      {/* Quadrant 4: Location Map */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Location Map</Typography>
+                        <Stack spacing={2}>
+                          <TextField
+                            name="gmaplink"
+                            value={form.gmaplink}
+                            onChange={handleChange}
+                            placeholder="Google Maps Link"
+                            size="small"
+                            InputProps={{
+                              style: { color: '#0f172a', fontWeight: 500, paddingRight: '4px' },
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  {form.gmaplink && (
+                                    <Tooltip title="View Map">
+                                      <IconButton sx={{ color: '#0ea5e9' }} onClick={() => window.open(form.gmaplink, '_blank')} size="small">
+                                        <IconExternalLink size={20} />
                                       </IconButton>
                                     </Tooltip>
-                                  </InputAdornment>
-                                )
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
+                                  )}
+                                  <Tooltip title="Pick Location">
+                                    <IconButton sx={{ color: '#2563eb' }} onClick={openMapDialog} size="small">
+                                      <IconMapPin size={20} />
+                                    </IconButton>
+                                  </Tooltip>
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              width: '100%',
+                              maxWidth: '350px',
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                                bgcolor: '#ffffff',
+                                '& fieldset': { borderColor: '#cbd5e1' },
+                                '&:hover fieldset': { borderColor: '#94a3b8' },
+                                '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '2px' }
+                              }
+                            }}
+                          />
+                        </Stack>
                       </Grid>
 
                     </Grid>
@@ -1033,7 +1037,7 @@ const CompanyProfile = () => {
 
                 {/* Tab 5: System Audit */}
                 {activeTab === 5 && (
-                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #cbd5e1', borderRadius: 4, p: 3, background: '#f8fafc', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.02)' }}>
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ minHeight: '450px', border: '1px solid #cbd5e1', borderRadius: 4, p: 3, background: '#f8fafc', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.02)' }}>
                     {sectionTitle('System Audit', IconBrandUnity)}
                     <Grid container spacing={3}>
                       <Grid item xs={12} md={2} sx={{ display: 'flex', alignItems: 'center' }}>

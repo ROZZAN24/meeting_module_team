@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 import axios from 'utils/axios';
 import {
-  IconSearch, IconRefresh, IconPlus, IconUser, IconFileText, IconTrash, IconEdit, IconMail, IconCalendar, IconCheck, IconAlertCircle, IconBriefcase, IconSchool, IconCurrencyDollar, IconAddressBook, IconUserCheck, IconUserPlus, IconLock, IconStar, IconTrendingUp
+  IconSearch, IconRefresh, IconPlus, IconUser, IconFileText, IconTrash, IconEdit, IconMail, IconCalendar, IconCheck, IconAlertCircle, IconBriefcase, IconSchool, IconCurrencyDollar, IconAddressBook, IconUserCheck, IconUserPlus, IconLock, IconStar, IconTrendingUp, IconDeviceFloppy, IconX
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -28,6 +28,11 @@ import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import useAuth from 'hooks/useAuth';
+
+const HOURS_LIST = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES_LIST = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+const BUSINESS_HOURS_LIST = ['10', '11', '12', '13', '14', '15', '16', '17'];
 
 // ==============================|| APPLICATION TRACKING SYSTEM ||============================== //
 
@@ -235,9 +240,25 @@ const VALIDATION_RULES = [
   { field: 'birthDate', label: 'Birth Date', required: true }
 ];
 
+const getSeventhWorkingDay = () => {
+  const date = new Date();
+  let count = 0;
+  while (count < 7) {
+    date.setDate(date.getDate() + 1);
+    if (date.getDay() !== 0) { // Skip Sundays
+      count++;
+    }
+  }
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export default function ApplicationTrackingSystem() {
   const dispatch = useDispatch();
   const perms = usePagePermissions(PAGE_CODES.HRA_ATS);
+  const { user } = useAuth();
 
   // Lookups mapping
   const { departments = [], designations = [], employees = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'EMPLOYEES']);
@@ -260,20 +281,26 @@ export default function ApplicationTrackingSystem() {
   const [callLetterData, setCallLetterData] = useState({
     interviewDate: '',
     interviewTime: '',
+    from: '',
     to: '',
-    cc: 'admin@nutech.com'
+    cc: ''
   });
   const [callLetterErrors, setCallLetterErrors] = useState({});
 
   // Assign Interview Dialog State
   const [interviewDialogOpen, setInterviewDialogOpen] = useState(false);
+  const [interviewHistory, setInterviewHistory] = useState([]);
   const [interviewData, setInterviewData] = useState({
     screeningLevel: '',
     interviewDate: '',
-    interviewTime: '',
+    interviewTimeHour: '',
+    interviewTimeMinute: '',
     round: '',
-    startTime: '',
-    endTime: '',
+    roundChecked: false,
+    startTimeHour: '',
+    startTimeMinute: '',
+    endTimeHour: '',
+    endTimeMinute: '',
     interviewPerson: ''
   });
   const [interviewErrors, setInterviewErrors] = useState({});
@@ -638,11 +665,15 @@ export default function ApplicationTrackingSystem() {
     }
     const target = rows.find(r => r.id === selectedIds[0]);
     if (target) {
+      const dept = departments.find(d => d.id.toString() === target.department || d.departmentName === target.department);
+      const deptMail = dept ? dept.departmentMailId : '';
+
       setCallLetterData({
-        interviewDate: '',
+        interviewDate: getSeventhWorkingDay(),
         interviewTime: '',
+        from: user?.email || '',
         to: target.emailId || '',
-        cc: 'admin@nutech.com'
+        cc: deptMail || ''
       });
       setCallLetterErrors({});
       setCallLetterDialogOpen(true);
@@ -656,10 +687,11 @@ export default function ApplicationTrackingSystem() {
   const handleClearCallLetterFields = () => {
     setCallLetterData(prev => ({
       ...prev,
-      interviewDate: '',
+      interviewDate: getSeventhWorkingDay(),
       interviewTime: '',
+      from: user?.email || '',
       to: '',
-      cc: 'admin@nutech.com'
+      cc: ''
     }));
     setCallLetterErrors({});
   };
@@ -677,17 +709,35 @@ export default function ApplicationTrackingSystem() {
     if (!callLetterData.interviewTime) {
       errs.interviewTime = 'Interview time is required.';
     } else {
-      if (callLetterData.interviewTime >= '17:00') {
-        errs.interviewTime = 'Interview must be scheduled before 17:00 (5:00 PM).';
-      }
+      // Parse the time value (format: "hh:mm AM/PM" from BOSTimePicker)
+      const parseToHHMM = (tStr) => {
+        if (!tStr) return '';
+        const clean = tStr.trim().toUpperCase();
+        const match = clean.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/);
+        if (!match) return tStr; // fallback, keep original
+        let h = parseInt(match[1], 10);
+        const m = match[2];
+        const ampm = match[3] || 'AM';
+        if (ampm === 'PM' && h !== 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        return `${String(h).padStart(2, '0')}:${m}`;
+      };
+
+      const hhmm = parseToHHMM(callLetterData.interviewTime);
 
       if (callLetterData.interviewDate === todayStr) {
         const now = new Date();
         const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        if (callLetterData.interviewTime <= currentHHMM) {
+        if (hhmm <= currentHHMM) {
           errs.interviewTime = 'Interview time must be in the future.';
         }
       }
+    }
+
+    if (!callLetterData.from) {
+      errs.from = 'From email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(callLetterData.from)) {
+      errs.from = 'Invalid email address.';
     }
 
     if (!callLetterData.to) {
@@ -715,9 +765,13 @@ export default function ApplicationTrackingSystem() {
 
     setLoading(true);
     try {
-      await axios.post('/api/hra/applicants/bulk-action', {
-        ids: selectedIds,
-        action: 'CALL'
+      await axios.post('/api/hra/applicants/send-call-letter', {
+        id: selectedIds[0],
+        interviewDate: callLetterData.interviewDate,
+        interviewTime: callLetterData.interviewTime,
+        fromEmail: callLetterData.from,
+        toEmail: callLetterData.to,
+        ccEmail: callLetterData.cc
       });
       dispatch(openSnackbar({
         open: true,
@@ -739,7 +793,7 @@ export default function ApplicationTrackingSystem() {
       setLoading(false);
     }
   };
-  const handleAssignInterview = () => {
+  const handleAssignInterview = async () => {
     if (selectedIds.length !== 1) {
       dispatch(openSnackbar({
         open: true,
@@ -754,13 +808,24 @@ export default function ApplicationTrackingSystem() {
       setInterviewData({
         screeningLevel: '',
         interviewDate: '',
-        interviewTime: '',
+        interviewTimeHour: '',
+        interviewTimeMinute: '',
         round: '',
-        startTime: '',
-        endTime: '',
+        roundChecked: false,
+        startTimeHour: '',
+        startTimeMinute: '',
+        endTimeHour: '',
+        endTimeMinute: '',
         interviewPerson: ''
       });
       setInterviewErrors({});
+      try {
+        const { data } = await axios.get(`/api/hra/applicants/${target.id}/interviews`);
+        setInterviewHistory(data || []);
+      } catch (e) {
+        console.error('Failed to load candidate interview history', e);
+        setInterviewHistory([]);
+      }
       setInterviewDialogOpen(true);
     }
   };
@@ -773,10 +838,14 @@ export default function ApplicationTrackingSystem() {
     setInterviewData({
       screeningLevel: '',
       interviewDate: '',
-      interviewTime: '',
+      interviewTimeHour: '',
+      interviewTimeMinute: '',
       round: '',
-      startTime: '',
-      endTime: '',
+      roundChecked: false,
+      startTimeHour: '',
+      startTimeMinute: '',
+      endTimeHour: '',
+      endTimeMinute: '',
       interviewPerson: ''
     });
     setInterviewErrors({});
@@ -785,6 +854,16 @@ export default function ApplicationTrackingSystem() {
   const handleAssignInterviewSubmit = async () => {
     const errs = {};
     const todayStr = getTodayDateString();
+
+    const selectedTime = (interviewData.interviewTimeHour && interviewData.interviewTimeMinute)
+      ? `${interviewData.interviewTimeHour}:${interviewData.interviewTimeMinute}`
+      : '';
+    const selectedStartTime = (interviewData.startTimeHour && interviewData.startTimeMinute)
+      ? `${interviewData.startTimeHour}:${interviewData.startTimeMinute}`
+      : '';
+    const selectedEndTime = (interviewData.endTimeHour && interviewData.endTimeMinute)
+      ? `${interviewData.endTimeHour}:${interviewData.endTimeMinute}`
+      : '';
 
     if (!interviewData.screeningLevel) {
       errs.screeningLevel = 'Screening level is required.';
@@ -796,12 +875,12 @@ export default function ApplicationTrackingSystem() {
       errs.interviewDate = 'Only today or future dates can be selected.';
     }
 
-    if (!interviewData.interviewTime) {
+    if (!selectedTime) {
       errs.interviewTime = 'Interview time is required.';
     } else if (interviewData.interviewDate === todayStr) {
       const now = new Date();
       const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      if (interviewData.interviewTime <= currentHHMM) {
+      if (selectedTime <= currentHHMM) {
         errs.interviewTime = 'Interview time must be in the future.';
       }
     }
@@ -810,14 +889,18 @@ export default function ApplicationTrackingSystem() {
       errs.round = 'Round is required.';
     }
 
-    if (!interviewData.startTime) {
+    if (!selectedStartTime) {
       errs.startTime = 'Start time is required.';
     }
 
-    if (!interviewData.endTime) {
+    if (!selectedEndTime) {
       errs.endTime = 'End time is required.';
-    } else if (interviewData.startTime && interviewData.endTime <= interviewData.startTime) {
-      errs.endTime = 'End time must be after start time.';
+    } else if (selectedStartTime) {
+      const startMin = parseInt(interviewData.startTimeHour) * 60 + parseInt(interviewData.startTimeMinute);
+      const endMin = parseInt(interviewData.endTimeHour) * 60 + parseInt(interviewData.endTimeMinute);
+      if (endMin <= startMin) {
+        errs.endTime = 'End time must be after start time.';
+      }
     }
 
     if (!interviewData.interviewPerson) {
@@ -839,7 +922,13 @@ export default function ApplicationTrackingSystem() {
     try {
       await axios.post('/api/hra/applicants/bulk-action', {
         ids: selectedIds,
-        action: 'INTERVIEW'
+        action: 'INTERVIEW',
+        screeningLevel: interviewData.screeningLevel,
+        round: interviewData.round,
+        interviewDate: interviewData.interviewDate,
+        startTime: selectedStartTime,
+        endTime: selectedEndTime,
+        interviewPerson: interviewData.interviewPerson
       });
       dispatch(openSnackbar({
         open: true,
@@ -1384,36 +1473,36 @@ export default function ApplicationTrackingSystem() {
           newTooltip={shortcutTooltip('Register Candidate', 'Ctrl + N')}
           hasWritePermission={perms.write}
         >
-          <Button variant="outlined" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+          <Button variant="contained" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
             Call Letter
           </Button>
           <Button
-            variant="outlined"
+            variant="contained"
             onClick={handleAssignInterview}
             startIcon={<IconCalendar size={18} />}
             sx={{
               borderRadius: '24px',
               textTransform: 'none',
-              color: 'orange.dark',
-              borderColor: 'orange.main',
+              bgcolor: 'orange.main',
+              color: '#fff',
+              fontWeight: 600,
               '&:hover': {
-                borderColor: 'orange.dark',
-                bgcolor: 'orange.light'
+                bgcolor: 'orange.dark'
               }
             }}
           >
             Assign Interview
           </Button>
-          <Button variant="outlined" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+          <Button variant="contained" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
             Offer Letter
           </Button>
-          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', fontWeight: 600 }}>
+          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
             Push To On-Roll
           </Button>
-          <Button variant="outlined" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+          <Button variant="contained" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
             Cancel Selection
           </Button>
-          <Button variant="outlined" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+          <Button variant="contained" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600, '&.Mui-disabled': { color: 'rgba(0, 0, 0, 0.26)', bgcolor: 'rgba(0, 0, 0, 0.12)' } }}>
             Edit Candidate
           </Button>
         </BOSTableToolbar>
@@ -2659,6 +2748,7 @@ export default function ApplicationTrackingSystem() {
           <Grid item xs={12}>
             <BOSTimePicker
               required
+              format24h
               label="Interview time (24h):"
               name="interviewTime"
               value={callLetterData.interviewTime}
@@ -2671,6 +2761,18 @@ export default function ApplicationTrackingSystem() {
               error={!!callLetterErrors.interviewTime}
               helperText={callLetterErrors.interviewTime}
               fullWidth
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              label="From:"
+              name="from"
+              value={callLetterData.from}
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: 'grey.50' }}
+              error={!!callLetterErrors.from}
+              helperText={callLetterErrors.from}
             />
           </Grid>
           <Grid item xs={12}>
@@ -2711,66 +2813,75 @@ export default function ApplicationTrackingSystem() {
       </BOSFormDialog>
 
       {/* Assign Interview Dialog */}
+      {/* Assign Interview Dialog */}
       <BOSFormDialog
         open={interviewDialogOpen}
         onClose={handleCloseInterviewDialog}
-        onClear={handleClearInterviewFields}
-        title={`Assign Interview Process(${selectedDetails.name})`}
-        maxWidth="md"
-        secondaryActions={
-          <Button
-            onClick={handleAssignInterviewSubmit}
-            variant="contained"
-            sx={{
-              bgcolor: 'success.main',
-              color: '#fff',
-              '&:hover': { bgcolor: 'success.dark', transform: 'translateY(-2px)', boxShadow: 6 },
-              borderRadius: '24px',
-              textTransform: 'none',
-              px: 4,
-              py: 1,
-              fontWeight: 700,
-              transition: 'all 0.2s',
-              boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
-            }}
-            startIcon={<IconCheck size={20} />}
-          >
-            Save
-          </Button>
-        }
+        title={`Assign Interview process( ${selectedDetails.name} )`}
+        maxWidth="lg"
+        hideFooter={true}
       >
-        {/* Applicant details displayed at the top */}
-        <Box sx={{ p: 2, bgcolor: 'rgba(33, 150, 243, 0.04)', borderRadius: '12px', mb: 1, border: '1px solid', borderColor: 'primary.light' }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={3}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>DEPARTMENT</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>{selectedDetails.department}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>POSITION</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>{selectedDetails.position}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>LEVEL</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>{selectedDetails.level}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>SCREEN LEVEL</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>{selectedDetails.screenLevel}</Typography>
-            </Grid>
-          </Grid>
+        {/* Candidate Details subheader */}
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          p: 1.5,
+          mb: 3,
+          border: '1px solid',
+          borderColor: 'grey.300',
+          borderRadius: '8px',
+          bgcolor: 'background.paper',
+          flexWrap: 'wrap',
+          gap: 2,
+          boxShadow: '0px 1px 3px rgba(0,0,0,0.05)'
+        }}>
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.85rem' }}>
+            DEPARTMENT : <span style={{ color: '#2196f3' }}>{(selectedDetails.department || '').toUpperCase()}</span>
+          </Typography>
+          <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, height: 20, alignSelf: 'center', borderColor: 'grey.300' }} />
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.85rem' }}>
+            POSITION : <span style={{ color: '#2196f3' }}>{(selectedDetails.position || '').toUpperCase()}</span>
+          </Typography>
+          <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, height: 20, alignSelf: 'center', borderColor: 'grey.300' }} />
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.85rem' }}>
+            LEVEL : <span style={{ color: '#2196f3' }}>{(selectedDetails.level || '').toUpperCase()}</span>
+          </Typography>
+          <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, height: 20, alignSelf: 'center', borderColor: 'grey.300' }} />
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.85rem' }}>
+            SCREEN LEVEL : <span style={{ color: '#2196f3' }}>{(selectedDetails.screenLevel || '').toUpperCase()}</span>
+          </Typography>
         </Box>
 
-        <Grid container spacing={2.5}>
-          {/* Screening Level dropdown */}
-          <Grid item xs={12} sm={6}>
+        {/* Input Row */}
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 2,
+          flexWrap: 'wrap',
+          mb: 1
+        }}>
+          {/* Screening Level */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 100 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Screening Level<span style={{ color: 'red' }}>*</span>
+            </Typography>
             <BOSTextField
               select
-              required
-              fullWidth
-              label="Screening level:"
-              name="screeningLevel"
+              size="small"
               value={interviewData.screeningLevel}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (selected === '' || selected === undefined || selected === null) {
+                    return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                  }
+                  return selected;
+                }
+              }}
               onChange={(e) => {
                 setInterviewData(prev => ({ ...prev, screeningLevel: e.target.value }));
                 if (interviewErrors.screeningLevel) {
@@ -2779,7 +2890,7 @@ export default function ApplicationTrackingSystem() {
               }}
               error={!!interviewErrors.screeningLevel}
               helperText={interviewErrors.screeningLevel}
-              sx={errorStyle(!!interviewErrors.screeningLevel)}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
             >
               <MenuItem value="">-select-</MenuItem>
               <MenuItem value="1">1</MenuItem>
@@ -2787,123 +2898,276 @@ export default function ApplicationTrackingSystem() {
               <MenuItem value="3">3</MenuItem>
               <MenuItem value="4">4</MenuItem>
             </BOSTextField>
-          </Grid>
+          </Box>
 
-          {/* Round dropdown */}
-          <Grid item xs={12} sm={6}>
-            <BOSTextField
-              select
-              required
-              fullWidth
-              label="Round:"
-              name="round"
-              value={interviewData.round}
-              onChange={(e) => {
-                setInterviewData(prev => ({ ...prev, round: e.target.value }));
-                if (interviewErrors.round) {
-                  setInterviewErrors(prev => ({ ...prev, round: '' }));
-                }
-              }}
-              error={!!interviewErrors.round}
-              helperText={interviewErrors.round}
-              sx={errorStyle(!!interviewErrors.round)}
-            >
-              <MenuItem value="">-select-</MenuItem>
-              <MenuItem value="TECHNICAL">TECHNICAL</MenuItem>
-              <MenuItem value="HR">HR</MenuItem>
-              <MenuItem value="MANAGEMENT">MANAGEMENT</MenuItem>
-              <MenuItem value="SPECIAL ROUND">SPECIAL ROUND</MenuItem>
-            </BOSTextField>
-          </Grid>
+          {/* Interview Date + Time */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Interview Date<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <BOSTextField
+                type="date"
+                size="small"
+                value={interviewData.interviewDate}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, interviewDate: e.target.value }));
+                  if (interviewErrors.interviewDate) {
+                    setInterviewErrors(prev => ({ ...prev, interviewDate: '' }));
+                  }
+                }}
+                inputProps={{ min: getTodayDateString() }}
+                error={!!interviewErrors.interviewDate}
+                sx={{ width: 135, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              />
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.interviewTimeHour}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, interviewTimeHour: e.target.value }));
+                  if (interviewErrors.interviewTime) {
+                    setInterviewErrors(prev => ({ ...prev, interviewTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.interviewTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {BUSINESS_HOURS_LIST.map(h => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+              </BOSTextField>
+              <Typography sx={{ fontWeight: 'bold' }}>:</Typography>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.interviewTimeMinute}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, interviewTimeMinute: e.target.value }));
+                  if (interviewErrors.interviewTime) {
+                    setInterviewErrors(prev => ({ ...prev, interviewTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.interviewTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {MINUTES_LIST.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </BOSTextField>
+            </Box>
+            {interviewErrors.interviewTime && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{interviewErrors.interviewTime}</Typography>
+            )}
+            {interviewErrors.interviewDate && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{interviewErrors.interviewDate}</Typography>
+            )}
+          </Box>
 
-          {/* Date */}
-          <Grid item xs={12} sm={6}>
-            <BOSTextField
-              required
-              fullWidth
-              type="date"
-              label="Interview Date:"
-              name="interviewDate"
-              value={interviewData.interviewDate}
-              onChange={(e) => {
-                setInterviewData(prev => ({ ...prev, interviewDate: e.target.value }));
-                if (interviewErrors.interviewDate) {
-                  setInterviewErrors(prev => ({ ...prev, interviewDate: '' }));
-                }
-              }}
-              inputProps={{ min: getTodayDateString() }}
-              error={!!interviewErrors.interviewDate}
-              helperText={interviewErrors.interviewDate}
-              sx={errorStyle(!!interviewErrors.interviewDate)}
-            />
-          </Grid>
-
-          {/* Time */}
-          <Grid item xs={12} sm={6}>
-            <BOSTimePicker
-              required
-              fullWidth
-              label="Interview Time (24hr):"
-              name="interviewTime"
-              value={interviewData.interviewTime}
-              onChange={(e) => {
-                setInterviewData(prev => ({ ...prev, interviewTime: e.target.value }));
-                if (interviewErrors.interviewTime) {
-                  setInterviewErrors(prev => ({ ...prev, interviewTime: '' }));
-                }
-              }}
-              error={!!interviewErrors.interviewTime}
-              helperText={interviewErrors.interviewTime}
-            />
-          </Grid>
+          {/* Round */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Round<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Checkbox
+                size="small"
+                checked={interviewData.roundChecked || false}
+                onChange={(e) => setInterviewData(prev => ({ ...prev, roundChecked: e.target.checked }))}
+                sx={{ p: 0.5 }}
+              />
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.round}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, round: e.target.value }));
+                  if (interviewErrors.round) {
+                    setInterviewErrors(prev => ({ ...prev, round: '' }));
+                  }
+                }}
+                error={!!interviewErrors.round}
+                helperText={interviewErrors.round}
+                sx={{ width: 140, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                <MenuItem value="TECHNICAL">TECHNICAL</MenuItem>
+                <MenuItem value="HR">HR</MenuItem>
+                <MenuItem value="MANAGEMENT">MANAGEMENT</MenuItem>
+                <MenuItem value="SPECIAL ROUND">SPECIAL ROUND</MenuItem>
+              </BOSTextField>
+            </Box>
+          </Box>
 
           {/* Start Time */}
-          <Grid item xs={12} sm={6}>
-            <BOSTimePicker
-              required
-              fullWidth
-              label="Start Time (24hr):"
-              name="startTime"
-              value={interviewData.startTime}
-              onChange={(e) => {
-                setInterviewData(prev => ({ ...prev, startTime: e.target.value }));
-                if (interviewErrors.startTime) {
-                  setInterviewErrors(prev => ({ ...prev, startTime: '' }));
-                }
-              }}
-              error={!!interviewErrors.startTime}
-              helperText={interviewErrors.startTime}
-            />
-          </Grid>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Start Time<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.startTimeHour}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, startTimeHour: e.target.value }));
+                  if (interviewErrors.startTime) {
+                    setInterviewErrors(prev => ({ ...prev, startTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.startTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {BUSINESS_HOURS_LIST.map(h => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+              </BOSTextField>
+              <Typography sx={{ fontWeight: 'bold' }}>:</Typography>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.startTimeMinute}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, startTimeMinute: e.target.value }));
+                  if (interviewErrors.startTime) {
+                    setInterviewErrors(prev => ({ ...prev, startTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.startTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {MINUTES_LIST.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </BOSTextField>
+            </Box>
+            {interviewErrors.startTime && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{interviewErrors.startTime}</Typography>
+            )}
+          </Box>
 
           {/* End Time */}
-          <Grid item xs={12} sm={6}>
-            <BOSTimePicker
-              required
-              fullWidth
-              label="End Time (24hr):"
-              name="endTime"
-              value={interviewData.endTime}
-              onChange={(e) => {
-                setInterviewData(prev => ({ ...prev, endTime: e.target.value }));
-                if (interviewErrors.endTime) {
-                  setInterviewErrors(prev => ({ ...prev, endTime: '' }));
-                }
-              }}
-              error={!!interviewErrors.endTime}
-              helperText={interviewErrors.endTime}
-            />
-          </Grid>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              End Time<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.endTimeHour}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, endTimeHour: e.target.value }));
+                  if (interviewErrors.endTime) {
+                    setInterviewErrors(prev => ({ ...prev, endTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.endTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {BUSINESS_HOURS_LIST.map(h => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+              </BOSTextField>
+              <Typography sx={{ fontWeight: 'bold' }}>:</Typography>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.endTimeMinute}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, endTimeMinute: e.target.value }));
+                  if (interviewErrors.endTime) {
+                    setInterviewErrors(prev => ({ ...prev, endTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.endTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {MINUTES_LIST.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </BOSTextField>
+            </Box>
+            {interviewErrors.endTime && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{interviewErrors.endTime}</Typography>
+            )}
+          </Box>
 
-          {/* Interview Person dropdown */}
-          <Grid item xs={12}>
+          {/* Interview Person */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, minWidth: 160 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Interview Person<span style={{ color: 'red' }}>*</span>
+            </Typography>
             <BOSTextField
               select
-              required
-              fullWidth
-              label="Interview Person:"
-              name="interviewPerson"
+              size="small"
               value={interviewData.interviewPerson}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (selected === '' || selected === undefined || selected === null) {
+                    return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                  }
+                  return selected;
+                }
+              }}
               onChange={(e) => {
                 setInterviewData(prev => ({ ...prev, interviewPerson: e.target.value }));
                 if (interviewErrors.interviewPerson) {
@@ -2912,7 +3176,7 @@ export default function ApplicationTrackingSystem() {
               }}
               error={!!interviewErrors.interviewPerson}
               helperText={interviewErrors.interviewPerson}
-              sx={errorStyle(!!interviewErrors.interviewPerson)}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
             >
               <MenuItem value="">-select-</MenuItem>
               {employees.map(emp => {
@@ -2925,8 +3189,127 @@ export default function ApplicationTrackingSystem() {
                 );
               })}
             </BOSTextField>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
+
+        {/* Buttons Centered */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3, mb: 3 }}>
+          <Button
+            variant="contained"
+            onClick={handleCloseInterviewDialog}
+            sx={{
+              bgcolor: '#5A738E',
+              color: '#fff',
+              '&:hover': { bgcolor: '#4b5e75' },
+              textTransform: 'none',
+              fontWeight: 'bold',
+              px: 3.5,
+              py: 0.75,
+              borderRadius: '4px'
+            }}
+            startIcon={<IconX size={18} />}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAssignInterviewSubmit}
+            sx={{
+              bgcolor: '#4b6584',
+              color: '#fff',
+              '&:hover': { bgcolor: '#3d526b' },
+              textTransform: 'none',
+              fontWeight: 'bold',
+              px: 3.5,
+              py: 0.75,
+              borderRadius: '4px'
+            }}
+            startIcon={<IconDeviceFloppy size={18} />}
+          >
+            Save
+          </Button>
+        </Box>
+
+        {/* History Grid */}
+        <TableContainer component={Paper} variant="outlined" sx={{ mt: 1, maxHeight: 280, overflowY: 'auto', borderRadius: '8px' }}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                {['#', 'Screening Level', 'Round', 'Date', 'Start Time', 'End Time', 'Interview by', 'Interview Status', 'Created By', 'Status'].map((col) => (
+                  <TableCell
+                    key={col}
+                    sx={{
+                      bgcolor: '#5A738E',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      fontSize: '0.8rem',
+                      py: 1,
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    {col}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {interviewHistory.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={10} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                    No interview history found for this candidate.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                interviewHistory.map((item, idx) => (
+                  <TableRow key={item.id} hover>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{idx + 1}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.screeningLevel}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>
+                      <Chip label={item.round} size="small" color="primary" variant="outlined" sx={{ fontWeight: 'bold', fontSize: '0.7rem' }} />
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.interviewDate}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.startTime}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.endTime}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.interviewPerson}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>
+                      <Chip
+                        label={item.interviewStatus}
+                        size="small"
+                        sx={{
+                          bgcolor: item.interviewStatus === 'PENDING' ? '#ffebee' :
+                                   item.interviewStatus === 'REJECTED' ? '#ffebee' :
+                                   item.interviewStatus === 'SELECTED' ? '#e8f5e9' :
+                                   item.interviewStatus === 'ON HOLD' ? '#fff3e0' :
+                                   item.interviewStatus === 'WAITING FOR PROGRESS' ? '#f3e5f5' : '#f5f5f5',
+                          color: item.interviewStatus === 'PENDING' ? '#c62828' :
+                                 item.interviewStatus === 'REJECTED' ? '#c62828' :
+                                 item.interviewStatus === 'SELECTED' ? '#2e7d32' :
+                                 item.interviewStatus === 'ON HOLD' ? '#e65100' :
+                                 item.interviewStatus === 'WAITING FOR PROGRESS' ? '#4a148c' : '#757575',
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.createdBy}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>
+                      <Chip
+                        label={item.status}
+                        size="small"
+                        sx={{
+                          bgcolor: item.status === 'ACTIVE' ? '#e8f5e9' : '#fafafa',
+                          color: item.status === 'ACTIVE' ? '#2e7d32' : 'text.secondary',
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem'
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </BOSFormDialog>
     </MainCard>
   );
