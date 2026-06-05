@@ -22,6 +22,9 @@ public class Department {
     @Column(name = "DEPARTMENT_NAME", nullable = false, length = 100)
     private String departmentName;
 
+    @Column(name = "DEPARTMENT_MAIL_ID", nullable = false, length = 255)
+    private String departmentMailId = "";
+
     @Column(name = "NDA_CERTIFICATE", length = 10)
     private String ndaCertificate = "No";
 

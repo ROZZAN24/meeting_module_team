@@ -118,6 +118,18 @@ public class SecurityUtils {
         }
     }
 
+    public static String getCurrentUserEmployeeNameNoQuery() {
+        String principalId = getCurrentUserId();
+        if (principalId == null) {
+            return null;
+        }
+        String cached = employeeNameCache.get(principalId);
+        if (cached == null || cached.equalsIgnoreCase(principalId)) {
+            return principalId; // Return user ID directly without executing DB queries
+        }
+        return cached;
+    }
+
     public static String getCurrentUserEmployeeName() {
         String principalId = getCurrentUserId();
         if (principalId == null) {
