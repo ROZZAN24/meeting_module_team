@@ -200,7 +200,7 @@ export default function BOSDataTable({
 
         // Loop through all regular filters
         for (const [key, fVal] of Object.entries(globalFilters)) {
-          if (fVal === undefined || fVal === null || fVal === '' || fVal === 'All') continue;
+          if (fVal === undefined || fVal === null || fVal === '' || String(fVal).toUpperCase() === 'ALL') continue;
           
           // Skip start, end, and consider keys as they will be processed together
           if (key.endsWith('Start') || key.endsWith('End') || key.endsWith('Consider')) {

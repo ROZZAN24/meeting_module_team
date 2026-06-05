@@ -88,15 +88,17 @@ function MenuList() {
   useLayoutEffect(() => {
     let currentItems = [...menuItem.items];
 
-    // Apply permission filtering only when permissions are loaded
-    if (permStatus === 'loaded') {
+    // Apply permission filtering only when permissions are loaded, except for BOS Admin (userLevel === 5)
+    if (user?.userLevel === 5) {
+      // BOS Admin (SuperUser) sees everything unconditionally
+    } else if (permStatus === 'loaded') {
       currentItems = filterMenuByPermissions(currentItems, permMap);
     } else {
       currentItems = filterMenuByPermissions(currentItems, {});
     }
 
     setMenuItems({ items: currentItems });
-  }, [menuLoading, menu, permStatus, permMap]);
+  }, [menuLoading, menu, permStatus, permMap, user?.userLevel]);
 
   // last menu-item to show in horizontal menu bar
   const lastItem = isHorizontal ? HORIZONTAL_MAX_ITEM : null;
