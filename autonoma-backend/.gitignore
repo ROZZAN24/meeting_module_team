@@ -25,4 +25,4 @@ application-local.properties
 .scratch/
 
 # Compiled Frontend Assets (Vite build output)
-src/main/resources/static/assets/
+src/main/resources/static/
