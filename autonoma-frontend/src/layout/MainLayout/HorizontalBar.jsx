@@ -28,59 +28,56 @@ import useConfig from 'hooks/useConfig';
 import { useRibbon } from 'contexts/RibbonContext';
 import SpeedDialConfigModal from './SpeedDialConfigModal';
 import { useSelector } from 'store';
+import useAuth from 'hooks/useAuth';
 
 import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight, IconSettings } from '@tabler/icons-react';
 
 const getGroupColors = (title) => {
   const t = (title || '').toUpperCase();
   if (t.includes('MASTER')) {
-    return {
-      main: '#1e88e5',    // Professional Blue
-      light: '#6ab7ff',
-      lighter: 'rgba(30, 136, 229, 0.08)'
-    };
+    return { main: '#1e88e5', light: '#6ab7ff', lighter: 'rgba(30, 136, 229, 0.08)' }; // Professional Blue
   }
   if (t.includes('HRA') || t.includes('HR')) {
-    return {
-      main: '#e65100',    // Warm Amber/Orange
-      light: '#ffb74d',
-      lighter: 'rgba(230, 81, 0, 0.08)'
-    };
+    return { main: '#e65100', light: '#ffb74d', lighter: 'rgba(230, 81, 0, 0.08)' }; // Warm Amber/Orange
   }
   if (t.includes('SALES') || t.includes('MARKETING')) {
-    return {
-      main: '#2e7d32',    // Forest Green
-      light: '#81c784',
-      lighter: 'rgba(46, 125, 50, 0.08)'
-    };
+    return { main: '#2e7d32', light: '#81c784', lighter: 'rgba(46, 125, 50, 0.08)' }; // Forest Green
+  }
+  if (t.includes('PLANNING') || t.includes('PURCHASE')) {
+    return { main: '#3949ab', light: '#7986cb', lighter: 'rgba(57, 73, 171, 0.08)' }; // Indigo
+  }
+  if (t.includes('PRODUCTION')) {
+    return { main: '#d32f2f', light: '#e57373', lighter: 'rgba(211, 47, 47, 0.08)' }; // Red
+  }
+  if (t.includes('STORES') || t.includes('LOGISTICS')) {
+    return { main: '#8d6e63', light: '#bcaaa4', lighter: 'rgba(141, 110, 99, 0.08)' }; // Brown/Bronze
+  }
+  if (t.includes('FINANCE') || t.includes('ACCOUNTS')) {
+    return { main: '#00897b', light: '#4db6ac', lighter: 'rgba(0, 137, 123, 0.08)' }; // Emerald/Teal
+  }
+  if (t.includes('DESIGN') || t.includes('DEVELOPMENT')) {
+    return { main: '#fbc02d', light: '#fff176', lighter: 'rgba(251, 192, 45, 0.08)' }; // Yellow/Gold
+  }
+  if (t.includes('MAINTENANCE') || t.includes('SERVICES')) {
+    return { main: '#5d4037', light: '#8d6e63', lighter: 'rgba(93, 64, 55, 0.08)' }; // Deep Brown
   }
   if (t.includes('QUALITY') || t.includes('QMS')) {
-    return {
-      main: '#673ab7',    // Deep Violet/Indigo
-      light: '#b39ddb',
-      lighter: 'rgba(103, 58, 183, 0.08)'
-    };
+    return { main: '#673ab7', light: '#b39ddb', lighter: 'rgba(103, 58, 183, 0.08)' }; // Deep Violet/Indigo
   }
   if (t.includes('REPORTS') || t.includes('ANALYTICS')) {
-    return {
-      main: '#c2185b',    // Premium Rose/Magenta
-      light: '#f48fb1',
-      lighter: 'rgba(194, 24, 91, 0.08)'
-    };
+    return { main: '#c2185b', light: '#f48fb1', lighter: 'rgba(194, 24, 91, 0.08)' }; // Premium Rose/Magenta
   }
   if (t.includes('ADMIN')) {
-    return {
-      main: '#0097a7',    // Clean Cyan/Teal
-      light: '#80deea',
-      lighter: 'rgba(0, 151, 167, 0.08)'
-    };
+    return { main: '#00acc1', light: '#4dd0e1', lighter: 'rgba(0, 172, 193, 0.08)' }; // Cyan
   }
-  // Default (e.g., Dashboard, others)
-  return {
-    main: '#455a64',      // Sleek Slate Blue/Grey
-    light: '#90a4ae',
-    lighter: 'rgba(69, 90, 100, 0.08)'
-  };
+  if (t.includes('DASHBOARD')) {
+    return { main: '#1565c0', light: '#64b5f6', lighter: 'rgba(21, 101, 192, 0.08)' }; // Deep Blue
+  }
+  if (t.includes('SUPPORT') || t.includes('TICKET')) {
+    return { main: '#7b1fa2', light: '#ce93d8', lighter: 'rgba(123, 31, 162, 0.08)' }; // Purple
+  }
+  // Default (e.g., others)
+  return { main: '#455a64', light: '#90a4ae', lighter: 'rgba(69, 90, 100, 0.08)' }; // Sleek Slate Blue/Grey
 };
 
 // ==============================|| RIBBON CHILD ITEM ||============================== //
@@ -626,17 +623,15 @@ export default function HorizontalBar() {
   } = useConfig();
   const { pathname } = useLocation();
   const { ribbonOpen, setRibbonOpen } = useRibbon();
+  const { user } = useAuth();
 
   const permStatus = useSelector((state) => state.permissions.status);
   const permMap = useSelector((state) => state.permissions.map);
 
   const groups = useMemo(() => {
-    let currentItems = [...menuItem.items];
-    if (permStatus === 'loaded') {
-      currentItems = filterMenuByPermissions(currentItems, permMap);
-    }
-    return currentItems;
-  }, [permStatus, permMap]);
+    if (permStatus !== 'loaded') return [];
+    return filterMenuByPermissions([...menuItem.items], permMap, user?.userLevel || 0);
+  }, [permStatus, permMap, user?.userLevel]);
 
   // Speed Dial Customization State
   const [speedDialPreferences, setSpeedDialPreferences] = useState({});

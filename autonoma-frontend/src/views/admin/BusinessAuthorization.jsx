@@ -249,10 +249,10 @@ const BusinessAuthorization = () => {
         borderRadius: '12px',
         border: '1px solid #eef2f6',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexShrink: 0,
-        width: '100%'
+        flexDirection: 'column',
+        flexGrow: 1,
+        width: '100%',
+        minHeight: 0
       }}>
 
 

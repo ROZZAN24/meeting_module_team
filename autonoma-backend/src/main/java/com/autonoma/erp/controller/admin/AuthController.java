@@ -227,7 +227,7 @@ public class AuthController {
                 .findByUserId(userId);
 
         com.autonoma.erp.model.admin.UserCredential user = userRepository.findByUserId(userId).orElse(null);
-        boolean isSuperUser = (user != null && user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
+        boolean isSuperUser = (user != null && user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN);
 
         if (isSuperUser) {
             // Super Users get everything regardless of mappings
@@ -309,7 +309,7 @@ public class AuthController {
                         java.util.Date now = new java.util.Date();
                         if (now.after(config.getLicExpiryDate())) {
                             // Expired - only allow IS_BOS_ADMIN=1
-                            if (user.getUserLevel() == null || user.getUserLevel() < AppUtil.AppConstants.USER_LEVEL_ADMIN) {
+                            if (user.getUserLevel() == null || user.getUserLevel() < AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
                                 Map<String, String> error = new HashMap<>();
                                 error.put("message", "System License Expired. Please contact support.");
                                 return ResponseEntity.status(403).body(error);
@@ -636,7 +636,7 @@ public class AuthController {
             java.util.List<com.autonoma.erp.model.admin.UserDivisionMapping> divMappings = userDivisionMappingRepository
                     .findByUserId(matchedUser.getUserId());
 
-            boolean isSuperUser = (matchedUser.getUserLevel() != null && matchedUser.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
+            boolean isSuperUser = (matchedUser.getUserLevel() != null && matchedUser.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN);
 
             if (isSuperUser) {
                 java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository
@@ -814,7 +814,7 @@ public class AuthController {
                 if (config.getLicExpiryDate() != null) {
                     java.util.Date now = new java.util.Date();
                     if (now.after(config.getLicExpiryDate())) {
-                        if (user.getUserLevel() == null || user.getUserLevel() < AppUtil.AppConstants.USER_LEVEL_ADMIN) {
+                        if (user.getUserLevel() == null || user.getUserLevel() < AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
                             Map<String, String> error = new HashMap<>();
                             error.put("message", "System License Expired. Please contact support.");
                             return ResponseEntity.status(403).body(error);
@@ -917,7 +917,7 @@ public class AuthController {
         return Math.sqrt(sum);
     }
 
-    private static final double FACE_MATCH_THRESHOLD = 0.6;
+    private static final double FACE_MATCH_THRESHOLD = 0.45;
 
     /**
      * Compare an incoming descriptor against a user's stored descriptor.

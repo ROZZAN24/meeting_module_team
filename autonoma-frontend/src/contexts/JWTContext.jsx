@@ -288,7 +288,7 @@ export function JWTProvider({ children }) {
           
           // Fetch company config for global input case style
           try {
-            const profileRes = await axios.get('/api/CompanyProfile/profile');
+            const profileRes = await axios.get('/api/CompanyProfile/profile', { skipGlobalAlert: true });
             if (profileRes.data && profileRes.data.inputCaseStyle) {
               window.localStorage.setItem('inputCaseStyle', profileRes.data.inputCaseStyle);
             }

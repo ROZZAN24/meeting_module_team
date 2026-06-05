@@ -34,7 +34,11 @@ public class BosUserPageAuthService {
         Map<Integer, BosUserPageAuth> authMap = userAuths.stream()
                 .collect(Collectors.toMap(BosUserPageAuth::getPageId, a -> a));
 
-        boolean isBosAdmin = userRepository.findByUserId(userId)
+        boolean isSuperAdmin = userRepository.findByUserId(userId)
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
+                .orElse(false);
+
+        boolean isAdmin = userRepository.findByUserId(userId)
                 .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN)
                 .orElse(false);
 
@@ -58,14 +62,15 @@ public class BosUserPageAuthService {
                 auth.setAdditional2(0);
                 auth.setAddTaskEnable(0);
 
-                // Default Close Checklist / Renewal (QM1120) to enabled & read/write for regular users
+                // Default Close Checklist / Renewal (QM1120)
                 if ("QM1120".equals(page.getPageCode())) {
                     auth.setEnable(1);
                     auth.setReadAcs(1);
                     auth.setWrite(1);
                 }
             }
-            if (isBosAdmin) {
+
+            if (isSuperAdmin) {
                 auth.setEnable(1);
                 auth.setReadAcs(1);
                 auth.setWrite(1);
@@ -76,9 +81,34 @@ public class BosUserPageAuthService {
                 auth.setAdditional1(1);
                 auth.setAdditional2(1);
                 auth.setAddTaskEnable(1);
+                auth.setPage(page);
+                result.add(auth);
+            } else if (isAdmin) {
+                String code = page.getPageCode();
+                if (code != null && (code.equals("AD1210") || code.equals("AD1220") || code.equals("AD1230") || code.equals("AD1240"))) {
+                    // Drop Super Admin pages for regular Admin
+                } else {
+                    auth.setEnable(1);
+                    auth.setReadAcs(1);
+                    auth.setWrite(1);
+                    auth.setDeleteAcs(1);
+                    auth.setExport(1);
+                    auth.setApproval(1);
+                    auth.setManager(1);
+                    auth.setAdditional1(1);
+                    auth.setAdditional2(1);
+                    auth.setAddTaskEnable(1);
+                    auth.setPage(page);
+                    result.add(auth);
+                }
+            } else {
+                // Regular user (Level 0)
+                // Rule: If BOS_PAGES is disabled, it MUST NOT appear for normal users
+                if (page.getEnabled() != null && page.getEnabled() == 1) {
+                    auth.setPage(page);
+                    result.add(auth);
+                }
             }
-            auth.setPage(page);
-            result.add(auth);
         }
         return result;
     }
@@ -98,15 +128,33 @@ public class BosUserPageAuthService {
      * @return true if the user has the requested permission
      */
     public boolean hasPermission(String userId, String pageCode, String action) {
-        boolean isBosAdmin = userRepository.findByUserId(userId)
-                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN)
+        BosPage page = pageRepository.findByPageCode(pageCode).orElse(null);
+        if (page == null) return false;
+
+        boolean isSuperAdmin = userRepository.findByUserId(userId)
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
                 .orElse(false);
-        if (isBosAdmin) {
+
+        if (isSuperAdmin) {
             return true;
         }
 
-        BosPage page = pageRepository.findByPageCode(pageCode).orElse(null);
-        if (page == null) return false;
+        boolean isAdmin = userRepository.findByUserId(userId)
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN)
+                .orElse(false);
+
+        if (isAdmin) {
+            if (pageCode != null && (pageCode.equals("AD1210") || pageCode.equals("AD1220") || pageCode.equals("AD1230") || pageCode.equals("AD1240"))) {
+                // Drop down to DB check for Super BOS(S) pages
+            } else {
+                return true;
+            }
+        }
+
+        // Rule: Disabled pages must not be accessible through direct URLs or APIs (for Regular Users only)
+        if (page.getEnabled() == null || page.getEnabled() != 1) {
+            return false;
+        }
 
         BosUserPageAuth auth = authRepository.findByUserIdAndPageId(userId, page.getPageId());
         if (auth == null) {

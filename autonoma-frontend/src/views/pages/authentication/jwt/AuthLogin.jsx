@@ -33,13 +33,13 @@ import CustomFormControl from 'ui-component/extended/Form/CustomFormControl';
 import useAuth from 'hooks/useAuth';
 import useScriptRef from 'hooks/useScriptRef';
 import axios from 'utils/axios';
-import { getFaceDescriptor, checkLiveness } from 'utils/faceApi';
+import { getFaceDescriptor, checkLiveness, drawFaceDetection } from 'utils/faceApi';
 import FaceDetectionDashboard from './FaceDetectionDashboard';
 
 // assets
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { IconBuilding, IconBuildingFactory2, IconArrowLeft, IconLogin, IconShieldCheck, IconLock, IconCheck, IconInfoCircle, IconCamera, IconCameraOff, IconScan, IconUser, IconFaceId } from '@tabler/icons-react';
+import { IconBuilding, IconBuildingFactory2, IconArrowLeft, IconLogin, IconShieldCheck, IconLock, IconCheck, IconInfoCircle, IconCamera, IconCameraOff, IconScan, IconUser, IconFaceId, IconActivity } from '@tabler/icons-react';
 
 // ===============================|| JWT - TWO-STEP LOGIN ||=============================== //
 
@@ -130,18 +130,45 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loginMethod, step]);
 
-  // Auto face scan
+  // Auto face scan with continuous drawing
   useEffect(() => {
-    let timeoutId;
+    let frameId;
+    let consecutiveFaces = 0;
+
+    const runDetection = async () => {
+      if (loginMethod === 'face' && webcamActive && !isFaceScanning && step === 'credentials') {
+        const videoElement = document.getElementById('webcam-video');
+        const canvasElement = document.getElementById('webcam-canvas');
+        if (videoElement && canvasElement && videoElement.readyState >= 2) {
+          try {
+            const hasFace = await drawFaceDetection(videoElement, canvasElement);
+            if (hasFace) {
+              consecutiveFaces++;
+              if (consecutiveFaces > 10) {
+                // Stabilized face found, clear tracking and authenticate
+                setCheckError(null);
+                handleFaceScan('');
+                return;
+              }
+            } else {
+              consecutiveFaces = Math.max(0, consecutiveFaces - 2);
+            }
+          } catch (e) {
+            console.error('Face detection error', e);
+          }
+        }
+
+        // Schedule next frame ONLY after current detection completes
+        frameId = requestAnimationFrame(runDetection);
+      }
+    };
+
     if (loginMethod === 'face' && webcamActive && !isFaceScanning && step === 'credentials') {
-      timeoutId = setTimeout(() => {
-        setCheckError(null);
-        // Use an empty string for username so the backend matches purely on face
-        handleFaceScan('');
-      }, 2500); // 2.5s delay to allow face detection and error viewing
+      frameId = requestAnimationFrame(runDetection);
     }
+
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (frameId) cancelAnimationFrame(frameId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loginMethod, webcamActive, isFaceScanning, step]);
@@ -406,157 +433,103 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
             >
               {({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
                 <form noValidate onSubmit={handleSubmit}>
-                  {loginMethod === 'password' && (
-                    <Box sx={{ mb: 3 }}>
-                      <Typography
-                        variant="h4"
-                        sx={{
-                          fontWeight: 800,
-                          color: theme.palette.primary.main,
-                          letterSpacing: '-0.5px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1
-                        }}
-                      >
-                        <IconShieldCheck size={28} /> Your Workspace is Ready. Let's Get Things Done.
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {/* Login Method Toggle */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      bgcolor: alpha(theme.palette.primary.main, 0.08),
-                      p: 0.5,
-                      borderRadius: '12px',
-                      mb: 3
-                    }}
-                  >
-                    <Button
-                      fullWidth
-                      type="button"
-                      onClick={() => {
-                        setLoginMethod('face');
-                        setCheckError(null);
-                        startWebcam();
-                      }}
-                      variant={loginMethod === 'face' ? 'contained' : 'text'}
-                      sx={{
-                        borderRadius: '10px',
-                        py: 1,
-                        fontSize: '0.875rem',
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        bgcolor: loginMethod === 'face' ? '#7f9eb5' : 'transparent',
-                        color: loginMethod === 'face' ? '#fff' : theme.palette.text.secondary,
-                        border: loginMethod === 'face' ? '1px solid #FFD700' : 'none',
-                        boxShadow: loginMethod === 'face' ? '0 0 10px rgba(255, 215, 0, 0.6)' : 'none',
-                        '&:hover': {
-                          bgcolor: loginMethod === 'face' ? '#6f8ea5' : alpha(theme.palette.primary.main, 0.15),
-                          boxShadow: loginMethod === 'face' ? '0 0 15px rgba(255, 215, 0, 0.8)' : 'none'
-                        }
-                      }}
-                    >
-                      Face Id
-                    </Button>
-                    <Button
-                      fullWidth
-                      type="button"
-                      onClick={() => {
-                        setLoginMethod('password');
-                        stopWebcam();
-                        setCheckError(null);
-                      }}
-                      variant={loginMethod === 'password' ? 'contained' : 'text'}
-                      sx={{
-                        borderRadius: '10px',
-                        py: 1,
-                        fontSize: '0.875rem',
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        bgcolor: loginMethod === 'password' ? theme.palette.primary.main : 'transparent',
-                        color: loginMethod === 'password' ? '#fff' : theme.palette.text.secondary,
-                        '&:hover': {
-                          bgcolor: loginMethod === 'password' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15)
-                        }
-                      }}
-                    >
-                      Password
-                    </Button>
-
+                  <Box sx={{ textAlign: 'center', mb: 4 }}>
+                    <Typography sx={{ fontSize: '1.5rem', fontWeight: 600, color: '#fff', mb: 1 }}>
+                      Welcome Back!
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                      {loginMethod === 'face'
+                        ? 'Authenticate with your face to access BOS(S)'
+                        : 'Enter your credentials to access BOS(S)'}
+                    </Typography>
                   </Box>
 
-                  {loginMethod === 'password' && (
-                    <CustomFormControl fullWidth error={Boolean(touched.email && errors.email)} sx={{ mb: 2 }}>
-                      <InputLabel htmlFor="login-userid">User ID / Email</InputLabel>
-                      <OutlinedInput
-                        id="login-userid"
-                        type="text"
-                        value={values.email}
-                        name="email"
-                        onBlur={handleBlur}
-                        onChange={(e) => {
-                          handleChange(e);
-                          if (checkError) setCheckError(null);
-                        }}
-                        label="User ID / Email"
-                        autoComplete="username"
-                        sx={{
-                          borderRadius: '12px',
-                          bgcolor: alpha(theme.palette.background.paper, 0.5),
-                          backdropFilter: 'blur(4px)'
-                        }}
-                      />
-                      {touched.email && errors.email && (
-                        <FormHelperText error id="standard-weight-helper-text-email-login">
-                          {errors.email}
-                        </FormHelperText>
-                      )}
-                    </CustomFormControl>
-                  )}
-
                   {loginMethod === 'password' ? (
-                    <CustomFormControl fullWidth error={Boolean(touched.password && errors.password)}>
-                      <InputLabel htmlFor="login-password">Password</InputLabel>
-                      <OutlinedInput
-                        id="login-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={values.password}
-                        name="password"
-                        onBlur={handleBlur}
-                        onChange={(e) => {
-                          handleChange(e);
-                          if (checkError) setCheckError(null);
-                        }}
-                        label="Password"
-                        autoComplete="current-password"
-                        endAdornment={
-                          <InputAdornment position="end">
-                            <IconButton
-                              aria-label="toggle password visibility"
-                              onClick={handleClickShowPassword}
-                              onMouseDown={handleMouseDownPassword}
-                              edge="end"
-                              size="large"
-                            >
-                              {showPassword ? <Visibility /> : <VisibilityOff />}
-                            </IconButton>
-                          </InputAdornment>
-                        }
-                        sx={{
-                          borderRadius: '12px',
-                          bgcolor: alpha(theme.palette.background.paper, 0.5),
-                          backdropFilter: 'blur(4px)'
-                        }}
-                      />
-                      {touched.password && errors.password && (
-                        <FormHelperText error id="standard-weight-helper-text-password-login">
-                          {errors.password}
-                        </FormHelperText>
-                      )}
-                    </CustomFormControl>
+                    <>
+                      <CustomFormControl fullWidth error={Boolean(touched.email && errors.email)} sx={{ mb: 2 }}>
+                        <InputLabel htmlFor="login-userid" sx={{ color: 'rgba(255,255,255,0.7)' }}>User ID</InputLabel>
+                        <OutlinedInput
+                          id="login-userid"
+                          type="text"
+                          value={values.email}
+                          name="email"
+                          onBlur={handleBlur}
+                          onChange={(e) => {
+                            handleChange(e);
+                            if (checkError) setCheckError(null);
+                          }}
+                          label="User ID"
+                          autoComplete="username"
+                          sx={{
+                            borderRadius: '12px',
+                            bgcolor: 'rgba(255,255,255,0.05)',
+                            color: '#fff',
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
+                            '& input:-webkit-autofill': {
+                              WebkitBoxShadow: '0 0 0 1000px #131722 inset !important',
+                              WebkitTextFillColor: '#fff !important',
+                              caretColor: '#fff',
+                              borderRadius: 'inherit'
+                            }
+                          }}
+                        />
+                        {touched.email && errors.email && (
+                          <FormHelperText error id="standard-weight-helper-text-email-login">
+                            {errors.email}
+                          </FormHelperText>
+                        )}
+                      </CustomFormControl>
+
+                      <CustomFormControl fullWidth error={Boolean(touched.password && errors.password)}>
+                        <InputLabel htmlFor="login-password" sx={{ color: 'rgba(255,255,255,0.7)' }}>Password</InputLabel>
+                        <OutlinedInput
+                          id="login-password"
+                          type={showPassword ? 'text' : 'password'}
+                          value={values.password}
+                          name="password"
+                          onBlur={handleBlur}
+                          onChange={(e) => {
+                            handleChange(e);
+                            if (checkError) setCheckError(null);
+                          }}
+                          label="Password"
+                          autoComplete="current-password"
+                          endAdornment={
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={handleClickShowPassword}
+                                onMouseDown={handleMouseDownPassword}
+                                edge="end"
+                                size="large"
+                                sx={{ color: 'rgba(255,255,255,0.7)' }}
+                              >
+                                {showPassword ? <Visibility /> : <VisibilityOff />}
+                              </IconButton>
+                            </InputAdornment>
+                          }
+                          sx={{
+                            borderRadius: '12px',
+                            bgcolor: 'rgba(255,255,255,0.05)',
+                            color: '#fff',
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
+                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
+                            '& input:-webkit-autofill': {
+                              WebkitBoxShadow: '0 0 0 1000px #131722 inset !important',
+                              WebkitTextFillColor: '#fff !important',
+                              caretColor: '#fff',
+                              borderRadius: 'inherit'
+                            }
+                          }}
+                        />
+                        {touched.password && errors.password && (
+                          <FormHelperText error id="standard-weight-helper-text-password-login">
+                            {errors.password}
+                          </FormHelperText>
+                        )}
+                      </CustomFormControl>
+                    </>
                   ) : (
                     <Box sx={{ width: '100%', mt: 2 }}>
                       <FaceDetectionDashboard
@@ -594,7 +567,6 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                     <Box sx={{ mt: 4 }}>
                       <AnimateButton>
                         <Button
-                          color="primary"
                           disabled={isChecking}
                           fullWidth
                           size="large"
@@ -602,25 +574,59 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                           variant="contained"
                           startIcon={isChecking ? <CircularProgress size={18} color="inherit" /> : <IconLock size={18} />}
                           sx={{
-                            borderRadius: '14px',
+                            borderRadius: '12px',
                             fontWeight: 700,
-                            py: 1.6,
+                            py: 1.5,
                             fontSize: '1rem',
-                            boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                            color: '#000',
+                            background: 'linear-gradient(90deg, #D4AF37 0%, #FFDF73 100%)',
+                            boxShadow: '0 8px 20px rgba(212, 175, 55, 0.3)',
                             '&:hover': {
-                              boxShadow: `0 10px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
-                              transform: 'translateY(-1px)'
+                              background: 'linear-gradient(90deg, #C29B27 0%, #E6C858 100%)',
+                              boxShadow: '0 10px 25px rgba(212, 175, 55, 0.5)',
                             }
                           }}
                         >
-                          {isChecking ? 'Verifying Credentials…' : 'Continue'}
+                          {isChecking ? 'Verifying...' : 'Authenticate'}
                         </Button>
                       </AnimateButton>
+
+                      <Box sx={{ mt: 3, textAlign: 'center' }}>
+                        <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mb: 2 }}>or</Typography>
+                        <Button
+                          onClick={() => {
+                            setLoginMethod('face');
+                            setCheckError(null);
+                            startWebcam();
+                          }}
+                          sx={{ color: '#00B0FF', textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' }}
+                          startIcon={<IconFaceId size={18} />}
+                        >
+                          Use Face ID Instead
+                        </Button>
+                      </Box>
                     </Box>
-                  ) : null}
+                  ) : (
+                    <Box sx={{ mt: 1, textAlign: 'center' }}>
+                      <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mb: 1 }}>or</Typography>
+                      <Button
+                        onClick={() => {
+                          setLoginMethod('password');
+                          stopWebcam();
+                          setCheckError(null);
+                        }}
+                        sx={{ color: '#00B0FF', textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' }}
+                        startIcon={<IconLock size={18} />}
+                      >
+                        Use Password Instead
+                      </Button>
+                    </Box>
+                  )}
                 </form>
               )}
             </Formik>
+
+
           </motion.div>
         ) : (
           <motion.div
@@ -665,7 +671,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                     sx={{
                       fontWeight: 800,
                       letterSpacing: '-0.3px',
-                      background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                      background: `linear-gradient(90deg, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.main} 100%)`,
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       mb: 0.2
@@ -674,7 +680,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                     Context Selection
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: '0.75rem' }}>
                       Signed in as
                     </Typography>
                     <Chip
@@ -695,7 +701,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
 
               {/* Company Selection */}
               <Box sx={{ mb: 1.5 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.15em' }}>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 800, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.15em' }}>
                   Select Company ({companies.length})
                 </Typography>
                 <FormControl fullWidth>
@@ -710,22 +716,29 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                     }}
                     sx={{
                       borderRadius: '16px',
-                      background: `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.5)})`,
-                      backdropFilter: 'blur(20px)',
-                      border: '1px solid',
-                      borderColor: alpha(theme.palette.common.white, 0.6),
-                      boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.08)}`,
+                      background: '#fff',
+                      border: 'none',
+                      boxShadow: `0 8px 32px rgba(0,0,0,0.4)`,
                       py: 0.3,
                       transition: 'all 0.3s ease',
                       '&:hover': {
-                        borderColor: theme.palette.primary.main,
-                        boxShadow: `0 10px 36px ${alpha(theme.palette.primary.main, 0.15)}`
+                        boxShadow: `0 10px 36px ${alpha(theme.palette.primary.main, 0.3)}`
                       },
                       '& .MuiSelect-select': {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1.5,
                         pl: 2
+                      }
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          bgcolor: '#fff',
+                          borderRadius: '12px',
+                          mt: 1,
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                        }
                       }
                     }}
                   >
@@ -749,10 +762,10 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                             <IconBuilding size={18} stroke={2.2} />
                           </Box>
                           <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.88rem' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.88rem' }}>
                               {item.company.companyName || item.company.dbSourceName}
                             </Typography>
-                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, display: 'block', fontSize: '0.72rem' }}>
+                            <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, display: 'block', fontSize: '0.72rem' }}>
                               Instance: <span style={{ color: theme.palette.primary.main, fontWeight: 700 }}>{item.company.dbSourceName}</span>
                             </Typography>
                           </Box>
@@ -782,7 +795,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
 
               {/* Division Selection */}
               <Box sx={{ mb: 1.5 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.15em' }}>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 800, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.15em' }}>
                   Select Division {currentDivisions.length > 0 ? `(${currentDivisions.length})` : ''}
                 </Typography>
 
@@ -815,22 +828,29 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                       }}
                       sx={{
                         borderRadius: '16px',
-                        background: `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.5)})`,
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid',
-                        borderColor: alpha(theme.palette.common.white, 0.6),
-                        boxShadow: `0 8px 32px ${alpha(theme.palette.secondary.main, 0.08)}`,
+                        background: '#fff',
+                        border: 'none',
+                        boxShadow: `0 8px 32px rgba(0,0,0,0.4)`,
                         py: 0.3,
                         transition: 'all 0.3s ease',
                         '&:hover': {
-                          borderColor: theme.palette.secondary.main,
-                          boxShadow: `0 10px 36px ${alpha(theme.palette.secondary.main, 0.15)}`
+                          boxShadow: `0 10px 36px ${alpha(theme.palette.secondary.main, 0.3)}`
                         },
                         '& .MuiSelect-select': {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1.5,
                           pl: 2
+                        }
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            bgcolor: '#fff',
+                            borderRadius: '12px',
+                            mt: 1,
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                          }
                         }
                       }}
                     >
@@ -854,10 +874,10 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                               <IconBuildingFactory2 size={18} stroke={2.2} />
                             </Box>
                             <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.88rem' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 800, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.88rem' }}>
                                 {div.divisionName}
                               </Typography>
-                              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, display: 'block', fontSize: '0.72rem' }}>
+                              <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, display: 'block', fontSize: '0.72rem' }}>
                                 Division ID: <span style={{ color: theme.palette.secondary.main, fontWeight: 700 }}>{div.id}</span>
                               </Typography>
                             </Box>
@@ -928,6 +948,31 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Footer Features (Globally visible) */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconShieldCheck size={20} color="#D4AF37" stroke={1.5} />
+          <Box>
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Secure</Typography>
+            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>End-to-end encryption</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconLock size={20} color="#D4AF37" stroke={1.5} />
+          <Box>
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Private</Typography>
+            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>Your data is never shared</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconActivity size={20} color="#D4AF37" stroke={1.5} />
+          <Box>
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Fast</Typography>
+            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>Quick access to your workspace</Typography>
+          </Box>
+        </Box>
+      </Box>
     </Box>
   );
 }

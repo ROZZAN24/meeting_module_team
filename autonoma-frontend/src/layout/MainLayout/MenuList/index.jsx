@@ -28,28 +28,47 @@ import { useGetMenu, useGetMenuMaster } from 'api/menu';
  * - type 'group': recursively filter children, hidden if all children removed
  * - Items without a pageCode: always visible (backwards compatible)
  */
-export function filterMenuByPermissions(items, permMap) {
+export function filterMenuByPermissions(items, permMap, userLevel = 0) {
   if (!items || !Array.isArray(items)) return [];
 
   return items
     .map((item) => {
-      // Leaf item with a pageCode → check if user has enable=true
-      if (item.type === 'item' && item.pageCode) {
+      // BOS Super Admin (5) override: always visible
+      if (userLevel === 5) {
+        if ((item.type === 'collapse' || item.type === 'group') && item.children) {
+          const filteredChildren = filterMenuByPermissions(item.children, permMap, userLevel);
+          if (filteredChildren.length === 0) return null;
+          return { ...item, children: filteredChildren };
+        }
+        return item;
+      }
+
+      // Admin (1) override: always visible EXCEPT for Super BOS(S) group
+      if (userLevel === 1) {
+        if (item.id === 'BOS(S)-Admin') return null; // Hide Super BOS(S) from level 1
+        if ((item.type === 'collapse' || item.type === 'group') && item.children) {
+          const filteredChildren = filterMenuByPermissions(item.children, permMap, userLevel);
+          if (filteredChildren.length === 0) return null;
+          return { ...item, children: filteredChildren };
+        }
+        return item;
+      }
+
+
+      // Regular User (0) behavior: Check if user has enable=true in permMap
+      if (item.type === 'item') {
+        if (!item.pageCode) return null; // hide if no page code
         const perm = permMap[item.pageCode];
-        // If permission record does not exist or enable is explicitly false or 0 → hide
         if (!perm || perm.enable === false || perm.enable === 0) return null;
         return item;
       }
 
-      // Collapse or group with children → recursively filter
       if ((item.type === 'collapse' || item.type === 'group') && item.children) {
-        const filteredChildren = filterMenuByPermissions(item.children, permMap);
-        // Hide the group/collapse if all children were removed
+        const filteredChildren = filterMenuByPermissions(item.children, permMap, userLevel);
         if (filteredChildren.length === 0) return null;
         return { ...item, children: filteredChildren };
       }
 
-      // Everything else (dividers, headers, items without pageCode) → keep
       return item;
     })
     .filter(Boolean);
@@ -85,15 +104,14 @@ function MenuList() {
 
   // ── Build filtered menu items ──
   useLayoutEffect(() => {
-    let currentItems = [...menuItem.items];
-
-    // Apply permission filtering only when permissions are loaded
-    if (permStatus === 'loaded') {
-      currentItems = filterMenuByPermissions(currentItems, permMap);
+    if (permStatus !== 'loaded') {
+      setMenuItems({ items: [] });
+      return;
     }
 
+    let currentItems = filterMenuByPermissions([...menuItem.items], permMap, user?.userLevel || 0);
     setMenuItems({ items: currentItems });
-  }, [menuLoading, menu, permStatus, permMap]);
+  }, [menuLoading, menu, permStatus, permMap, user?.userLevel]);
 
   // last menu-item to show in horizontal menu bar
   const lastItem = isHorizontal ? HORIZONTAL_MAX_ITEM : null;

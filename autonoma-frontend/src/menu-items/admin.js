@@ -102,13 +102,22 @@ const admin = {
           pageCode: 'AD1170'
         },
         {
-          id: 'data-migration',
-          title: 'Old Data Migration',
+          id: 'prefix-credentials',
+          title: 'Prefix/Suffix Credentials',
           type: 'item',
-          url: '/admin/data-migration',
-          icon: icons.IconDatabaseExport,
+          url: '/admin/prefix-credentials',
+          icon: icons.IconSettings,
           breadcrumbs: true,
-          pageCode: 'AD1180'
+          pageCode: 'AD1230'
+        },
+        {
+          id: 'session-monitoring',
+          title: 'Session Monitoring',
+          type: 'item',
+          url: '/admin/session-monitoring',
+          icon: icons.IconActivity,
+          breadcrumbs: true,
+          pageCode: 'AD1240'
         },
         {
           id: 'organization-chart',
@@ -146,22 +155,13 @@ const admin = {
           pageCode: 'AD1220'
         },
         {
-          id: 'prefix-credentials',
-          title: 'Prefix/Suffix Credentials',
+          id: 'data-migration',
+          title: 'Old Data Migration',
           type: 'item',
-          url: '/admin/prefix-credentials',
-          icon: icons.IconSettings,
+          url: '/admin/data-migration',
+          icon: icons.IconDatabaseExport,
           breadcrumbs: true,
-          pageCode: 'AD1230'
-        },
-        {
-          id: 'session-monitoring',
-          title: 'Session Monitoring',
-          type: 'item',
-          url: '/admin/session-monitoring',
-          icon: icons.IconActivity,
-          breadcrumbs: true,
-          pageCode: 'AD1240'
+          pageCode: 'AD1180'
         }
       ]
     }

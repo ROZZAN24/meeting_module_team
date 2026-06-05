@@ -90,14 +90,18 @@ export default function SessionInfoBadge() {
           </Typography>
         </Box>
 
-        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 300, mx: 0.2 }}>/</Typography>
+        {divisionName && (
+          <>
+            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 300, mx: 0.2 }}>/</Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
-          <IconBuildingFactory2 size={15} stroke={2} style={{ color: theme.palette.secondary.main, flexShrink: 0 }} />
-          <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem' }}>
-            {divisionName}
-          </Typography>
-        </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+              <IconBuildingFactory2 size={15} stroke={2} style={{ color: theme.palette.secondary.main, flexShrink: 0 }} />
+              <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem' }}>
+                {divisionName}
+              </Typography>
+            </Box>
+          </>
+        )}
 
         <IconChevronDown size={14} stroke={2} style={{ color: theme.palette.text.disabled, marginLeft: 4 }} />
       </Box>
