@@ -29,7 +29,8 @@ import {
   IconDashboard,
   IconAdjustmentsBolt,
   IconPhone,
-  IconMicrophone
+  IconMicrophone,
+  IconFaceId
 } from '@tabler/icons-react';
 
 const authLoginImports = {
@@ -198,6 +199,7 @@ export default function Login() {
                       <Grid item xs={3}><ModuleIcon icon={IconChartPie} title="Analytics & Reports" /></Grid>
                       <Grid item xs={3}><ModuleIcon icon={IconPhone} title="Mobile Apps" /></Grid>
                       <Grid item xs={3}><ModuleIcon icon={IconMicrophone} title="Voice Enabled" /></Grid>
+                      <Grid item xs={3}><ModuleIcon icon={IconFaceId} title="Face Login" /></Grid>
                     </Grid>
 
                     {/* Security Footers */}
