@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -18,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class ApiLoggingFilter extends OncePerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger("API_LOGGER");
+    private static final Logger log = LoggerFactory.getLogger(ApiLoggingFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -26,31 +27,49 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
         
-        // Match ONLY our target modules (QMS, Checklist, Audit, Induction)
-        boolean isTargetModule = uri.startsWith("/api/qms") || 
-                                 uri.startsWith("/api/master/qms") ||
-                                 uri.startsWith("/api/induction") ||
-                                 uri.startsWith("/api/master/induction") ||
-                                 uri.startsWith("/api/checklist") ||
-                                 uri.startsWith("/api/master/checklist");
-
-        if (!isTargetModule) {
+        // Skip logging for static assets if any
+        if (uri.startsWith("/static/") || uri.endsWith(".js") || uri.endsWith(".css") || uri.endsWith(".png") || uri.endsWith(".ico")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Identify current module name
-        String module = "QMS";
-        if (uri.contains("/induction")) {
+        // Determine module name from URI
+        String module = "SYSTEM";
+        String lowerUri = uri.toLowerCase();
+        if (lowerUri.contains("/qms")) {
+            module = "QMS";
+        } else if (lowerUri.contains("/induction")) {
             module = "INDUCTION";
-        } else if (uri.contains("/checklist")) {
+        } else if (lowerUri.contains("/checklist")) {
             module = "CHECKLIST";
-        } else if (uri.contains("/audit")) {
+        } else if (lowerUri.contains("/audit")) {
             module = "AUDIT";
+        } else if (lowerUri.contains("/admin")) {
+            module = "ADMIN";
+        } else if (lowerUri.contains("/master")) {
+            module = "MASTER";
+        } else if (lowerUri.contains("/purchase")) {
+            module = "PURCHASE";
+        } else if (lowerUri.contains("/sales")) {
+            module = "SALES";
+        } else if (lowerUri.contains("/inventory")) {
+            module = "INVENTORY";
+        } else if (lowerUri.contains("/finance")) {
+            module = "FINANCE";
         }
 
-        // Initialize logging context
+        // Initialize LogContextHolder
         LogContextHolder.initContext(module);
+
+        // Populate MDC properties for Logback configuration
+        String username = SecurityUtils.getCurrentUserId();
+        if (username == null) {
+            username = "ANONYMOUS";
+        }
+        MDC.put("username", username);
+        MDC.put("module", module);
+        MDC.put("transactionId", LogContextHolder.getTransactionId());
+        MDC.put("requestUrl", uri);
 
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
@@ -62,18 +81,12 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
         } finally {
             long duration = System.currentTimeMillis() - startTime;
             
-            // 1. Log Request
+            // Log Request Payload
             String method = wrappedRequest.getMethod();
-            String user = SecurityUtils.getCurrentUserId();
-            if (user == null) {
-                user = "ANONYMOUS";
-            }
-            
             String requestPayload = "";
             byte[] requestBody = wrappedRequest.getContentAsByteArray();
             if (requestBody.length > 0) {
                 requestPayload = new String(requestBody, StandardCharsets.UTF_8);
-                // Truncate if too long to keep logs readable
                 if (requestPayload.length() > 1000) {
                     requestPayload = requestPayload.substring(0, 1000) + "... [truncated]";
                 }
@@ -81,15 +94,19 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
                 requestPayload = "{}";
             }
 
-            log.info("[API_REQUEST] [{}] [{}] - User: {}, Payload: {}", method, uri, user, requestPayload.replaceAll("\\s+", " "));
+            log.debug("[HTTP_REQUEST] [{}] [{}] - User: {}, Payload: {}", method, uri, username, requestPayload.replaceAll("\\s+", " "));
 
-            // 2. Log Response
+            // Log Response Status
             int status = wrappedResponse.getStatus();
-            log.info("[API_RESPONSE] [{}] [{}] - Status: {}, Duration: {}ms", method, uri, status, duration);
+            log.debug("[HTTP_RESPONSE] [{}] [{}] - Status: {}, Duration: {}ms", method, uri, status, duration);
 
             // Copy back cached response content to client
             wrappedResponse.copyBodyToResponse();
+            
+            // Clean up both ThreadLocal and MDC to prevent memory/thread leakages
             LogContextHolder.clear();
+            MDC.clear();
         }
     }
 }
+
