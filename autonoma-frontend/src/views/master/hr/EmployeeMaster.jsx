@@ -372,6 +372,27 @@ export default function EmployeeMaster() {
   }, []);
 
   const [abilityUpload, setAbilityUpload] = useState({ open: false, field: '', types: [], selectedType: '' });
+
+  // Restricted abilities that require completed induction
+  const INDUCTION_GATED_ABILITIES = ['isAuditor', 'isAuditee', 'isNcrApprover'];
+
+  const handleAbilityToggle = (e) => {
+    const { name, value } = e.target;
+    if (value === 'YES' && INDUCTION_GATED_ABILITIES.includes(name)) {
+      if (form.inductionStatus !== 'COMPLETED') {
+        dispatch(openSnackbar({
+          open: true,
+          message: `Cannot set ${name === 'isAuditor' ? 'Auditor' : name === 'isAuditee' ? 'Auditee' : 'NCR Approver'} ability to YES — this employee has not completed Induction (status: ${form.inductionStatus || 'PENDING'}). Please complete the induction process first.`,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'error'
+        }));
+        return; // Block the change
+      }
+    }
+    h(e); // Normal change
+  };
+
   const renderAbilityTable = (groupTitle, groupIcon, items) => {
     return (
       <Box sx={{ mb: 2 }}>
@@ -400,7 +421,7 @@ export default function EmployeeMaster() {
                   <TableRow key={toggleName} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                     <TableCell sx={{ fontWeight: 600, py: 1 }}>{label}</TableCell>
                     <TableCell sx={{ py: 1 }}>
-                      <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 85, '& .MuiSelect-select': { minWidth: 'auto !important' } }}>
+                      <BOSTextField select name={toggleName} value={form[toggleName]} onChange={INDUCTION_GATED_ABILITIES.includes(toggleName) ? handleAbilityToggle : h} size="small" sx={{ width: 85, '& .MuiSelect-select': { minWidth: 'auto !important' } }}>
                         <MenuItem value="YES">YES</MenuItem>
                         <MenuItem value="NO">NO</MenuItem>
                       </BOSTextField>

@@ -95,6 +95,7 @@ public class EmployeeMasterService {
             employee.setEmpCode(nextCode);
         }
         
+        validateAbilityInductionConstraint(employee);
         sanitizeEmployee(employee);
         return employeeRepo.save(employee);
     }
@@ -117,8 +118,31 @@ public class EmployeeMasterService {
         details.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         details.setUpdatedAt(new Date());
         
+        validateAbilityInductionConstraint(details);
         sanitizeEmployee(details);
         return employeeRepo.save(details);
+    }
+
+    /**
+     * Validates that restricted ability flags (Auditor, Auditee, NCR Approver)
+     * cannot be set to YES unless the employee has completed induction.
+     */
+    private void validateAbilityInductionConstraint(EmployeeMaster e) {
+        boolean hasRestrictedAbility =
+            "YES".equalsIgnoreCase(e.getIsAuditor()) ||
+            "YES".equalsIgnoreCase(e.getIsAuditee()) ||
+            "YES".equalsIgnoreCase(e.getIsNcrApprover());
+
+        boolean inductionComplete = "COMPLETED".equalsIgnoreCase(e.getInductionStatus());
+
+        if (hasRestrictedAbility && !inductionComplete) {
+            throw new RuntimeException(
+                "Cannot assign Auditor / Auditee / NCR Approver ability: " +
+                "This employee has not completed Induction (current status: " +
+                (e.getInductionStatus() != null ? e.getInductionStatus() : "PENDING") + "). " +
+                "Please complete the induction process first."
+            );
+        }
     }
 
     /** Coerce null Strings to empty string to satisfy NOT NULL DB columns. */

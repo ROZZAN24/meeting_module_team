@@ -1440,6 +1440,8 @@ export default function AddAuditSchedule() {
 
                 const filteredEmployees = (employees || []).filter(emp => emp).filter(emp => {
                   if (emp.status !== 'Active') return false;
+                  // Only show employees who have completed induction for audit roles
+                  if (emp.inductionStatus !== 'COMPLETED') return false;
 
                   if (person.field === 'auditor') return emp.isAuditor === 'YES';
                   if (person.field === 'auditee') {
