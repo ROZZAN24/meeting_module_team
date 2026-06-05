@@ -19,6 +19,9 @@ public class AuditNcrController {
     @Autowired
     private AuditObservationDetailRepository detailRepository;
 
+    @Autowired
+    private com.autonoma.erp.service.NcrOfiService ncrOfiService;
+
     @GetMapping("/findings")
     public List<AuditObservationDetail> getAllFindings() {
         return detailRepository.findAllNcrAndOfi();
@@ -26,32 +29,33 @@ public class AuditNcrController {
 
     @PutMapping("/close/{id}")
     @RequirePagePermission(pageCode = "QM1240", action = "write")
-    public ResponseEntity<AuditObservationDetail> closeNcr(@PathVariable Long id, @RequestBody AuditObservationDetail update) {
+    public ResponseEntity<?> closeNcr(@PathVariable Long id, @RequestBody AuditObservationDetail update) {
         return detailRepository.findById(id).map(detail -> {
-            detail.setRootCause(update.getRootCause());
-            detail.setCorrectiveAction(update.getCorrectiveAction());
-            detail.setPreventiveAction(update.getPreventiveAction());
-            detail.setClosedDate(new Date());
-            detail.setClosedBy("Admin");
-            detail.setNcrStatus("WAITING_APPROVAL");
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("observationDetailId", id.intValue());
+            payload.put("rootCause", update.getRootCause());
+            payload.put("correctiveAction", update.getCorrectiveAction());
+            payload.put("preventiveAction", update.getPreventiveAction());
+            payload.put("targetDate", update.getTargetDate() != null ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(update.getTargetDate()) : null);
             
-            // Generate NCR No if not present (only for NCR/NC status)
-            if (detail.getNcrNo() == null && ("NCR".equals(detail.getObservationStatus()) || "NC".equals(detail.getObservationStatus()))) {
-                detail.setNcrNo(generateNcrNo());
+            try {
+                ncrOfiService.processNcrClosure(payload);
+                return ResponseEntity.ok(detailRepository.findById(id).orElse(detail));
+            } catch (Exception e) {
+                return ResponseEntity.internalServerError().body(e.getMessage());
             }
-            
-            return ResponseEntity.ok(detailRepository.save(detail));
         }).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/approve/{id}")
     @RequirePagePermission(pageCode = "QM1250", action = "approval")
-    public ResponseEntity<AuditObservationDetail> approveNcr(@PathVariable Long id) {
-        return detailRepository.findById(id).map(detail -> {
-            detail.setNcrStatus("CLOSED");
-            detail.setApprovalStatus("APPROVED");
-            return ResponseEntity.ok(detailRepository.save(detail));
-        }).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> approveNcr(@PathVariable Long id) {
+        try {
+            ncrOfiService.approveNcr(id.intValue(), null);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
     @GetMapping("/next-ncr-no")

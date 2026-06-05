@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { MenuItem, Autocomplete, Chip, Button, Typography, Stack, IconButton, Box, Checkbox } from '@mui/material';
-import { IconUpload, IconX, IconPaperclip } from '@tabler/icons-react';
-import { BOSFormDialog, BOSTextField, BOSStatusField } from 'ui-component/bos';
+import { MenuItem, Autocomplete, Chip, Typography, Checkbox } from '@mui/material';
+import { BOSFormDialog, BOSTextField, BOSStatusField, BOSFileUpload } from 'ui-component/bos';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
@@ -64,7 +63,6 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
   const { employees = [], users = [] } = useLookups(['EMPLOYEES', 'USERS']);
   const { errors, validate, clearErrors, handleInputChange, setErrors } = useBOSValidation();
   const [form, setForm] = useState(INITIAL_FORM);
-  const [selectedFile, setSelectedFile] = useState(null);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -77,7 +75,6 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
       } else {
         setForm(INITIAL_FORM);
       }
-      setSelectedFile(null);
       clearErrors();
     }
   }, [open, item, clearErrors]);
@@ -91,31 +88,7 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    const validExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png'];
-    const isValidType = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
-
-    if (!isValidType) {
-      dispatch(openSnackbar({ open: true, message: 'Invalid file type. Accepted: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      dispatch(openSnackbar({ open: true, message: 'File size exceeds 5MB limit', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
-      return;
-    }
-
-    setSelectedFile(file);
-    setForm(prev => ({ ...prev, attachmentName: file.name }));
-  };
-
-  const removeFile = () => {
-    setSelectedFile(null);
-    setForm(prev => ({ ...prev, attachmentName: '', attachmentUrl: '' }));
-  };
 
   const handleSave = async () => {
     const rules = [
@@ -144,26 +117,9 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         return;
       }
 
-      let finalForm = { ...form };
-
-      if (selectedFile) {
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        try {
-          const uploadRes = await axios.post('/api/files/upload?module=MASTER_QMS_MEETING_MEETING_MASTER', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          finalForm.attachmentUrl = uploadRes.data;
-          finalForm.attachmentName = selectedFile.name;
-        } catch (err) {
-          dispatch(openSnackbar({ open: true, message: 'Failed to upload attachment', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
-          return; 
-        }
-      }
-
       onSave({
-        ...finalForm,
-        employeeName: finalForm.employeeName.join(', ')
+        ...form,
+        employeeName: form.employeeName.join(', ')
       });
     }
   };
@@ -324,62 +280,29 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         className="h-9"
       />
 
-      <Box 
-        className="flex items-center justify-between p-2 border border-dashed border-divider rounded bg-action-hover h-11"
-        sx={{ 
-          p: 1.25, 
-          border: '1px dashed', 
-          borderColor: 'divider', 
-          borderRadius: 1,
-          bgcolor: 'action.hover',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 44,
-          boxSizing: 'border-box'
+      <BOSFileUpload
+        files={form.attachmentUrl ? [{
+          fileName: form.attachmentName,
+          serverFileName: form.attachmentUrl,
+          isServer: true
+        }] : []}
+        onChange={(files) => {
+          if (files.length === 0) {
+            setForm(prev => ({ ...prev, attachmentName: '', attachmentUrl: '' }));
+          } else {
+            const file = files[0];
+            setForm(prev => ({
+              ...prev,
+              attachmentName: file.fileName || file.name,
+              attachmentUrl: file.serverFileName
+            }));
+          }
         }}
-      >
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconPaperclip size={18} color="#666" />
-          <Typography variant="caption" fontWeight="medium" color="text.secondary" className="text-xs">
-            Attachment <span style={{ opacity: 0.7 }}>(Max 5MB PDF, DOC, XLS, IMG)</span>
-          </Typography>
-        </Stack>
-        
-        {!form.attachmentName ? (
-          <Button 
-            variant="outlined" 
-            component="label" 
-            size="small" 
-            startIcon={<IconUpload size={14} />}
-            sx={{ 
-              py: 0.25, 
-              px: 1.5, 
-              fontSize: '0.75rem',
-              height: 28,
-              textTransform: 'none'
-            }}
-            className="h-7 text-xs py-1 px-3"
-          >
-            Upload File
-            <input type="file" hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onChange={handleFileChange} />
-          </Button>
-        ) : (
-          <Chip 
-            label={form.attachmentName} 
-            onDelete={removeFile} 
-            color="primary" 
-            variant="outlined" 
-            size="small"
-            sx={{ 
-              height: 24, 
-              fontSize: '0.75rem',
-              maxWidth: 220 
-            }}
-            className="h-6 text-xs"
-          />
-        )}
-      </Box>
+        module="MASTER_QMS_MEETING_MEETING_MASTER"
+        multiple={false}
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+        label="Upload Attachment"
+      />
     </BOSFormDialog>
   );
 };

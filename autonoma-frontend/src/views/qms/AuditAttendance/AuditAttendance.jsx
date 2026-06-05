@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Stack, Button, Tooltip, IconButton, MenuItem, Box, Chip, Divider } from '@mui/material';
+import { Typography, Stack, Button, Tooltip, IconButton, MenuItem, Box, Chip, Divider, Alert } from '@mui/material';
 import { IconUsers, IconFileDownload, IconPlus, IconEdit, IconTrash, IconRefresh } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
@@ -223,17 +223,18 @@ export default function AuditAttendance() {
         return false;
       }
 
-      // 2. Schedule must start within the next 10 minutes and not have started yet
+      // 2. Schedule must start within the next 480 minutes (8 hrs - TESTING MODE) and not have started yet
       const schStartTime = parseScheduleDateTime(s, false);
 
       if (schStartTime) {
-        const tenMinsBeforeStart = new Date(schStartTime.getTime() - 10 * 60 * 1000);
+        const tenMinsBeforeStart = new Date(schStartTime.getTime() - 8 * 60 * 60 * 1000); // TESTING: 8hr window (revert to 10 * 60 * 1000)
         if (now < tenMinsBeforeStart) {
           return false; // too early
         }
-        if (now > schStartTime) {
-          return false; // past schedule / already started
-        }
+        // TESTING: removed "past schedule" block so attendance can be recorded anytime today
+        // if (now > schStartTime) {
+        //   return false; // past schedule / already started
+        // }
       }
       
       return true;
@@ -401,6 +402,21 @@ export default function AuditAttendance() {
          columns={columns} />
       }
     >
+      {/* ⚠️ TESTING MODE BANNER — Remove when reverting time window to 10 minutes */}
+      <Alert 
+        severity="warning" 
+        variant="filled"
+        sx={{ 
+          mb: 2, 
+          fontWeight: 800, 
+          fontSize: '0.95rem',
+          borderRadius: 2,
+          '& .MuiAlert-message': { width: '100%', textAlign: 'center' }
+        }}
+      >
+        ⚠️ TESTING MODE — Time restriction is temporarily relaxed (8-hour window). Revert to 10-minute window after testing.
+      </Alert>
+
       <BOSDataTable
         columns={columns}
         rows={rows.slice(page * size, page * size + size)}

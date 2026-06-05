@@ -5366,3 +5366,51 @@ select count_big(*) from AD_COMPANY_CREDENTIAL cc1_0 [90022-224]
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
 	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
+2026-06-05 23:41:01.020348+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT id, DEPT_NO, DEPT_NAME FROM HR_DEPARTMENT LIMIT [*]10"; SQL statement:
+SELECT id, DEPT_NO, DEPT_NAME FROM HR_DEPARTMENT LIMIT 10 [42000-224]
+2026-06-05 23:41:01.021141+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT id, ROW_ID, LEVEL, LEVEL_NAME, SCREENING_LEVEL FROM HR_DESIGNATION_LEVEL LIMIT [*]10"; SQL statement:
+SELECT id, ROW_ID, LEVEL, LEVEL_NAME, SCREENING_LEVEL FROM HR_DESIGNATION_LEVEL LIMIT 10 [42000-224]
+2026-06-05 23:41:01.021349+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT EMP_CODE, EMPLOYEE_NAME, GRADE_CODE, IS_INDUCTION_ELIGIBLE, INDUCTION_STATUS, STATUS FROM HR_EMPLOYEE WHERE IS_INDUCTION_ELIGIBLE = 'YES' [*]LIMIT 10"; SQL statement:
+SELECT EMP_CODE, EMPLOYEE_NAME, GRADE_CODE, IS_INDUCTION_ELIGIBLE, INDUCTION_STATUS, STATUS FROM HR_EMPLOYEE WHERE IS_INDUCTION_ELIGIBLE = 'YES' LIMIT 10 [42000-224]
+2026-06-05 23:41:01.021515+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT EMP_CODE, EMPLOYEE_NAME, GRADE_CODE, INDUCTION_STATUS, STATUS FROM HR_EMPLOYEE WHERE INDUCTION_STATUS = 'PENDING' [*]LIMIT 10"; SQL statement:
+SELECT EMP_CODE, EMPLOYEE_NAME, GRADE_CODE, INDUCTION_STATUS, STATUS FROM HR_EMPLOYEE WHERE INDUCTION_STATUS = 'PENDING' LIMIT 10 [42000-224]
+2026-06-05 23:41:11.337667+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "DEPT_NO" not found; SQL statement:
+SELECT id, DEPT_NO, DEPT_NAME FROM HR_DEPARTMENT [42122-224]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.expression.ExpressionColumn.getColumnException(ExpressionColumn.java:244)
+	at org.h2.expression.ExpressionColumn.optimizeOther(ExpressionColumn.java:226)
+	at org.h2.expression.ExpressionColumn.optimize(ExpressionColumn.java:213)
+	at org.h2.command.query.Select.prepareExpressions(Select.java:1170)
+	at org.h2.command.query.Query.prepare(Query.java:218)
+	at org.h2.command.Parser.prepareCommand(Parser.java:489)
+	at org.h2.engine.SessionLocal.prepareLocal(SessionLocal.java:639)
+	at org.h2.engine.SessionLocal.prepareCommand(SessionLocal.java:559)
+	at org.h2.jdbc.JdbcConnection.prepareCommand(JdbcConnection.java:1166)
+	at org.h2.jdbc.JdbcStatement.executeQuery(JdbcStatement.java:94)
+	at QueryRealData.main(QueryRealData.java:14)
+2026-06-05 23:41:11.338467+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "ID" not found; SQL statement:
+SELECT id, ROW_ID, LEVEL, LEVEL_NAME, SCREENING_LEVEL FROM HR_DESIGNATION_LEVEL [42122-224]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.expression.ExpressionColumn.getColumnException(ExpressionColumn.java:244)
+	at org.h2.expression.ExpressionColumn.optimizeOther(ExpressionColumn.java:226)
+	at org.h2.expression.ExpressionColumn.optimize(ExpressionColumn.java:213)
+	at org.h2.command.query.Select.prepareExpressions(Select.java:1170)
+	at org.h2.command.query.Query.prepare(Query.java:218)
+	at org.h2.command.Parser.prepareCommand(Parser.java:489)
+	at org.h2.engine.SessionLocal.prepareLocal(SessionLocal.java:639)
+	at org.h2.engine.SessionLocal.prepareCommand(SessionLocal.java:559)
+	at org.h2.jdbc.JdbcConnection.prepareCommand(JdbcConnection.java:1166)
+	at org.h2.jdbc.JdbcStatement.executeQuery(JdbcStatement.java:94)
+	at QueryRealData.main(QueryRealData.java:25)

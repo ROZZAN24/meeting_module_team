@@ -261,7 +261,15 @@ export default function AuditNcrApproval() {
       await axios.put(`/api/qms/audit/observation/ncr/${endpoint}/${selectedFinding.id}`, null, {
         params: { remarks: formData.remarks }
       });
-      dispatch(openSnackbar({ open: true, message: `NC / OFI ${status} successfully!`, severity: status === 'APPROVED' ? 'success' : 'error' }));
+      // Issue 4: Use filled alert variant for proper in-app popup on approve/reject
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: `NC / OFI ${status === 'APPROVED' ? 'APPROVED' : 'REJECTED'} successfully!`, 
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: status === 'APPROVED' ? 'success' : 'error',
+        close: false
+      }));
       
       // Broadcast status update for reactive reload in other views
       try {

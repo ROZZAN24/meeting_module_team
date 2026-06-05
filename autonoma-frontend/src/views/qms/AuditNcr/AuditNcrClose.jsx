@@ -58,6 +58,7 @@ export default function AuditNcrClose() {
   const [isNewMode, setIsNewMode] = useState(false);
   const [ncrAttachments, setNcrAttachments] = useState([]);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [originalFormData, setOriginalFormData] = useState(null); // Issue 5: dirty-check baseline
 
   const matchingCriteria = useMemo(() => {
     if (!selectedFinding || !criteriaList.length) return null;
@@ -301,12 +302,14 @@ export default function AuditNcrClose() {
   const handleOpenClose = async (row) => {
     setIsNewMode(false);
     setSelectedFinding(row);
-    updateForm({ 
+    const loaded = { 
         rootCause: row.rootCause || '', 
         correctiveAction: row.correctiveAction || '', 
         preventiveAction: row.preventiveAction || '', 
         targetDate: row.targetDate ? format(new Date(row.targetDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
-    });
+    };
+    updateForm(loaded);
+    setOriginalFormData(loaded); // Issue 5: save baseline for dirty check
     setUploadedFiles([]);
     setErrors({});
     fetchNcrAttachments(row.id);
@@ -357,6 +360,27 @@ export default function AuditNcrClose() {
       return;
     }
 
+    // Issue 5: Dirty-check guard — if UNRESOLVED record and nothing changed, block save
+    if (!isNewMode && selectedFinding?.ncrStatus === 'UNRESOLVED' && originalFormData) {
+      const isDirty = 
+        formData.rootCause !== originalFormData.rootCause ||
+        formData.correctiveAction !== originalFormData.correctiveAction ||
+        formData.preventiveAction !== originalFormData.preventiveAction ||
+        formData.targetDate !== originalFormData.targetDate ||
+        uploadedFiles.length > 0;
+      if (!isDirty) {
+        dispatch(openSnackbar({
+          open: true,
+          message: 'Please update at least one field (Root Cause, Corrective Action, Preventive Action, Target Date, or attachment) before resubmitting.',
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'warning',
+          close: false
+        }));
+        return;
+      }
+    }
+
     try {
       const payload = {
         observationDetailId: selectedFinding.id,
@@ -376,7 +400,14 @@ export default function AuditNcrClose() {
       console.log('Files to upload:', uploadedFiles.map(f => f.name));
 
       await axios.post('/api/qms/ncr-ofi', submitData);
-      dispatch(openSnackbar({ open: true, message: 'NC / OFI submitted for closure successfully!', severity: 'success' }));
+      // Issue 2: Use filled alert variant for in-app popup (not just console-style)
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: 'NC / OFI submitted for closure successfully!', 
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'success' 
+      }));
       setDialogOpen(false);
       fetchData();
     } catch (e) {
@@ -540,7 +571,8 @@ export default function AuditNcrClose() {
 
               <BOSTextField label="Observation" value={selectedFinding?.clause || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
               <BOSTextField label="Audit Criteria Details" value={selectedFinding?.criteriaDetails || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
-              <BOSTextField label="Comments" value={selectedFinding?.remarks || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
+              {/* Issue 3b: Rename label to make it clear this is the approver's read-only comment, not editable by auditee */}
+              <BOSTextField label="Approver Remarks (Read Only)" value={selectedFinding?.remarks || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} disabled={true} sx={{ '& .MuiInputBase-root': { bgcolor: 'action.hover' } }} />
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

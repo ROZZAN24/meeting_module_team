@@ -224,20 +224,14 @@ public class QmsMomMasterService {
         EmployeeMaster assignTo = employeeRepository.findById(assignToId)
                 .orElseThrow(() -> new RuntimeException("Assign To employee not found"));
 
-        // Find all MOMs containing these detail IDs
-        List<QmsMomMaster> allMoms = repository.findAll();
-        for (QmsMomMaster mom : allMoms) {
-            if (mom.getDetails() != null) {
-                mom.getDetails().forEach(detail -> {
-                    if (detailIds.stream().anyMatch(dId -> dId.longValue() == detail.getId())) {
-                        detail.setAssignedBy(assignBy);
-                        detail.setAssignedTo(assignTo);
-                        detail.setTargetDate(LocalDate.parse(targetDate));
-                    }
-                });
-            }
-            repository.save(mom);
+        List<Long> ids = detailIds.stream().map(Number::longValue).toList();
+        List<QmsMomDetail> details = detailRepository.findAllById(ids);
+        for (QmsMomDetail detail : details) {
+            detail.setAssignedBy(assignBy);
+            detail.setAssignedTo(assignTo);
+            detail.setTargetDate(LocalDate.parse(targetDate));
         }
+        detailRepository.saveAll(details);
     }
 
     /**

@@ -122,7 +122,7 @@ public class BosUserPageAuthService {
             currentUser = authentication.getName();
         }
 
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.util.Date now = new java.util.Date();
 
         for (BosUserPageAuth auth : auths) {
             BosUserPageAuth existing = authRepository.findByUserIdAndPageId(auth.getUserId(), auth.getPageId());

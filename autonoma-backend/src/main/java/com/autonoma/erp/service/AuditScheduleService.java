@@ -33,11 +33,10 @@ public class AuditScheduleService {
             boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(schedule.getScheduleNo()).isEmpty();
             schedule.setHasAttendance(exists);
 
-            // Auto-heal schedule status if observation already exists in DB (e.g. from seed scripts)
+            // Auto-heal schedule status in memory only if observation already exists in DB (e.g. from seed scripts)
             boolean hasObservation = auditObservationRepository.existsByAuditScheduleNoIgnoreCase(schedule.getScheduleNo());
             if (hasObservation && !"CLOSED".equalsIgnoreCase(schedule.getStatus())) {
                 schedule.setStatus("CLOSED");
-                repository.save(schedule);
             }
         }
         return list;
@@ -48,11 +47,10 @@ public class AuditScheduleService {
             boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(schedule.getScheduleNo()).isEmpty();
             schedule.setHasAttendance(exists);
 
-            // Auto-heal schedule status if observation already exists in DB
+            // Auto-heal schedule status in memory only if observation already exists in DB
             boolean hasObservation = auditObservationRepository.existsByAuditScheduleNoIgnoreCase(schedule.getScheduleNo());
             if (hasObservation && !"CLOSED".equalsIgnoreCase(schedule.getStatus())) {
                 schedule.setStatus("CLOSED");
-                repository.save(schedule);
             }
             return schedule;
         });

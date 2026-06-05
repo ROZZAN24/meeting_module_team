@@ -118,6 +118,7 @@ public class AuditObservationController {
         dto.setAttachmentReq(detail.getAttachmentReq());
         dto.setObservationStatus(detail.getObservationStatus());
         dto.setNcrStatus(detail.getNcrStatus());
+        dto.setNcrNo(detail.getNcrNo());  // Fix: map ncrNo so it shows in the approval table
         dto.setRootCause(detail.getRootCause());
         dto.setCorrectiveAction(detail.getCorrectiveAction());
         dto.setPreventiveAction(detail.getPreventiveAction());

@@ -30,7 +30,8 @@ import {
   BOSFormSection, 
   BOSTextField, 
   getStatusChipSx,
-  BOSFileGallery 
+  BOSFileGallery,
+  BOSFileUpload
 } from 'ui-component/bos';
 
 /**
@@ -370,105 +371,50 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
           </BOSFormSection>
 
           <BOSFormSection title="Actual Proof (Execution)" icon={<IconCloudUpload size={20} color={theme.palette.primary.main} />}>
-             {isExecution && (
-               <Box sx={{ mb: 2 }}>
-                 <Button 
-                   component="label" 
-                   variant="contained" 
-                   fullWidth
-                   startIcon={<IconCloudUpload size={18} />} 
-                   sx={{ height: 45, borderRadius: 2 }}
-                 >
-                   Upload Document
-                   <input 
-                     type="file" 
-                     hidden 
-                     onChange={(e) => {
-                       const file = e.target.files[0];
-                       if (file) {
-                         const fileEntry = {
-                           name: file.name,
-                           docDetails: 'N/A',
-                           file: file,
-                           isServer: false
-                         };
-                         setFormData(prev => ({
-                           ...prev,
-                           actualFiles: [...prev.actualFiles, fileEntry]
-                         }));
-                       }
-                       e.target.value = '';
-                     }} 
-                   />
-                 </Button>
-               </Box>
-             )}
-             <BOSFileGallery 
-               files={(formData.actualFiles || []).map(parseFile)} 
-               isEditing={isExecution}
-               onRemove={isExecution ? (idx) => {
-                 setFormData(prev => ({
-                   ...prev,
-                   actualFiles: prev.actualFiles.filter((_, i) => i !== idx)
-                 }));
-               } : null}
-               title="ACTUAL"
+             <BOSFileUpload
+               files={formData.actualFiles}
+               onChange={(files) => setFormData(p => ({ ...p, actualFiles: files }))}
+               module="QMS_CHECKLIST"
+               multiple={true}
+               disabled={!isExecution}
+               label="Upload Actual Proof"
              />
           </BOSFormSection>
         </Stack>
       </Box>
 
       {/* MANDATORY REJECTION COMMENTS POPUP */}
-      <Dialog 
+      <BOSFormDialog 
         open={rejectOpen} 
         onClose={() => setRejectOpen(false)}
+        onSave={() => {
+          if (rejectComment.trim()) {
+            onReject(rejectComment.trim());
+            setRejectOpen(false);
+          }
+        }}
+        title={`Reject Checklist - ${master.seqNo}`}
         maxWidth="sm"
-        fullWidth
         sx={{ zIndex: 1400 }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: theme.palette.error.light, color: theme.palette.error.dark }}>
-          <IconBan size={24} />
-          <Typography component="span" variant="h3" color="inherit">Reject Checklist - {master.seqNo}</Typography>
-        </DialogTitle>
-        <DialogContent sx={{ p: 3, pt: '24px !important' }}>
-          <Stack spacing={2.5}>
-            <Typography variant="body1" color="text.secondary">
-              Please enter a comment explaining the reason for rejecting this checklist item. Comments are mandatory to reject.
-            </Typography>
-            <BOSTextField
-              label="Rejection Comments"
-              value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
-              multiline
-              rows={4}
-              placeholder="Provide detailed rejection feedback here..."
-              required
-              error={!rejectComment.trim()}
-              helperText={!rejectComment.trim() ? "Comment is required to proceed with rejection." : ""}
-              fullWidth
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', justifyContent: 'center', gap: 2 }}>
-          <Button onClick={() => setRejectOpen(false)} variant="outlined" color="primary" sx={{ borderRadius: '8px', fontWeight: 600 }}>
-            NO
-          </Button>
-          <Button 
-            onClick={() => {
-              if (rejectComment.trim()) {
-                onReject(rejectComment.trim());
-                setRejectOpen(false);
-              }
-            }} 
-            variant="contained" 
-            color="error" 
-            disabled={!rejectComment.trim()}
-            sx={{ borderRadius: '8px', fontWeight: 600 }}
-          >
-            YES
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Stack spacing={2.5}>
+          <Typography variant="body1" color="text.secondary">
+            Please enter a comment explaining the reason for rejecting this checklist item. Comments are mandatory to reject.
+          </Typography>
+          <BOSTextField
+            label="Rejection Comments"
+            value={rejectComment}
+            onChange={(e) => setRejectComment(e.target.value)}
+            multiline
+            rows={4}
+            placeholder="Provide detailed rejection feedback here..."
+            required
+            error={!rejectComment.trim()}
+            helperText={!rejectComment.trim() ? "Comment is required to proceed with rejection." : ""}
+            fullWidth
+          />
+        </Stack>
+      </BOSFormDialog>
     </BOSFormDialog>
   );
 };

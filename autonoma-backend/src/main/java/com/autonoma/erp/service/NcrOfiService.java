@@ -35,6 +35,9 @@ public class NcrOfiService {
     @Autowired
     private com.autonoma.erp.repository.AuditObservationRepository auditObservationRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.admin.PrefixCredentialRepository prefixCredentialRepository;
+
     private final Path root = Paths.get("uploads");
 
     public NcrOfiService() {
@@ -152,6 +155,27 @@ public class NcrOfiService {
         
         NcrOfiMaster savedMaster = ncrOfiMasterRepository.save(master);
 
+        // Issue 6 fix: If this detail was UNRESOLVED, record a rework log entry
+        observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
+            if ("UNRESOLVED".equalsIgnoreCase(detail.getNcrStatus()) || "UNRESOLVED".equalsIgnoreCase(detail.getApprovalStatus())) {
+                try {
+                    // Count how many previous rework iterations exist
+                    Integer prevCount = ncrOfiMasterRepository.countReworksByObservationDetailId(observationDetailId.intValue());
+                    int reworkNo = (prevCount == null ? 0 : prevCount) + 1;
+                    ncrOfiMasterRepository.insertReworkLog(
+                        observationDetailId.intValue(),
+                        reworkNo,
+                        com.autonoma.erp.util.SecurityUtils.getCurrentUserId(),
+                        rootCause,
+                        correctiveAction,
+                        preventiveAction
+                    );
+                } catch (Exception ex) {
+                    System.err.println("[NcrOfiService] Rework log insertion failed (non-blocking): " + ex.getMessage());
+                }
+            }
+        });
+
         // 2. Upsert Action records to avoid duplicate key or excessive entries
         saveAction(savedMaster.getId(), "ROOT_CAUSE", rootCause);
         saveAction(savedMaster.getId(), "CORRECTIVE", correctiveAction);
@@ -200,8 +224,12 @@ public class NcrOfiService {
                 ncrOfiMasterRepository.save(master);
             });
 
+            // Issue 7 fix: Check if ALL sibling details are now resolved.
+            // If every detail is either CLOSED (approved NCR) or null-ncrStatus (COMPLIANCE),
+            // then mark the parent AuditObservation as APPROVED.
             if (detail.getAuditObservation() != null) {
                 recalculateParentScore(detail.getAuditObservation());
+                checkAndCloseParentObservation(detail.getAuditObservation());
             }
         });
     }
@@ -279,6 +307,30 @@ public class NcrOfiService {
         observation.setAuditScore(score);
         
         auditObservationRepository.save(observation);
+    }
+
+    /**
+     * Issue 7 fix: Check if all NCR/OFI findings in the parent observation are resolved.
+     * If every detail is either COMPLIANCE (auto-approved) or CLOSED (NCR approved),
+     * then set the parent AuditObservation.status = "APPROVED".
+     */
+    private void checkAndCloseParentObservation(com.autonoma.erp.model.AuditObservation observation) {
+        if (observation == null || observation.getDetails() == null || observation.getDetails().isEmpty()) return;
+        
+        boolean allResolved = observation.getDetails().stream().allMatch(d -> {
+            String obsStatus = d.getObservationStatus();
+            String ncrSt = d.getNcrStatus();
+            // COMPLIANCE items have no NCR status (null or approved at creation)
+            if ("COMPLIANCE".equalsIgnoreCase(obsStatus)) return true;
+            // NC/OFI items must be CLOSED
+            return "CLOSED".equalsIgnoreCase(ncrSt);
+        });
+        
+        if (allResolved && !"APPROVED".equalsIgnoreCase(observation.getStatus())) {
+            observation.setStatus("APPROVED");
+            auditObservationRepository.save(observation);
+            System.out.println("[NcrOfiService] Observation " + observation.getObservationNo() + " auto-closed to APPROVED — all findings resolved.");
+        }
     }
 
     @Transactional
@@ -371,11 +423,49 @@ public class NcrOfiService {
         return generateNcrOfiNo(type);
     }
 
+    /**
+     * Generates the next NCR/OFI number.
+     * Format: {prefix}/{year}/{running_no_zero_padded}
+     * Prefix and digit count are read from AD_PREFIX_CREDENTIALS for the current financial year.
+     * Falls back to type name (NC/OFI) with 6-digit padding if not configured.
+     */
     private String generateNcrOfiNo(String type) {
         String year = String.valueOf(LocalDate.now().getYear());
-        String prefix = type + "/" + year + "/";
+        String currentAccountYear = year + "-" + (LocalDate.now().getYear() + 1);
+
+        // Read prefix config from AD_PREFIX_CREDENTIALS for current year
+        String configuredPrefix = null;
+        int digits = 6; // default
+        try {
+            java.util.List<com.autonoma.erp.model.admin.PrefixCredential> allCreds = prefixCredentialRepository.findAll();
+            // Find active record for current account year, or latest active if not found
+            com.autonoma.erp.model.admin.PrefixCredential cred = allCreds.stream()
+                .filter(c -> c.getStatus() != null && c.getStatus() == 1)
+                .filter(c -> currentAccountYear.equals(c.getAccountYear()))
+                .findFirst()
+                .orElse(allCreds.stream()
+                    .filter(c -> c.getStatus() != null && c.getStatus() == 1)
+                    .findFirst().orElse(null));
+
+            if (cred != null) {
+                boolean isNc = "NC".equalsIgnoreCase(type) || "NCR".equalsIgnoreCase(type);
+                boolean isOfi = "OFI".equalsIgnoreCase(type);
+                if (isNc && cred.getNcrPrefix() != null && !cred.getNcrPrefix().isEmpty()) {
+                    configuredPrefix = cred.getNcrPrefix();
+                    digits = cred.getNcrDigit() != null ? cred.getNcrDigit() : 6;
+                } else if (isOfi && cred.getOfiPrefix() != null && !cred.getOfiPrefix().isEmpty()) {
+                    configuredPrefix = cred.getOfiPrefix();
+                    digits = cred.getOfiDigit() != null ? cred.getOfiDigit() : 6;
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("[NcrOfiService] Could not read prefix from AD_PREFIX_CREDENTIALS: " + ex.getMessage());
+        }
+
+        // Build final prefix string: e.g. "NC/2026/" or "NCR-2026-" depending on config
+        String prefix = (configuredPrefix != null ? configuredPrefix : type) + "/" + year + "/";
         String maxNo = ncrOfiMasterRepository.findMaxNoByTypeAndPrefix(type, prefix + "%");
-        
+
         int runningNo = 1;
         if (maxNo != null && maxNo.contains("/")) {
             String[] parts = maxNo.split("/");
@@ -387,7 +477,7 @@ public class NcrOfiService {
                 }
             }
         }
-        return prefix + String.format("%06d", runningNo);
+        return prefix + String.format("%0" + digits + "d", runningNo);
     }
 
     @Transactional

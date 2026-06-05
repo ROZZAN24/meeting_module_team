@@ -29,7 +29,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
-import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
+import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, BOSDatePicker } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -767,12 +767,10 @@ export default function CloseCheckListRenewal() {
           <Divider />
           <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
             <Box sx={{ mb: 1.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>From</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} />
+              <BOSDatePicker label="From" value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} />
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>To</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} />
+              <BOSDatePicker label="To" value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} />
             </Box>
           </FilterSection>
           <Divider />
@@ -795,14 +793,13 @@ export default function CloseCheckListRenewal() {
             {filters.considerDate === 'Yes' && (
               <Box sx={{ mt: 1.5 }}>
                 <Box sx={{ mb: 1.5 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>Consider Date</Typography>
-                  <TextField size="small" type="date" fullWidth value={filters.considerDateValue || ''} onChange={(e) => {
+                  <BOSDatePicker label="Consider Date" value={filters.considerDateValue || ''} onChange={(e) => {
                     const val = e.target.value;
                     setFilter('considerDateValue', val);
                     if (val) {
                       setFilter('fromDate', val);
                     }
-                  }} InputLabelProps={{ shrink: true }} />
+                  }} />
                 </Box>
                 {filters.considerDateValue && (
                   (() => {

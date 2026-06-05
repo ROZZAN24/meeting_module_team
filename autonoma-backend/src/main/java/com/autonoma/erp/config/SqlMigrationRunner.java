@@ -1257,12 +1257,12 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
     private void emulateV4_3(JdbcTemplate targetJdbcTemplate) {
         List<String> tables = targetJdbcTemplate.queryForList(
-            "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME NOT LIKE 'FLYWAY%' AND TABLE_NAME NOT LIKE 'ERP_%'",
+            "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME NOT LIKE 'FLYWAY%' AND TABLE_NAME NOT LIKE 'ERP_%'",
             String.class
         );
         for (String table : tables) {
             List<String> columns = targetJdbcTemplate.queryForList(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                 String.class,
                 table
             );
@@ -1300,12 +1300,12 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
     private void emulateV4_4(JdbcTemplate targetJdbcTemplate) {
         List<String> tables = targetJdbcTemplate.queryForList(
-            "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME NOT LIKE 'FLYWAY%' AND TABLE_NAME NOT LIKE 'ERP_%'",
+            "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME NOT LIKE 'FLYWAY%' AND TABLE_NAME NOT LIKE 'ERP_%'",
             String.class
         );
         for (String table : tables) {
             List<String> columns = targetJdbcTemplate.queryForList(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                 String.class,
                 table
             );
@@ -1458,7 +1458,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
     private void ensureAuditColumns(JdbcTemplate targetJdbcTemplate, String tableName) {
         try {
             Integer count = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                 Integer.class,
                 tableName.toUpperCase()
             );
@@ -1467,7 +1467,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
             }
 
             List<String> columns = targetJdbcTemplate.queryForList(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                 String.class,
                 tableName.toUpperCase()
             );
@@ -1493,7 +1493,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         String tableName = "hrm_designation_master";
         try {
             Integer tableCount = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                 Integer.class,
                 tableName.toUpperCase()
             );
@@ -1501,7 +1501,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 return;
             }
             List<String> columns = targetJdbcTemplate.queryForList(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                 String.class,
                 tableName.toUpperCase()
             );
@@ -1623,7 +1623,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         for (String tableName : tableNames) {
             try {
                 Integer tableCount = targetJdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                     Integer.class,
                     tableName.toUpperCase()
                 );
@@ -1631,7 +1631,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
                     continue;
                 }
                 List<String> columns = targetJdbcTemplate.queryForList(
-                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                     String.class,
                     tableName.toUpperCase()
                 );
@@ -1696,12 +1696,12 @@ public class SqlMigrationRunner implements CommandLineRunner {
     private void renameTableIfExists(JdbcTemplate targetJdbcTemplate, String oldTable, String newTable) {
         try {
             Integer countOld = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                 Integer.class,
                 oldTable.toUpperCase()
             );
             Integer countNew = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                 Integer.class,
                 newTable.toUpperCase()
             );
@@ -1779,7 +1779,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         String table = "audit_observation_detail";
         try {
             Integer tableCount = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                 Integer.class,
                 table.toUpperCase()
             );
@@ -1787,7 +1787,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 return;
             }
             List<String> columns = targetJdbcTemplate.queryForList(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                 String.class,
                 table.toUpperCase()
             );
@@ -1897,7 +1897,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
     private void renameColumnIfExists(JdbcTemplate targetJdbcTemplate, String tableName, String oldCol, String newCol) {
         try {
             Integer tableCount = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                 Integer.class,
                 tableName.toUpperCase()
             );
@@ -1905,13 +1905,13 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 return;
             }
             Integer oldColCount = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND COLUMN_NAME = ?",
                 Integer.class,
                 tableName.toUpperCase(),
                 oldCol.toUpperCase()
             );
             Integer newColCount = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND COLUMN_NAME = ?",
                 Integer.class,
                 tableName.toUpperCase(),
                 newCol.toUpperCase()
@@ -1932,7 +1932,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
     private void emulateInductionColumns(JdbcTemplate targetJdbcTemplate, String tableName) {
         try {
             Integer tableCount = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                 Integer.class,
                 tableName.toUpperCase()
             );
@@ -1940,7 +1940,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 return;
             }
             List<String> columns = targetJdbcTemplate.queryForList(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                 String.class,
                 tableName.toUpperCase()
             );
@@ -1954,7 +1954,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
             // Refresh columns list after rename
             columns = targetJdbcTemplate.queryForList(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                 String.class,
                 tableName.toUpperCase()
             );
@@ -2079,6 +2079,8 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
         // Add missing audit columns
         ensureStandardAuditColumns(targetJdbcTemplate, "QMS_AUDIT_OBSERVATION_DETAIL");
+        ensureObservationDetailExtraColumns(targetJdbcTemplate); // IS_ACTIVE, ATTACHMENT_PATH, etc.
+        ensureNcrReworkLogTable(targetJdbcTemplate);            // Issue 6: NCR rework audit trail
         ensureStandardAuditColumns(targetJdbcTemplate, "QMS_AUDIT_SCHEDULE_CRITERIA");
         ensureStandardAuditColumns(targetJdbcTemplate, "QMS_NCR_OFI_ACTION");
         ensureStandardAuditColumns(targetJdbcTemplate, "QMS_NCR_OFI_APPROVAL");
@@ -2140,7 +2142,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
     private void dropConstraintIfExists(JdbcTemplate targetJdbcTemplate, String tableName, String constraintName) {
         try {
             Integer count = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = ? AND CONSTRAINT_NAME = ?",
                 Integer.class,
                 tableName.toUpperCase(),
                 constraintName.toUpperCase()
@@ -2153,10 +2155,73 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
     }
 
+    private void ensureObservationDetailExtraColumns(JdbcTemplate targetJdbcTemplate) {
+        String table = "QMS_AUDIT_OBSERVATION_DETAIL";
+        try {
+            Integer count = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
+                Integer.class, table.toUpperCase()
+            );
+            if (count == null || count == 0) return;
+
+            // IS_ACTIVE — used to soft-delete observation detail rows
+            Integer hasIsActive = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME) = ? AND UPPER(COLUMN_NAME) = 'IS_ACTIVE'",
+                Integer.class, table.toUpperCase()
+            );
+            if (hasIsActive == null || hasIsActive == 0) {
+                targetJdbcTemplate.execute("ALTER TABLE " + table + " ADD IS_ACTIVE NVARCHAR(10) NULL DEFAULT 'YES'");
+                System.out.println("[Migration] Added IS_ACTIVE to " + table);
+            }
+
+            // ATTACHMENT_PATH — stores file path for observation attachments
+            Integer hasAttachmentPath = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME) = ? AND UPPER(COLUMN_NAME) = 'ATTACHMENT_PATH'",
+                Integer.class, table.toUpperCase()
+            );
+            if (hasAttachmentPath == null || hasAttachmentPath == 0) {
+                targetJdbcTemplate.execute("ALTER TABLE " + table + " ADD ATTACHMENT_PATH NVARCHAR(1000) NULL");
+                System.out.println("[Migration] Added ATTACHMENT_PATH to " + table);
+            }
+        } catch (Exception e) {
+            System.out.println("[Migration] Error ensuring extra columns for " + table + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Issue 6: Create QMS_NCR_REWORK_LOG table if it doesn't exist.
+     * Logs every time an UNRESOLVED NCR is reworked and resubmitted by the auditee.
+     */
+    private void ensureNcrReworkLogTable(JdbcTemplate targetJdbcTemplate) {
+        try {
+            Integer count = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = 'QMS_NCR_REWORK_LOG'",
+                Integer.class
+            );
+            if (count != null && count > 0) return; // already exists
+
+            targetJdbcTemplate.execute(
+                "CREATE TABLE QMS_NCR_REWORK_LOG (" +
+                "  ID INT IDENTITY(1,1) PRIMARY KEY," +
+                "  OBSERVATION_DETAIL_ID INT NOT NULL," +
+                "  REWORK_NO INT NOT NULL," +
+                "  SUBMITTED_BY NVARCHAR(100) NULL," +
+                "  SUBMITTED_AT DATETIME NULL DEFAULT GETDATE()," +
+                "  ROOT_CAUSE NVARCHAR(2000) NULL," +
+                "  CORRECTIVE_ACTION NVARCHAR(2000) NULL," +
+                "  PREVENTIVE_ACTION NVARCHAR(2000) NULL" +
+                ")"
+            );
+            System.out.println("[Migration] Created QMS_NCR_REWORK_LOG table.");
+        } catch (Exception e) {
+            System.out.println("[Migration] Error creating QMS_NCR_REWORK_LOG: " + e.getMessage());
+        }
+    }
+
     private void ensureStandardAuditColumns(JdbcTemplate targetJdbcTemplate, String tableName) {
         try {
             Integer count = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
                 Integer.class,
                 tableName.toUpperCase()
             );
@@ -2165,7 +2230,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
             }
 
             List<String> columns = targetJdbcTemplate.queryForList(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?",
                 String.class,
                 tableName.toUpperCase()
             );
@@ -2190,7 +2255,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
     private void addForeignKeySafe(JdbcTemplate targetJdbcTemplate, String tableName, String constraintName, String colName, String refTable, String refCol, String options) {
         try {
             Integer count = targetJdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = 'PUBLIC' AND CONSTRAINT_NAME = ?",
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME = ?",
                 Integer.class,
                 constraintName.toUpperCase()
             );

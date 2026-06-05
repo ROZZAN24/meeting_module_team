@@ -14,65 +14,84 @@ import java.util.Date;
 public class PrefixCredential {
 
     @Id
-    @Column(name = "account_year", nullable = false, columnDefinition = "VARCHAR(20)")
+    @Column(name = "account_year", nullable = false, columnDefinition = "NVARCHAR(20)")
     private String accountYear;
 
     @Column(name = "status")
     private Integer status;
 
-    @Column(name = "sales_order_prefix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "sales_order_prefix", columnDefinition = "NVARCHAR(20)")
     private String salesOrderPrefix;
 
-    @Column(name = "sales_order_suffix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "sales_order_suffix", columnDefinition = "NVARCHAR(20)")
     private String salesOrderSuffix;
 
     @Column(name = "sales_order_digit")
     private Integer salesOrderDigit;
 
-    @Column(name = "mat_po_prefix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "mat_po_prefix", columnDefinition = "NVARCHAR(20)")
     private String matPoPrefix;
 
-    @Column(name = "mat_po_suffix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "mat_po_suffix", columnDefinition = "NVARCHAR(20)")
     private String matPoSuffix;
 
     @Column(name = "mat_po_digit")
     private Integer matPoDigit;
 
-    @Column(name = "gate_entry_prefix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "gate_entry_prefix", columnDefinition = "NVARCHAR(20)")
     private String gateEntryPrefix;
 
-    @Column(name = "gate_entry_suffix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "gate_entry_suffix", columnDefinition = "NVARCHAR(20)")
     private String gateEntrySuffix;
 
     @Column(name = "gate_entry_digit")
     private Integer gateEntryDigit;
 
-    @Column(name = "grn_prefix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "grn_prefix", columnDefinition = "NVARCHAR(20)")
     private String grnPrefix;
 
-    @Column(name = "grn_suffix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "grn_suffix", columnDefinition = "NVARCHAR(20)")
     private String grnSuffix;
 
     @Column(name = "grn_digit")
     private Integer grnDigit;
 
-    @Column(name = "invoice_prefix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "invoice_prefix", columnDefinition = "NVARCHAR(20)")
     private String invoicePrefix;
 
-    @Column(name = "invoice_suffix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "invoice_suffix", columnDefinition = "NVARCHAR(20)")
     private String invoiceSuffix;
 
     @Column(name = "invoice_digit")
     private Integer invoiceDigit;
 
-    @Column(name = "task_prefix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "task_prefix", columnDefinition = "NVARCHAR(20)")
     private String taskPrefix;
 
-    @Column(name = "task_suffix", columnDefinition = "VARCHAR(20)")
+    @Column(name = "task_suffix", columnDefinition = "NVARCHAR(20)")
     private String taskSuffix;
 
     @Column(name = "task_digit")
     private Integer taskDigit;
+
+    // QMS prefix fields
+    @Column(name = "ncr_prefix", columnDefinition = "NVARCHAR(20)")
+    private String ncrPrefix;
+
+    @Column(name = "ncr_digit")
+    private Integer ncrDigit;
+
+    @Column(name = "ofi_prefix", columnDefinition = "NVARCHAR(20)")
+    private String ofiPrefix;
+
+    @Column(name = "ofi_digit")
+    private Integer ofiDigit;
+
+    @Column(name = "observation_prefix", columnDefinition = "NVARCHAR(20)")
+    private String observationPrefix;
+
+    @Column(name = "observation_digit")
+    private Integer observationDigit;
 
     @Column(name = "CREATED_BY", nullable = false, length = 50, updatable = false)
     private String createdBy;
@@ -280,4 +299,22 @@ public class PrefixCredential {
     public void setTaskDigit(Integer taskDigit) {
         this.taskDigit = taskDigit;
     }
+
+    public String getNcrPrefix() { return ncrPrefix; }
+    public void setNcrPrefix(String ncrPrefix) { this.ncrPrefix = ncrPrefix; }
+
+    public Integer getNcrDigit() { return ncrDigit; }
+    public void setNcrDigit(Integer ncrDigit) { this.ncrDigit = ncrDigit; }
+
+    public String getOfiPrefix() { return ofiPrefix; }
+    public void setOfiPrefix(String ofiPrefix) { this.ofiPrefix = ofiPrefix; }
+
+    public Integer getOfiDigit() { return ofiDigit; }
+    public void setOfiDigit(Integer ofiDigit) { this.ofiDigit = ofiDigit; }
+
+    public String getObservationPrefix() { return observationPrefix; }
+    public void setObservationPrefix(String observationPrefix) { this.observationPrefix = observationPrefix; }
+
+    public Integer getObservationDigit() { return observationDigit; }
+    public void setObservationDigit(Integer observationDigit) { this.observationDigit = observationDigit; }
 }

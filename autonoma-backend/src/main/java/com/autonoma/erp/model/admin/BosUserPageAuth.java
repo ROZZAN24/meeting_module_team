@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -66,13 +67,15 @@ public class BosUserPageAuth {
     private String createdBy;
 
     @Column(name = "created_date")
-    private java.time.LocalDateTime createdDate;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdDate;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
     @Column(name = "updated_date")
-    private java.time.LocalDateTime updatedDate;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updatedDate;
 
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -224,11 +227,11 @@ public class BosUserPageAuth {
         this.createdBy = createdBy;
     }
 
-    public java.time.LocalDateTime getCreatedDate() {
+    public Date getCreatedDate() {
         return createdDate;
     }
 
-    public void setCreatedDate(java.time.LocalDateTime createdDate) {
+    public void setCreatedDate(Date createdDate) {
         this.createdDate = createdDate;
     }
 
@@ -240,11 +243,11 @@ public class BosUserPageAuth {
         this.updatedBy = updatedBy;
     }
 
-    public java.time.LocalDateTime getUpdatedDate() {
+    public Date getUpdatedDate() {
         return updatedDate;
     }
 
-    public void setUpdatedDate(java.time.LocalDateTime updatedDate) {
+    public void setUpdatedDate(Date updatedDate) {
         this.updatedDate = updatedDate;
     }
 

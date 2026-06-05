@@ -14,39 +14,7 @@ import axios from 'utils/axios';
 import useLookups from 'hooks/useLookups';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFilePreview, BOSAutocomplete, BOSDatePicker } from 'ui-component/bos';
-
-// ── Top-level so it never remounts on parent re-render ────────────────────────
-const FileItem = ({ file, onPreview, onRemove }) => (
-  <Box
-    sx={{
-      display: 'flex', alignItems: 'center', gap: 1, py: 0.5, px: 1,
-      borderRadius: 1,
-      '&:hover': { bgcolor: 'action.hover' }
-    }}
-  >
-    <IconFileDescription size={16} style={{ flexShrink: 0 }} />
-    <Typography variant="caption" noWrap sx={{ flex: 1, fontSize: '0.72rem' }}>{file.name}</Typography>
-    <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.disabled', flexShrink: 0, mr: 0.5 }}>
-      {(file.size / 1024).toFixed(0)}KB
-    </Typography>
-    {onPreview && (
-      <Tooltip title="Preview">
-        <IconButton size="small" onClick={() => onPreview(file)} sx={{ p: 0.3, color: 'primary.main' }}>
-          <IconEye size={14} />
-        </IconButton>
-      </Tooltip>
-    )}
-    {onRemove && (
-      <Tooltip title="Remove">
-        <IconButton size="small" onClick={() => onRemove(file)} sx={{ p: 0.3, color: 'error.main' }}>
-          <IconTrash size={14} />
-        </IconButton>
-      </Tooltip>
-    )}
-  </Box>
-);
-FileItem.propTypes = { file: PropTypes.object, onPreview: PropTypes.func, onRemove: PropTypes.func };
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFilePreview, BOSAutocomplete, BOSDatePicker, BOSFileUpload } from 'ui-component/bos';
 
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -220,24 +188,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   // Stop mic when dialog closes
   useEffect(() => { if (!open) stopListening(); }, [open, stopListening]);
 
-  const [previewFile, setPreviewFile] = useState(null);
 
-  // Open and close file preview dialog using BOSFilePreview
-  const handlePreviewOpen = useCallback((file) => {
-    setPreviewFile(file);
-  }, []);
-
-  const handlePreviewClose = useCallback(() => {
-    setPreviewFile(null);
-  }, []);
-
-  const handleRemoveFile = useCallback((fileToRemove) => {
-    setUploadedFiles(prev => prev.filter(f => f !== fileToRemove));
-  }, []);
-
-  const handleRemoveScannedFile = useCallback((fileToRemove) => {
-    setScannedFiles(prev => prev.filter(f => f !== fileToRemove));
-  }, []);
 
   useEffect(() => {
     if (open) {
@@ -329,18 +280,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     }
   };
 
-  const handleFileUpload = (e) => {
-    if (e.target.files?.length) {
-      setUploadedFiles(prev => [...prev, ...Array.from(e.target.files)]);
-    }
-    e.target.value = '';
-  };
-  const handleScanUpload = (e) => {
-    if (e.target.files?.length) {
-      setScannedFiles(prev => [...prev, ...Array.from(e.target.files)]);
-    }
-    e.target.value = '';
-  };
+
   const handleClear = () => {
     setSeqNo(''); setAssignTo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
     setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
@@ -401,33 +341,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
     setIsSaving(true);
     try {
-      const uploadedFileNames = [];
-      for (const f of uploadedFiles) {
-        if (f.isServer) {
-          uploadedFileNames.push(f.serverFileName);
-        } else {
-          const upFormData = new FormData();
-          upFormData.append('file', f);
-          const res = await axios.post('/api/files/upload?module=MASTER_QMS_CHECKLIST_CHECK_LIST_MASTER', upFormData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          uploadedFileNames.push(res.data);
-        }
-      }
-
-      const scannedFileNames = [];
-      for (const f of scannedFiles) {
-        if (f.isServer) {
-          scannedFileNames.push(f.serverFileName);
-        } else {
-          const upFormData = new FormData();
-          upFormData.append('file', f);
-          const res = await axios.post('/api/files/upload?module=MASTER_QMS_CHECKLIST_CHECK_LIST_MASTER', upFormData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          scannedFileNames.push(res.data);
-        }
-      }
+      const uploadedFileNames = uploadedFiles.map(f => f.serverFileName || f.name);
+      const scannedFileNames = scannedFiles.map(f => f.serverFileName || f.name);
 
       const statusVal = statusOverride === 'INACTIVE' ? 'Inactive' : (statusOverride === 'ACTIVE' ? 'Active' : status);
 
@@ -480,111 +395,28 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const sidebarContent = (
     <Stack spacing={3}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Uploaded Files</Typography>
-          {!isViewOnly && (
-            <Button
-              component="label"
-              variant="contained"
-              size="small"
-              startIcon={<IconCloudUpload size={16} />}
-              sx={{
-                textTransform: 'none',
-                borderRadius: '8px',
-                bgcolor: 'primary.main', 
-                '&:hover': { bgcolor: 'primary.dark' }
-              }}
-            >
-              Upload File
-              <input type="file" hidden multiple onChange={handleFileUpload} />
-            </Button>
-          )}
-        </Box>
-        <Box sx={{ 
-          minHeight: 120,
-          maxHeight: 220,
-          bgcolor: 'background.paper', 
-          border: '1px dashed', 
-          borderColor: 'divider',
-          borderRadius: '10px', 
-          p: uploadedFiles.length === 0 ? 3 : 1,
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: uploadedFiles.length === 0 ? 'center' : 'stretch',
-          justifyContent: uploadedFiles.length === 0 ? 'center' : 'flex-start',
-          gap: 1.5,
-          overflowY: 'auto'
-        }}>
-          {uploadedFiles.length === 0 ? (
-            <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <IconCloudUpload size={48} stroke={1.5} color={theme.palette.primary.main} />
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file uploaded yet</Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
-            </Box>
-          ) : (
-            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              {uploadedFiles.map((f, i) => (
-                <FileItem
-                  key={i} file={f}
-                  onPreview={handlePreviewOpen}
-                  onRemove={isViewOnly ? undefined : handleRemoveFile}
-                />
-              ))}
-            </Box>
-          )}
-        </Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>Uploaded Files</Typography>
+        <BOSFileUpload
+          files={uploadedFiles}
+          onChange={(files) => setUploadedFiles(files)}
+          module="MASTER_QMS_CHECKLIST_CHECK_LIST_MASTER"
+          multiple={true}
+          disabled={isViewOnly}
+          label="Upload File"
+        />
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Scanned Files</Typography>
-          {!isViewOnly && (
-            <Button
-              component="label"
-              variant="contained"
-              size="small"
-              startIcon={<IconCamera size={16} />}
-              sx={{
-                textTransform: 'none',
-                borderRadius: '8px',
-                bgcolor: 'secondary.main',
-                '&:hover': { bgcolor: 'secondary.dark' }
-              }}
-            >
-              Scan & Upload
-              <input type="file" hidden multiple accept="image/*" onChange={handleScanUpload} />
-            </Button>
-          )}
-        </Box>
-        <Box sx={{ 
-          minHeight: 120,
-          maxHeight: 220,
-          bgcolor: 'background.paper', 
-          border: '1px dashed', 
-          borderColor: 'divider',
-          borderRadius: '10px', 
-          p: scannedFiles.length === 0 ? 3 : 1,
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: scannedFiles.length === 0 ? 'center' : 'stretch',
-          justifyContent: scannedFiles.length === 0 ? 'center' : 'flex-start',
-          gap: 1.5,
-          overflowY: 'auto'
-        }}>
-          {scannedFiles.length === 0 ? (
-            <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <IconFileDescription size={48} stroke={1.5} color={theme.palette.secondary.main} />
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file scanned yet</Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
-            </Box>
-          ) : (
-            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              {scannedFiles.map((f, i) => (
-                <FileItem key={i} file={f} onPreview={handlePreviewOpen} onRemove={isViewOnly ? undefined : handleRemoveScannedFile} />
-              ))}
-            </Box>
-          )}
-        </Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>Scanned Files</Typography>
+        <BOSFileUpload
+          files={scannedFiles}
+          onChange={(files) => setScannedFiles(files)}
+          module="MASTER_QMS_CHECKLIST_CHECK_LIST_MASTER"
+          multiple={true}
+          accept="image/*"
+          disabled={isViewOnly}
+          label="Scan & Upload"
+        />
       </Box>
     </Stack>
   );
@@ -922,14 +754,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
       </BOSFormDialog>
 
-      {/* ── BOS File Preview Dialog ── */}
-      {previewFile && (
-        <BOSFilePreview
-          open={!!previewFile}
-          onClose={handlePreviewClose}
-          file={previewFile}
-        />
-      )}
+
     </>
   );
 }

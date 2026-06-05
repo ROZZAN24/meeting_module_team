@@ -22,7 +22,7 @@ import {
   Tooltip,
   Chip
 } from '@mui/material';
-import { BOSFormSection, BOSTextField, BOSFormDialog, BOSAutocomplete, BOSAnalogTimePicker, btnSave, btnCancel, btnClear, BOSDataTable } from 'ui-component/bos';
+import { BOSFormSection, BOSTextField, BOSFormDialog, BOSAutocomplete, BOSAnalogTimePicker, btnSave, btnCancel, btnClear, BOSDataTable, BOSDatePicker } from 'ui-component/bos';
 import {
   IconPlus,
   IconTrash,
@@ -1641,9 +1641,8 @@ export default function AddMeetingMinutes() {
               />
 
               {/* Target Date */}
-              <BOSTextField
-                type="date"
-                fullWidth
+              <BOSDatePicker
+                name="targetDate"
                 label="Target Date"
                 value={detailDialog.form.targetDate}
                 onChange={(e) =>
@@ -1653,7 +1652,6 @@ export default function AddMeetingMinutes() {
                   }))
                 }
                 disabled={detailDialog.form.processType === 'INFO'}
-                inputProps={{ min: TODAY }}
                 error={isSunday(detailDialog.form.targetDate) || (detailDialog.form.targetDate && detailDialog.form.targetDate < TODAY)}
                 helperText={
                   isSunday(detailDialog.form.targetDate)
@@ -1665,9 +1663,8 @@ export default function AddMeetingMinutes() {
               />
 
               {/* Review Date */}
-              <BOSTextField
-                type="date"
-                fullWidth
+              <BOSDatePicker
+                name="reviewDate"
                 label="Review Date"
                 value={detailDialog.form.reviewDate}
                 onChange={(e) =>
@@ -1677,7 +1674,6 @@ export default function AddMeetingMinutes() {
                   }))
                 }
                 disabled={detailDialog.form.processType === 'INFO'}
-                inputProps={{ min: detailDialog.form.targetDate || TODAY }}
                 error={
                   (detailDialog.form.reviewDate &&
                     detailDialog.form.targetDate &&

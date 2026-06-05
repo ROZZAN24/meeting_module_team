@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Stack, Typography, Chip, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper,
-  Checkbox, Autocomplete, Box
+  Stack, Typography, Chip, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, Paper, Checkbox
 } from '@mui/material';
-import { IconArrowsExchange } from '@tabler/icons-react';
-import { BOSTextField, BOSFormDialog, BOSDataTable } from 'ui-component/bos';
+import { BOSFormDialog, BOSAutocomplete, BOSDatePicker } from 'ui-component/bos';
 import useLookups from 'hooks/useLookups';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -41,36 +38,22 @@ const ReassignDialog = ({ open, onClose, item, onConfirm }) => {
 
   const handleToggle = (id) => {
     setSelectedRows(prev =>
-      prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter(rId => rId !== id) : [...prev, id]
     );
   };
 
   const handleConfirm = async () => {
     if (selectedRows.length === 0) {
-      dispatch(openSnackbar({ open: true, message: 'Please Select any one Record....', variant: 'alert', severity: 'warning' }));
+      dispatch(openSnackbar({ open: true, message: 'Please select at least one action item', variant: 'alert', severity: 'warning' }));
       return;
     }
-    if (!assignBy) {
-      dispatch(openSnackbar({ open: true, message: 'Please select Assign By...', variant: 'alert', severity: 'warning' }));
-      return;
-    }
-    if (!assignTo) {
-      dispatch(openSnackbar({ open: true, message: 'Please select Assign To...', variant: 'alert', severity: 'warning' }));
-      return;
-    }
-    if (!targetDate) {
-      dispatch(openSnackbar({ open: true, message: 'Please select Target Date', variant: 'alert', severity: 'warning' }));
-      return;
-    }
-    // Sunday check
-    const dt = new Date(targetDate);
-    if (dt.getDay() === 0) {
-      dispatch(openSnackbar({ open: true, message: 'The selected date is Sunday. Please select another date...', variant: 'alert', severity: 'error' }));
+    if (!assignBy || !assignTo || !targetDate) {
+      dispatch(openSnackbar({ open: true, message: 'Please fill in all mandatory fields', variant: 'alert', severity: 'warning' }));
       return;
     }
 
     try {
-      await axios.put(`${API_PATHS.QMS.MOMS}/reassign`, {
+      await axios.post(API_PATHS.REASSIGN_MM_DETAILS, {
         detailIds: selectedRows,
         assignById: assignBy.id,
         assignToId: assignTo.id,
@@ -94,9 +77,9 @@ const ReassignDialog = ({ open, onClose, item, onConfirm }) => {
     <BOSFormDialog
       open={open}
       onClose={onClose}
+      onSave={handleConfirm}
       title="Reassign Meeting Minutes"
       maxWidth="lg"
-      hideFooter={true}
     >
       <Stack spacing={3} sx={{ mt: 1 }}>
         {/* Detail rows table */}
@@ -151,38 +134,32 @@ const ReassignDialog = ({ open, onClose, item, onConfirm }) => {
 
         {/* Reassign fields */}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <Autocomplete
-            fullWidth
+          <BOSAutocomplete
             options={employees}
-            getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+            getOptionLabel={(option) => option.employeeName || ''}
             value={assignBy}
-            onChange={(e, val) => setAssignBy(val)}
-            renderInput={(params) => <BOSTextField {...params} label="Assign By *" />}
+            onChange={(val) => setAssignBy(val)}
+            label="Assign By"
+            placeholder="Select Assignor"
+            required
           />
-          <Autocomplete
-            fullWidth
+          <BOSAutocomplete
             options={employees}
-            getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+            getOptionLabel={(option) => option.employeeName || ''}
             value={assignTo}
-            onChange={(e, val) => setAssignTo(val)}
-            renderInput={(params) => <BOSTextField {...params} label="Assign To *" />}
+            onChange={(val) => setAssignTo(val)}
+            label="Assign To"
+            placeholder="Select Assignee"
+            required
           />
-          <BOSTextField
-            type="date"
-            label="Target Date *"
+          <BOSDatePicker
+            name="targetDate"
+            label="Target Date"
             value={targetDate}
             onChange={(e) => setTargetDate(e.target.value)}
-            fullWidth
-            inputProps={{ min: new Date().toISOString().split('T')[0] }}
+            required
           />
         </Stack>
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
-          <Button onClick={onClose} variant="outlined" color="secondary">Cancel</Button>
-          <Button variant="contained" color="warning" onClick={handleConfirm} startIcon={<IconArrowsExchange size={18} />}>
-            Confirm
-          </Button>
-        </Box>
       </Stack>
     </BOSFormDialog>
   );

@@ -40,16 +40,12 @@ public class QmsMeetingAttendanceService {
 
         Long empIdStr = data.get("employeeId") != null ? Long.parseLong(data.get("employeeId").toString()) : null;
 
-        EmployeeMaster employee;
-        if (empIdStr != null) {
-            employee = employeeRepo.findById(empIdStr)
-                    .orElseThrow(() -> new RuntimeException("Selected employee not found"));
-        } else {
-            // For now, use a default employee. In production, use UserSession.
-            // This is a placeholder for the logged-in user's employee record.
-            employee = employeeRepo.findAll().stream().findFirst()
-                    .orElseThrow(() -> new RuntimeException("No employee found"));
+        if (empIdStr == null) {
+            throw new RuntimeException("Employee ID is required to mark attendance");
         }
+
+        EmployeeMaster employee = employeeRepo.findById(empIdStr)
+                .orElseThrow(() -> new RuntimeException("Selected employee not found"));
 
         // Check if already marked
         Optional<QmsMeetingUserAttendance> existing = attendanceRepo
