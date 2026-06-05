@@ -278,10 +278,16 @@ export default function AddAuditObservation() {
     try {
       const res = await axios.get(`${API_PATHS.QMS.AUDIT_OBSERVATION}/${id}`);
       setFormData(res.data);
-      setDetails(res.data.details || []);
+      const loadedDetails = (res.data.details || []).map(d => {
+        if (d.observationStatus === 'COMPLIANCE') {
+          return { ...d, approvalStatus: 'APPROVED' };
+        }
+        return d;
+      });
+      setDetails(loadedDetails);
       if (res.data.auditScheduleNo) fetchAttendance(res.data.auditScheduleNo);
       if (res.data.details) {
-        recalculateCounts(res.data.details, res.data.observationDate);
+        recalculateCounts(loadedDetails, res.data.observationDate);
       }
     } catch (e) { console.error('Failed to fetch observation'); }
   };
@@ -313,7 +319,7 @@ export default function AddAuditObservation() {
         criteriaDetails: c.criteriaDetails,
         attachmentReq: c.attachmentReq,
         observationStatus: 'COMPLIANCE',
-        approvalStatus: 'PENDING',
+        approvalStatus: 'APPROVED',
         comments: ''
       }));
       setDetails(initialDetails);
@@ -325,6 +331,13 @@ export default function AddAuditObservation() {
   const updateDetail = (idx, field, value) => {
     const newDetails = [...details];
     newDetails[idx][field] = value;
+    if (field === 'observationStatus') {
+      if (value === 'COMPLIANCE') {
+        newDetails[idx]['approvalStatus'] = 'APPROVED';
+      } else {
+        newDetails[idx]['approvalStatus'] = 'PENDING';
+      }
+    }
     setDetails(newDetails);
     recalculateCounts(newDetails);
   };
