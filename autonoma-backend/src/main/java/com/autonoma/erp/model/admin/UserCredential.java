@@ -44,7 +44,7 @@ public class UserCredential {
     @Column(name = "IMG_NAME", columnDefinition = "NVARCHAR(255)")
     private String imgName;
 
-    @Column(name = "IS_BOS_ADMIN")
+    @Column(name = "USER_LEVEL")
     private Integer isBosAdmin;
 
     @Column(name = "FACE_IMAGE", columnDefinition = "NVARCHAR(MAX)")
