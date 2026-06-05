@@ -1,2 +1,0 @@
-import{e as o,j as r}from"./index-D2VPl_1T.js";const s=o(r.jsx("path",{d:"m4 12 1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8z"})),t=o(r.jsx("path",{d:"m20 12-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8z"}));export{s as A,t as a};
-//# sourceMappingURL=ArrowDownward-S6kZa8vZ.js.map

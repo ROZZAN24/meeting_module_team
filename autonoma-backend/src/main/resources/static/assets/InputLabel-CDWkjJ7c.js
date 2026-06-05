@@ -1,0 +1,2 @@
+import{j as a,h as s,ae as n,P as r}from"./index-DHMPIE0D.js";const p=s(o=>a.jsx(n,{...o}),{shouldForwardProp:o=>o!=="horizontal"})(({theme:o,horizontal:t})=>({color:o.vars.palette.text.primary,fontWeight:500,marginBottom:t?0:8}));function l({children:o,horizontal:t=!1,...e}){return a.jsx(p,{horizontal:t,...e,children:o})}l.propTypes={children:r.any,horizontal:r.bool,others:r.any};export{l as I};
+//# sourceMappingURL=InputLabel-CDWkjJ7c.js.map
