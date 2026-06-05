@@ -208,6 +208,11 @@ const InductionAssignment = () => {
     const original = history.find(h => h.id === level.id);
     if (!original) return false;
     
+    // If the screening level itself is changed, it is a new level assignment rather than rescheduling/reassigning the same level
+    if (normalizeScreeningLevel(original.screeningLevel) !== normalizeScreeningLevel(level.screeningLevel)) {
+      return false;
+    }
+    
     const trainerChanged = original.trainerEmpCode !== level.trainerEmpCode;
     const dateChanged = original.inductionDate !== level.inductionDate;
     const timeChanged = normalizeInductionTime(original.inductionTime) !== normalizeInductionTime(level.inductionTime);
@@ -460,7 +465,8 @@ const InductionAssignment = () => {
       const finalRows = [];
       allActiveEmployees.forEach(emp => {
         const empAssignments = (assignments || []).filter(a => a.empCode === emp.empCode);
-        const empDept = emp && typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
+        const empDeptRaw = emp && typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
+        const empDept = empDeptRaw ? empDeptRaw.toUpperCase() : '';
         const empDesig = emp && typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation;
 
         if (empAssignments.length === 0) {
@@ -512,7 +518,7 @@ const InductionAssignment = () => {
             id: activeAssign.id,
             employeeId: emp.id,
             empName: emp.employeeName,
-            department: empDept || activeAssign.department,
+            department: (empDept || activeAssign.department || '').toUpperCase(),
             designation: empDesig || activeAssign.designation,
             screeningLevel: normalizeScreeningLevel(activeAssign.screeningLevel),
             inductionTime: normalizeInductionTime(activeAssign.inductionTime),

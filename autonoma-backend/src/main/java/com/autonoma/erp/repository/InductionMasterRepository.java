@@ -12,6 +12,6 @@ public interface InductionMasterRepository extends JpaRepository<InductionMaster
     @Query("SELECT MAX(i.id) FROM InductionMaster i")
     Long findMaxId();
 
-    @Query("SELECT m FROM InductionMaster m WHERE m.inductionRound = :round AND m.status = 'ACTIVE'")
+    @Query("SELECT m FROM InductionMaster m WHERE m.status = 'ACTIVE'")
     List<InductionMaster> findByRoundAndActive(@Param("round") String round);
 }

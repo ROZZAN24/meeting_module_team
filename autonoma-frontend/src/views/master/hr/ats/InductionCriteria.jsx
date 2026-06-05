@@ -35,7 +35,8 @@ const LEVEL_OPTIONS = [
   { code: 'L3', label: 'L3 - Executive' },
   { code: 'L4', label: 'L4 - Senior Executive' },
   { code: 'L5', label: 'L5 - Assistant Manager' },
-  { code: 'L6', label: 'L6 - Manager & Above' }
+  { code: 'L6', label: 'L6 - Manager & Above' },
+  { code: 'L7', label: 'L7 - Director / VP & Above' }
 ];
 
 const VALIDATION_RULES = [
@@ -219,7 +220,16 @@ export default function InductionCriteria() {
     );
     const order = LEVEL_OPTIONS.map(l => l.code);
     const rawLevels = originalRow.levelCodes ? originalRow.levelCodes.split(',').filter(Boolean) : [];
-    const sortedLevels = [...rawLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    const sortedLevels = [...rawLevels].sort((a, b) => {
+      const idxA = order.indexOf(a);
+      const idxB = order.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      const aNum = parseInt(a.replace(/^\D+/g, ''), 10) || 0;
+      const bNum = parseInt(b.replace(/^\D+/g, ''), 10) || 0;
+      return aNum - bNum;
+    });
 
     setFormData({
       ...originalRow,
@@ -283,7 +293,16 @@ export default function InductionCriteria() {
       newLevels = value;
     }
     const order = LEVEL_OPTIONS.map(l => l.code);
-    const sortedLevels = [...newLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    const sortedLevels = [...newLevels].sort((a, b) => {
+      const idxA = order.indexOf(a);
+      const idxB = order.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      const aNum = parseInt(a.replace(/^\D+/g, ''), 10) || 0;
+      const bNum = parseInt(b.replace(/^\D+/g, ''), 10) || 0;
+      return aNum - bNum;
+    });
     setFormData(prev => ({ ...prev, levelCodes: sortedLevels }));
     if (errors.levelCodes) clearErrors('levelCodes');
   };
@@ -406,7 +425,7 @@ export default function InductionCriteria() {
             .split(',')
             .map((code) => {
               const match = departments.find((d) => d.departmentNo === code.trim());
-              return match ? match.departmentName : code;
+              return match ? match.departmentName.toUpperCase() : code.toUpperCase();
             })
             .join(', ')
         : '-';
@@ -414,7 +433,7 @@ export default function InductionCriteria() {
       return {
         ...r,
         index: i + 1,
-        serialNo: r.id ? r.id.toString() : '-',
+        serialNo: (i + 1).toString(),
         departmentCodes: deptNames, // Render friendly department names in table row
         createdUser: r.createdUser || r.createdBy || '-',
         updatedUser: r.updatedUser || r.updatedBy || '-',
@@ -590,7 +609,7 @@ export default function InductionCriteria() {
                     renderValue: (selected) => {
                       if (!selected || selected.length === 0) return <em>-Select-</em>;
                       if (selected.length === departments.length) return 'All Departments';
-                      return selected.map(id => departments.find(d => d.id.toString() === id)?.departmentName || id).join(', ');
+                      return selected.map(id => (departments.find(d => d.id.toString() === id)?.departmentName || id).toUpperCase()).join(', ');
                     }
                   }}
                   required
@@ -607,7 +626,7 @@ export default function InductionCriteria() {
                   {departments.map((d) => (
                     <MenuItem key={d.id} value={d.id.toString()}>
                       <Checkbox checked={formData.departmentCodes.includes(d.id.toString())} />
-                      <ListItemText primary={d.departmentName} secondary={d.departmentNo} />
+                      <ListItemText primary={d.departmentName.toUpperCase()} secondary={d.departmentNo} />
                     </MenuItem>
                   ))}
                 </BOSTextField>
