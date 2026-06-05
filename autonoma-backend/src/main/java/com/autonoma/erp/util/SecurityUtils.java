@@ -37,7 +37,6 @@ public class SecurityUtils {
         } catch (Exception e) {
             // Log error
         }
-        System.out.println("[SecurityUtils] No authenticated user found");
         return null;
     }
 
