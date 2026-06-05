@@ -294,6 +294,20 @@ export default function EmployeeMaster() {
       return;
     }
 
+    // Meeting & Governance validations
+    if (form.isChaired === 'YES' && (!form.chairedType || !form.chairedType.trim())) {
+      dispatch(openSnackbar({ open: true, message: 'Please select at least one qualification under ‘Qualified For’.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      return;
+    }
+    if (form.isHost === 'YES' && (!form.hostType || !form.hostType.trim())) {
+      dispatch(openSnackbar({ open: true, message: 'Please select at least one qualification under ‘Qualified For’.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      return;
+    }
+    if (form.isParticipants === 'YES' && (!form.participantsType || !form.participantsType.trim())) {
+      dispatch(openSnackbar({ open: true, message: 'Please select at least one qualification under ‘Qualified For’.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = { 
@@ -433,7 +447,14 @@ export default function EmployeeMaster() {
                           options={customOptions || auditTypes.map(t => t.auditType)} 
                           value={selectedTypes} 
                           onChange={(e, val) => setForm(p => ({ ...p, [typeName]: val.join(',') }))} 
-                          renderInput={(params) => (<BOSTextField {...params} placeholder="Select..." size="small" />)} 
+                          renderInput={(params) => (
+                            <BOSTextField 
+                              {...params} 
+                              placeholder="Select..." 
+                              size="small" 
+                              error={isEnabled && selectedTypes.length === 0} 
+                            />
+                          )}
                           renderTags={(v, getTagProps) => v.map((o, i) => {
                             const { key, ...tagProps } = getTagProps({ index: i });
                             return <Chip key={key} label={o} size="small" color="primary" {...tagProps} sx={{ fontWeight: 600, height: 20, fontSize: '0.7rem' }} />;

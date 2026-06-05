@@ -393,14 +393,6 @@ export const masters = {
               url: '/master/qms/meeting/master',
               icon: icons.IconCalendarEvent,
               pageCode: 'M1310'
-            },
-            {
-              id: 'master-qms-meeting-unnamed',
-              title: 'Unnamed Page',
-              type: 'item',
-              url: '/master/qms/meeting/unnamed',
-              icon: icons.IconHelp,
-              pageCode: 'M1320'
             }
           ]
         }

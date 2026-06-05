@@ -1295,10 +1295,6 @@ const MainRoutes = {
       element: <PageGuard pageCode={PAGE_CODES.CRM_SATISFACTION}><UnderConstruction /></PageGuard>
     },
     {
-      path: '/master/qms/meeting/unnamed',
-      element: <PageGuard pageCode={PAGE_CODES.QMS_MEETING_UNNAMED}><UnderConstruction /></PageGuard>
-    },
-    {
       path: '*',
       element: <ErrorBoundary />
     }

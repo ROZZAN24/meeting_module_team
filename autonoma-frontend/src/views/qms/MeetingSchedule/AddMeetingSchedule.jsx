@@ -839,12 +839,22 @@ export default function AddMeetingSchedule() {
                 const otherField = person.field === 'chairedBy' ? 'hostBy' : 'chairedBy';
                 const otherSelectedEmp = form[otherField];
 
-                const filteredEmployees = employees.filter(emp => 
-                  emp.status === 'Active' && 
-                  person.filter(emp) &&
-                  selectedDeptIds.includes(String(emp.departmentId)) &&
-                  (!otherSelectedEmp || String(emp.id) !== String(otherSelectedEmp.id))
-                );
+                const meetingName = form.meetingType?.meetingName;
+                const filteredEmployees = employees.filter(emp => {
+                  if (emp.status !== 'Active') return false;
+                  if (!person.filter(emp)) return false;
+                  if (!selectedDeptIds.includes(String(emp.departmentId))) return false;
+                  if (otherSelectedEmp && String(emp.id) === String(otherSelectedEmp.id)) return false;
+                  
+                  if (meetingName) {
+                    const typeField = person.field === 'chairedBy' ? emp.chairedType : emp.hostType;
+                    const qualifiedMeetings = typeField ? typeField.split(',').map(m => m.trim().toLowerCase()) : [];
+                    if (!qualifiedMeetings.includes(meetingName.toLowerCase())) return false;
+                  } else {
+                    return false;
+                  }
+                  return true;
+                });
 
                 return (
                   <Card key={person.role} sx={{
@@ -886,7 +896,7 @@ export default function AddMeetingSchedule() {
                       
                       <Autocomplete
                         fullWidth
-                        disabled={form.departments.length === 0}
+                        disabled={form.departments.length === 0 || !form.meetingType}
                         options={filteredEmployees}
                         getOptionLabel={(option) => option.employeeName || ''}
                         value={selectedEmp}
@@ -903,7 +913,7 @@ export default function AddMeetingSchedule() {
                         renderInput={(params) => (
                           <BOSTextField 
                             {...params} 
-                            label={form.departments.length === 0 ? `Select ${person.label} (Please select a department first)` : `Select ${person.label}`} 
+                            label={form.departments.length === 0 ? `Select ${person.label} (Please select a department first)` : !form.meetingType ? `Select ${person.label} (Please select a meeting type first)` : `Select ${person.label}`} 
                             required 
                             error={!!errors[person.field]} 
                             fullWidth 
@@ -921,14 +931,24 @@ export default function AddMeetingSchedule() {
             <Autocomplete
               multiple
               disableCloseOnSelect
-              disabled={form.departments.length === 0}
-              options={employees.filter(e => 
-                e.status === 'Active' && 
-                e.isParticipants === 'YES' && 
-                form.departments.map(d => String(d.id)).includes(String(e.departmentId)) &&
-                (!form.hostBy || String(e.id) !== String(form.hostBy.id)) &&
-                !form.participants.some(p => p.id === e.id || p.empCode === e.empCode)
-              )}
+              disabled={form.departments.length === 0 || !form.meetingType}
+              options={employees.filter(e => {
+                if (e.status !== 'Active') return false;
+                if (e.isParticipants !== 'YES') return false;
+                const selectedDeptIds = form.departments.map(d => String(d.id));
+                if (!selectedDeptIds.includes(String(e.departmentId))) return false;
+                if (form.hostBy && String(e.id) === String(form.hostBy.id)) return false;
+                if (form.participants.some(p => p.id === e.id || p.empCode === e.empCode)) return false;
+                
+                const meetingName = form.meetingType?.meetingName;
+                if (meetingName) {
+                  const qualifiedMeetings = e.participantsType ? e.participantsType.split(',').map(m => m.trim().toLowerCase()) : [];
+                  if (!qualifiedMeetings.includes(meetingName.toLowerCase())) return false;
+                } else {
+                  return false;
+                }
+                return true;
+              })}
               getOptionLabel={(option) => option.employeeName || ''}
               value={form.participants}
               onChange={(e, val) => {
@@ -938,7 +958,7 @@ export default function AddMeetingSchedule() {
               renderInput={(params) => (
                 <BOSTextField 
                   {...params} 
-                  label={form.departments.length === 0 ? "Participants (Please select a department first)" : "Participants"} 
+                  label={form.departments.length === 0 ? "Participants (Please select a department first)" : !form.meetingType ? "Participants (Please select a meeting type first)" : "Participants"} 
                   required 
                   error={!!errors.participants} 
                   fullWidth 
