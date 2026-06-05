@@ -53,7 +53,7 @@ export default function VerificationCriteria() {
       id: 'status',
       label: 'Status',
       minWidth: 100,
-      render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
+      status: true
     },
     { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
     {
@@ -74,18 +74,18 @@ export default function VerificationCriteria() {
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
     const config = [{
-        id: 'status',
-        label: 'Status',
-        type: 'select',
-        options: [
-          { value: 'ALL', label: 'ALL' },
-          { value: 'ACTIVE', label: 'ACTIVE' },
-          { value: 'INACTIVE', label: 'INACTIVE' }
-        ],
-        defaultValue: 'ALL',
-        isStarred: true
-      },
-      ...getCommonDateFilters('createdAt', 'updatedAt')];
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'ALL', label: 'ALL' },
+        { value: 'ACTIVE', label: 'ACTIVE' },
+        { value: 'INACTIVE', label: 'INACTIVE' }
+      ],
+      defaultValue: 'ALL',
+      isStarred: true
+    },
+    ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -213,7 +213,7 @@ export default function VerificationCriteria() {
           <Typography variant="h3">Applicant Verification Criteria</Typography>
         </Stack>
       }
-            secondary={
+      secondary={
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
@@ -222,8 +222,8 @@ export default function VerificationCriteria() {
           exportData={resolvedRows}
           exportFilename="Verification_Criteria"
           hasExportPermission={perms.export}
-          
-         columns={columns} />
+
+          columns={columns} />
       }
     >
       <BOSDataTable
@@ -314,7 +314,7 @@ export default function VerificationCriteria() {
             sx={errorStyle(!!errors.status)}
           />
         </Stack>
-        
+
       </BOSFormDialog>
 
       <ConfirmDeleteDialog
