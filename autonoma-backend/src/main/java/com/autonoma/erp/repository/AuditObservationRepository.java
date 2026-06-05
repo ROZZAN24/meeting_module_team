@@ -12,4 +12,6 @@ public interface AuditObservationRepository extends JpaRepository<AuditObservati
     Optional<Integer> findMaxObservationNo();
 
     java.util.Optional<AuditObservation> findFirstByOrderByObservationNoDesc();
+
+    boolean existsByAuditScheduleNoIgnoreCase(String auditScheduleNo);
 }
