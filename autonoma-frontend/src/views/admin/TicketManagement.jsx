@@ -186,14 +186,14 @@ export default function TicketManagement({ viewType }) {
       if (e.key === 'Escape' && location.state?.fromDashboard) {
         if (e.defaultPrevented) return;
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-        
+
         const hasOpenDialog = document.querySelector('.MuiDialog-root');
         if (!hasOpenDialog) {
-          navigate('/dashboard/task-dashboard', { 
-            state: { 
+          navigate('/dashboard/task-dashboard', {
+            state: {
               fromTab: location.state?.fromTab,
               dashboardFilters: location.state?.dashboardFilters
-            } 
+            }
           });
         }
       }
@@ -207,6 +207,7 @@ export default function TicketManagement({ viewType }) {
   const [usersList, setUsersList] = useState([]);
   const [pagesData, setPagesData] = useState([]);
   const [employeesList, setEmployeesList] = useState([]);
+  const isVerticalHeadState = useMemo(() => employeesList.some(e => e.verticalHead && e.verticalHead.toLowerCase() === (user?.name || '').toLowerCase()), [employeesList, user]);
   const [companiesList, setCompaniesList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -279,6 +280,7 @@ export default function TicketManagement({ viewType }) {
   const [formDevEmail, setFormDevEmail] = useState('');
   const [formDevMobile, setFormDevMobile] = useState('');
   const [formVerifiedBy, setFormVerifiedBy] = useState('');
+  const [formTestedBy, setFormTestedBy] = useState('');
 
   // Severity and General Fields
   const [formSeverity, setFormSeverity] = useState('Medium');
@@ -685,7 +687,7 @@ export default function TicketManagement({ viewType }) {
   useEffect(() => {
     const myName = (user?.name || '').toLowerCase();
     const isVerticalHead = employeesList.some(e => e.verticalHead && e.verticalHead.toLowerCase() === myName);
-    
+
     const taskScopeOptions = [
       { value: 'Mine', label: 'Mine' }
     ];
@@ -726,6 +728,8 @@ export default function TicketManagement({ viewType }) {
           { value: 'All', label: 'All' },
           { value: 'Open', label: 'Open' },
           { value: 'In Progress', label: 'In Progress' },
+          { value: 'To Be Verified', label: 'To Be Verified' },
+          { value: 'Yet To Deploy', label: 'Yet To Deploy' },
           { value: 'To Be Tested', label: 'To Be Tested' },
           { value: 'Reopened', label: 'Reopened' },
           { value: 'Rework', label: 'Rework' },
@@ -754,10 +758,10 @@ export default function TicketManagement({ viewType }) {
       { id: 'endDate', label: 'To Date', type: 'date', isStarred: false }
     ];
     dispatch(setFilterConfig(config));
-    
+
     if (initialFiltersRef.current) {
       dispatch(setFilters(initialFiltersRef.current));
-      
+
       // Once employeesList is loaded, we can clear the ref so we don't overwrite user changes on any future config updates
       if (employeesList.length > 0) {
         initialFiltersRef.current = null;
@@ -883,10 +887,10 @@ export default function TicketManagement({ viewType }) {
       setDetailDevName(selectedTicket.developerName || '');
       setDetailDevEmail(selectedTicket.developerEmail || '');
       setDetailDevMobile(selectedTicket.developerMobileNo || '');
-      
+
       const savedSummary = selectedTicket.resolutionSummary || '';
       const PREDEFINED_REASONS = ['Not Working as Expected', 'Additional Requirement Needed', 'Requirement Not Fully Completed', 'Incorrect Output', 'Missing Functionality', 'UI/Design Changes Required', 'Validation Issue Found', 'Bug Still Exists', 'Rework Required', 'Performance Improvement Needed', 'Requirement Changed', 'Clarification Required', 'Testing Failed', 'Quality Issue Identified'];
-      
+
       if (selectedTicket.ticketStatus === 'Reopened') {
         if (PREDEFINED_REASONS.includes(savedSummary)) {
           setReopenReason(savedSummary);
@@ -1672,10 +1676,10 @@ export default function TicketManagement({ viewType }) {
           const res = await axios.post('/api/files/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
-          
+
           const url = res.data;
           const isImage = file.type.startsWith('image') || url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null;
-          
+
           uploadedUrls.push({ url, isImage });
           newAttachments.push({
             url: url,
@@ -1685,9 +1689,9 @@ export default function TicketManagement({ viewType }) {
             pasted: isImage
           });
         }
-        
+
         setFormAttachments(prev => [...prev, ...newAttachments]);
-        
+
         for (const item of uploadedUrls) {
           if (item.isImage) {
             const actualUrl = item.url.startsWith('/api/') ? item.url : `/api/files/view?path=${encodeURIComponent(item.url)}`;
@@ -1699,7 +1703,7 @@ export default function TicketManagement({ viewType }) {
             }
           }
         }
-        
+
         showSnackbar('Attachments pasted successfully!');
       } catch (err) {
         showSnackbar('Failed to paste attachments', 'error');
@@ -1785,6 +1789,7 @@ export default function TicketManagement({ viewType }) {
       developerMobileNo: formDevMobile || null,
       assignedTo: formDevName || 'Unassigned',
       verifiedBy: formVerifiedBy || null,
+      testedBy: formTestedBy || null,
       createdBy: user?.username || user?.email || user?.name || 'SYSTEM',
       tempAttachments: formAttachments.map(f => typeof f === 'string' ? f : f.url),
       tempVoiceRecordings: formVoiceFiles
@@ -1804,11 +1809,11 @@ export default function TicketManagement({ viewType }) {
       setPendingSavePayload(null);
       resetForm();
       if (location.state?.fromDashboard) {
-        navigate('/dashboard/task-dashboard', { 
-          state: { 
+        navigate('/dashboard/task-dashboard', {
+          state: {
             fromTab: location.state?.fromTab,
-            dashboardFilters: location.state?.dashboardFilters 
-          } 
+            dashboardFilters: location.state?.dashboardFilters
+          }
         });
       } else {
         fetchTickets();
@@ -1887,12 +1892,12 @@ export default function TicketManagement({ viewType }) {
 
     // ─── RAISED FOR ME RULES ───────────────────────────────────────────────
     if (currentViewType === 'raised-for-me') {
-      // TO BE TESTED: Taken Time mandatory
-      if (detailStatus === 'To Be Tested') {
+      // TO BE VERIFIED: Taken Time mandatory
+      if (detailStatus === 'To Be Verified') {
         const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
         if (!detailTakenTime || !detailTakenTime.trim() || detailTakenTime === '00:00' || detailTakenTime === ':') {
           setTakenTimeError(true);
-          showSnackbar(isReopenedTicket ? 'Rework Time is mandatory when status is To Be Tested' : 'Taken Time is mandatory when status is To Be Tested', 'warning');
+          showSnackbar(isReopenedTicket ? 'Rework Time is mandatory when status is To Be Verified' : 'Taken Time is mandatory when status is To Be Verified', 'warning');
           return;
         }
       }
@@ -1916,7 +1921,7 @@ export default function TicketManagement({ viewType }) {
         let newTakenTime = selectedTicket.takenTime || '';
         let newReworkTime = selectedTicket.reworkTime || '';
 
-        if (detailStatus === 'To Be Tested') {
+        if (detailStatus === 'To Be Verified') {
           const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
           if (isReopenedTicket) {
             const isTransitionFromRework = selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
@@ -2003,6 +2008,10 @@ export default function TicketManagement({ viewType }) {
           payload.assignedUserStatus = 'Rework';  // signal backend to set assigned user's status to REWORK
           payload.resolutionSummary = finalResolution;
           isStatusUpdate = true;
+        } else if (detailStatus === 'To Be Tested' && detailStatus !== selectedTicket.ticketStatus) {
+          payload.ticketStatus = 'To Be Tested';
+          payload.resolutionSummary = finalResolution;
+          isStatusUpdate = true;
         } else if (detailStatus === 'Completed' && detailStatus !== selectedTicket.ticketStatus) {
           // COMPLETED: ticket final complete
           payload.ticketStatus = 'Completed';
@@ -2016,8 +2025,8 @@ export default function TicketManagement({ viewType }) {
           if (formAttachments.length > 0 || formVoiceFiles.length > 0) hasChanges = true;
           if (payload.assignedHours) hasChanges = true;
           if (finalResolution !== (selectedTicket.resolutionSummary || '')) {
-             payload.resolutionSummary = finalResolution;
-             hasChanges = true;
+            payload.resolutionSummary = finalResolution;
+            hasChanges = true;
           }
 
           if (!hasChanges) {
@@ -2153,6 +2162,7 @@ export default function TicketManagement({ viewType }) {
     setFormDevEmail('');
     setFormDevMobile('');
     setFormVerifiedBy(user?.name || user?.username || '');
+    setFormTestedBy('');
     if (user?.empId) {
       fetchEmployeeDetails();
     } else {
@@ -2185,7 +2195,7 @@ export default function TicketManagement({ viewType }) {
       // Map current user ID (a.USER_ID)
       const currentUserId = (user?.username || '').trim().toLowerCase();
       const currentUserName = (user?.name || '').trim().toLowerCase();
-      
+
       let myEmpName = '';
       if (user?.empId && employeesList) {
         const emp = employeesList.find(e => e.id == user.empId || e.empCode == user.empId || e.employeeCode == user.empId);
@@ -2195,54 +2205,84 @@ export default function TicketManagement({ viewType }) {
       // Build Team User IDs & Names based on: Vertical Head -> EMP_ID -> USER_ID
       const teamIdentifiers = [];
       employeesList.forEach(b => {
-         const vHead = (b.verticalHead || '').trim().toLowerCase();
-         if (vHead && (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName)))) {
-            if (b.employeeName) teamIdentifiers.push(b.employeeName.trim().toLowerCase());
-            if (b.officeMail) {
-               const mail = b.officeMail.trim().toLowerCase();
-               teamIdentifiers.push(mail);
-               if (mail.includes('@')) teamIdentifiers.push(mail.split('@')[0]);
-            }
-            const c = usersList.find(u => u.empId == b.id);
-            if (c && c.userId) {
-               teamIdentifiers.push(c.userId.trim().toLowerCase());
-            }
-         }
+        const vHead = (b.verticalHead || '').trim().toLowerCase();
+        if (vHead && (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName)))) {
+          if (b.employeeName) teamIdentifiers.push(b.employeeName.trim().toLowerCase());
+          if (b.officeMail) {
+            const mail = b.officeMail.trim().toLowerCase();
+            teamIdentifiers.push(mail);
+            if (mail.includes('@')) teamIdentifiers.push(mail.split('@')[0]);
+          }
+          const c = usersList.find(u => u.empId == b.id);
+          if (c && c.userId) {
+            teamIdentifiers.push(c.userId.trim().toLowerCase());
+          }
+        }
       });
       const scope = globalFilters?.taskScope || 'Mine';
 
       const matchTeam = (field) => {
-         if (!field) return false;
-         const f = field.toLowerCase();
-         if (f === currentUserId || f === currentUserName || (myEmpName && f === myEmpName)) return true;
-         return teamIdentifiers.includes(f);
+        if (!field) return false;
+        const f = field.toLowerCase();
+        if (f === currentUserId || f === currentUserName || (myEmpName && f === myEmpName)) return true;
+        return teamIdentifiers.includes(f);
       };
 
       if (currentViewType === 'raised-for-me') {
         const assignedTo = (t.assignedTo || t.developerName || '').toLowerCase();
         const createdBy = (t.createdBy || t.assignedBy || '').toLowerCase();
+        const testedBy = (t.testedBy || '').toLowerCase();
 
         if (scope !== 'Company') {
-           if (scope === 'Team') {
-              // SQL for Request for me: inner join TICKET_TRACEABILITY_CENTER d on c.USER_ID=d.created_by
-              if (!matchTeam(createdBy)) return false;
-           } else {
-              // Default 'Mine'
-              if (assignedTo !== currentUserId && assignedTo !== currentUserName && assignedTo !== myEmpName && !(myEmpName && assignedTo.includes(myEmpName))) return false;
-           }
+          if (scope === 'Team') {
+            // SQL for Request for me: inner join TICKET_TRACEABILITY_CENTER d on c.USER_ID=d.created_by
+            if (!matchTeam(createdBy)) return false;
+          } else {
+            // Default 'Mine'
+            const isAssigned = assignedTo === currentUserId || assignedTo === currentUserName || assignedTo === myEmpName || (myEmpName && assignedTo.includes(myEmpName));
+            if (!isAssigned) return false;
+          }
         }
       } else {
         const createdBy = (t.createdBy || t.assignedBy || '').toLowerCase();
         const assignedTo = (t.assignedTo || t.developerName || '').toLowerCase();
-        
+        const testedBy = (t.testedBy || '').toLowerCase();
+
         if (scope !== 'Company') {
-           if (scope === 'Team') {
-              // SQL for My request: inner join TICKET_TRACEABILITY_CENTER d on c.USER_ID=d.assigned_to
-              if (!matchTeam(assignedTo)) return false;
-           } else {
-              // Default 'Mine'
-              if (createdBy !== currentUserId && createdBy !== currentUserName && createdBy !== myEmpName && !(myEmpName && createdBy.includes(myEmpName))) return false;
-           }
+          if (scope === 'Team') {
+            // SQL for My request: inner join TICKET_TRACEABILITY_CENTER d on c.USER_ID=d.assigned_to
+            if (!matchTeam(assignedTo)) return false;
+          } else {
+            // Default 'Mine'
+            const isCreator = createdBy === currentUserId || createdBy === currentUserName || createdBy === myEmpName || (myEmpName && createdBy.includes(myEmpName));
+            
+            const hasReachedTesting = ['To Be Tested', 'Reopened', 'Rework', 'Resolved'].includes(t.ticketStatus) || (t.reopenedCount && t.reopenedCount > 0);
+            const isNotCompleted = t.ticketStatus !== 'Completed' && t.ticketStatus !== 'Closed';
+
+            let isTester = false;
+            if (hasReachedTesting && testedBy) {
+              const _tb = testedBy.trim();
+              if (_tb === currentUserId || _tb === currentUserName || _tb === myEmpName) isTester = true;
+              
+              if (employeesList) {
+                const testerObj = employeesList.find(e => e.employeeName && e.employeeName.trim().toLowerCase() === _tb);
+                if (testerObj) {
+                  // Check by Employee ID
+                  if (user?.empId && (testerObj.id == user.empId || testerObj.empCode == user.empId || testerObj.employeeCode == user.empId)) {
+                    isTester = true;
+                  }
+                  // Check by User ID
+                  if (usersList && currentUserId) {
+                    const testerUser = usersList.find(u => u.empId == testerObj.id);
+                    if (testerUser && testerUser.userId && testerUser.userId.trim().toLowerCase() === currentUserId) {
+                      isTester = true;
+                    }
+                  }
+                }
+              }
+            }
+            if (!isCreator && !isTester) return false;
+          }
         }
       }
 
@@ -2251,6 +2291,12 @@ export default function TicketManagement({ viewType }) {
         const targetRaisedTo = raisedToFilter.toLowerCase();
         if (assignedTo !== targetRaisedTo) return false;
       }
+      const filterStatusVal = globalFilters?.ticketStatus || 'All';
+      if (filterStatusVal === 'All' && currentViewType === 'raised-for-me') {
+        if (scope === 'Mine' && t.ticketStatus === 'To Be Verified') return false;
+        if (t.ticketStatus === 'Yet To Deploy') return false;
+      }
+      
       return true;
     });
   }, [tickets, currentViewType, globalFilters, user, raisedToFilter, employeesList, usersList]);
@@ -2260,6 +2306,8 @@ export default function TicketManagement({ viewType }) {
     const total = baseFilteredTickets.length;
     const open = baseFilteredTickets.filter(t => t.ticketStatus === 'Open').length;
     const inProgress = baseFilteredTickets.filter(t => t.ticketStatus === 'In Progress').length;
+    const toBeVerified = baseFilteredTickets.filter(t => t.ticketStatus === 'To Be Verified').length;
+    const yetToDeploy = baseFilteredTickets.filter(t => t.ticketStatus === 'Yet To Deploy').length;
     const toBeTested = baseFilteredTickets.filter(t => t.ticketStatus === 'To Be Tested').length;
     const reopened = baseFilteredTickets.filter(t => t.ticketStatus === 'Reopened' || (t.reopenedCount && t.reopenedCount > 0)).length;
     const completed = baseFilteredTickets.filter(t => t.ticketStatus === 'Completed').length;
@@ -2287,7 +2335,7 @@ export default function TicketManagement({ viewType }) {
       return isPastDue || hasDelayHours;
     }).length;
 
-    return { total, open, inProgress, toBeTested, reopened, completed, overdue };
+    return { total, open, inProgress, toBeVerified, yetToDeploy, toBeTested, reopened, completed, overdue };
   }, [baseFilteredTickets]);
 
   // Color mappings
@@ -2355,7 +2403,7 @@ export default function TicketManagement({ viewType }) {
       const matchesType = filterTypeVal === 'All' || t.ticketType === filterTypeVal;
 
       const filterStatusVal = globalFilters.ticketStatus || 'All';
-      const matchesStatus = filterStatusVal === 'All' || t.ticketStatus === filterStatusVal;
+      const matchesStatus = filterStatusVal === 'All' ? t.ticketStatus !== 'Completed' : t.ticketStatus === filterStatusVal;
 
       const filterPriorityVal = globalFilters.priorityLevel || 'All';
       const matchesPriority = filterPriorityVal === 'All' || t.priorityLevel === filterPriorityVal;
@@ -2513,7 +2561,7 @@ export default function TicketManagement({ viewType }) {
                     }
                     if (isHtml || textToDisplay.includes('<p>')) {
                       return (
-                        <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 }, '& img': { maxWidth: '100%', maxHeight: '60px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
+                        <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 }, '& img': { display: 'none' } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
                       );
                     }
                     return (
@@ -2721,7 +2769,7 @@ export default function TicketManagement({ viewType }) {
             </Box>
             <Collapse in={panelsOpen.part1} sx={{ flexGrow: 1, overflowY: 'auto' }}>
               <Box sx={{ p: 2 }}>
-                <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #eef2f6', minHeight: 60, mb: 2, '& img': { maxWidth: '100%', maxHeight: '150px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' } }} dangerouslySetInnerHTML={{ __html: selectedTicket.description || '' }} />
+                <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #eef2f6', minHeight: 60, mb: 2, '& img': { display: 'none' } }} dangerouslySetInnerHTML={{ __html: selectedTicket.description || '' }} />
 
                 <Grid container spacing={1.5}>
                   {[
@@ -2730,6 +2778,7 @@ export default function TicketManagement({ viewType }) {
                     { label: 'Page Name', value: getPageDisplay(selectedTicket), icon: <DesktopWindowsOutlinedIcon sx={{ color: '#0ea5e9', fontSize: 16 }} />, xs: 12 },
                     { label: 'Created By', value: selectedTicket.employeeName || selectedTicket.createdBy, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> },
                     { label: 'Verified By', value: selectedTicket.verifiedBy || selectedTicket.verifierName, icon: <CheckCircleIcon sx={{ color: '#10b981', fontSize: 16 }} /> },
+                    { label: 'Tested By', value: selectedTicket.testedBy || 'None', icon: <CheckCircleIcon sx={{ color: '#8b5cf6', fontSize: 16 }} /> },
                     ...(selectedTicket.verifierName ? [{ label: 'Verifier Name', value: selectedTicket.verifierName, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> }] : []),
                     ...(selectedTicket.verifierPhone ? [{ label: 'Verifier Phone', value: selectedTicket.verifierPhone, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> }] : [])
                   ].map((item, idx) => (
@@ -2751,7 +2800,7 @@ export default function TicketManagement({ viewType }) {
                 {(selectedTicket.additionalRequirement && selectedTicket.additionalRequirement.replace(/<[^>]*>?/gm, '').trim() !== '') && (
                   <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eef2f6' }}>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, display: 'block' }}>Additional Requirement</Typography>
-                    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2, '& img': { maxWidth: '100%', maxHeight: '150px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' } }} dangerouslySetInnerHTML={{ __html: selectedTicket.additionalRequirement }} />
+                    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2, '& img': { display: 'none' } }} dangerouslySetInnerHTML={{ __html: selectedTicket.additionalRequirement }} />
                   </Box>
                 )}
               </Box>
@@ -2799,9 +2848,9 @@ export default function TicketManagement({ viewType }) {
                           >
                             {!isReopenedTicket && <MenuItem key="Open" value="Open" disabled={selectedTicket.ticketStatus !== 'Open'} sx={{ fontSize: '0.875rem' }}>OPEN</MenuItem>}
                             {!isReopenedTicket && <MenuItem key="InProgress" value="In Progress" sx={{ fontSize: '0.875rem' }}>IN PROGRESS</MenuItem>}
-                            <MenuItem key="ToBeTested" value="To Be Tested" sx={{ fontSize: '0.875rem' }}>TO BE TESTED</MenuItem>
+                            <MenuItem key="ToBeVerified" value="To Be Verified" sx={{ fontSize: '0.875rem' }}>TO BE VERIFIED</MenuItem>
+                            {globalFilters?.taskScope !== 'Mine' && <MenuItem key="YetToDeploy" value="Yet To Deploy" sx={{ fontSize: '0.875rem' }}>YET TO DEPLOY</MenuItem>}
                             {isReopenedTicket && <MenuItem key="Rework" value="Rework" sx={{ fontSize: '0.875rem' }}>REWORK</MenuItem>}
-                            <MenuItem key="YetToDeploy" value="Yet To Deploy" sx={{ fontSize: '0.875rem' }}>YET TO DEPLOY</MenuItem>
                             <MenuItem key="Reopened" value="Reopened" disabled sx={{ fontSize: '0.875rem' }}>REOPEN</MenuItem>
                           </TextField>
                         ) : (
@@ -2812,12 +2861,13 @@ export default function TicketManagement({ viewType }) {
                             sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#fff', '& fieldset': { borderColor: '#eef2f6' }, fontSize: '0.875rem' } }}
                           >
                             <MenuItem key="current" value={selectedTicket.ticketStatus} disabled>{selectedTicket.ticketStatus.toUpperCase()}</MenuItem>
+                            <MenuItem key="ToBeTested" value="To Be Tested">TO BE TESTED</MenuItem>
                             <MenuItem key="Reopened" value="Reopened">REOPEN</MenuItem>
                             <MenuItem key="Completed" value="Completed">COMPLETED</MenuItem>
                           </TextField>
                         )}
                       </Box>
-                      {currentViewType === 'raised-for-me' && detailStatus === 'To Be Tested' && (
+                      {currentViewType === 'raised-for-me' && detailStatus === 'To Be Verified' && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, ml: 1 }} onClick={(e) => e.stopPropagation()}>
                           <Typography variant="caption" sx={{ fontWeight: 800, color: takenTimeError ? '#d32f2f' : '#1e293b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReopenedTicket ? 'Rework Time' : 'Taken Time'} <span style={{ color: '#dc2626' }}>*</span></Typography>
                           <FormControl sx={{ width: 'max-content', mt: 0 }} variant="outlined">
@@ -3001,12 +3051,12 @@ export default function TicketManagement({ viewType }) {
                               bgcolor: '#fff',
                               mb: 1
                             }} onPasteCapture={(e) => handlePaste(e, 'detailResolution')}>
-                              <ReactQuillDemo 
-                                value={detailResolution} 
+                              <ReactQuillDemo
+                                value={detailResolution}
                                 onChange={(val) => {
                                   setDetailResolution(val);
                                   if (val.replace(/<[^>]*>?/gm, '').trim()) setCommentError(false);
-                                }} 
+                                }}
                               />
                             </Box>
                             {commentError && (
@@ -3189,7 +3239,7 @@ export default function TicketManagement({ viewType }) {
                               </>
                             )}
                           </Stack>
-                          
+
                           {(formAttachments.length > 0 || formVoiceFiles.length > 0) && (
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 150, overflowY: 'auto' }}>
                               {formAttachments.map((fileObj, idx) => {
@@ -3314,6 +3364,10 @@ export default function TicketManagement({ viewType }) {
                           <Grid item xs={6} sm={4}>
                             <Typography variant="caption" color="text.secondary">Verified By</Typography>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.verifiedBy || selectedTicket.verifierName || 'None'}</Typography>
+                          </Grid>
+                          <Grid item xs={6} sm={4}>
+                            <Typography variant="caption" color="text.secondary">Tested By</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.testedBy || 'None'}</Typography>
                           </Grid>
 
                           {selectedTicket.takenTime && (
@@ -3728,7 +3782,7 @@ export default function TicketManagement({ viewType }) {
                               }
                               if (isHtml || textToDisplay.includes('<p>')) {
                                 return (
-                                  <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 }, '& img': { maxWidth: '100%', maxHeight: '60px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
+                                  <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 }, '& img': { display: 'none' } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
                                 );
                               }
                               return (
@@ -3751,11 +3805,11 @@ export default function TicketManagement({ viewType }) {
 
 
         {/* INLINE ATTACHMENT PREVIEW */}
-        <BOSFilePreview 
-          open={previewModalOpen} 
-          onClose={() => setPreviewModalOpen(false)} 
-          url={previewFileData?.url ? (previewFileData.url.startsWith('/api/') ? previewFileData.url : `/api/files/view?path=${encodeURIComponent(previewFileData.url)}`) : ''} 
-          fileName={previewFileData?.name} 
+        <BOSFilePreview
+          open={previewModalOpen}
+          onClose={() => setPreviewModalOpen(false)}
+          url={previewFileData?.url ? (previewFileData.url.startsWith('/api/') ? previewFileData.url : `/api/files/view?path=${encodeURIComponent(previewFileData.url)}`) : ''}
+          fileName={previewFileData?.name}
         />
       </Box>
     );
@@ -3785,6 +3839,8 @@ export default function TicketManagement({ viewType }) {
           <HeaderStatCard title="Total" count={stats.total} color={theme.palette.primary.main} icon={<AssignmentIcon />} />
           <HeaderStatCard title="Open" count={stats.open} color={theme.palette.info.main} icon={<TicketIcon />} />
           <HeaderStatCard title="In Progress" count={stats.inProgress} color={theme.palette.warning.main} icon={<HistoryIcon />} />
+          <HeaderStatCard title="To Be Verified" count={stats.toBeVerified} color={theme.palette.secondary.main} icon={<CheckCircleIcon />} />
+          <HeaderStatCard title="Yet To Deploy" count={stats.yetToDeploy} color={theme.palette.info.dark} icon={<CloudUploadIcon />} />
           <HeaderStatCard title="To Be Tested" count={stats.toBeTested} color={theme.palette.success.main} icon={<CheckCircleIcon />} />
           <HeaderStatCard title="Reopened" count={stats.reopened} color={theme.palette.secondary.main} icon={<ReplayIcon />} />
           <HeaderStatCard title="Completed" count={stats.completed} color={theme.palette.text.secondary} icon={<CheckCircleIcon />} />
@@ -3837,6 +3893,7 @@ export default function TicketManagement({ viewType }) {
                   <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Assigned To</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Assigned By</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Verified By</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Tested By</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 120 }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Target Date</TableCell>
@@ -3888,6 +3945,9 @@ export default function TicketManagement({ viewType }) {
                         </TableCell>
                         <TableCell sx={{ minWidth: 140 }}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.verifiedBy || '-'}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 140 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.testedBy || '-'}</Typography>
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -4158,7 +4218,7 @@ export default function TicketManagement({ viewType }) {
 
                 {/* Row 2: Assigned To, Verified By, Time, Target Date */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start', mt: 2 }}>
-                  <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formDevName, 'Assigned To', 90)}px` }}>
+                  <Box sx={{ flex: 1, minWidth: '130px' }}>
                     <Autocomplete
                       size="small"
                       options={employeesList.filter(e => e.employeeName !== user?.name && e.employeeName !== user?.username && e.empCode !== user?.empId)}
@@ -4230,7 +4290,7 @@ export default function TicketManagement({ viewType }) {
                       }}
                     />
                   </Box>
-                  <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formVerifiedBy, 'Verified By', 90)}px` }}>
+                  <Box sx={{ flex: 1, minWidth: '130px' }}>
                     <Autocomplete
                       size="small"
                       options={employeesList.filter(e => e.isTaskVerifier === 'YES')}
@@ -4242,8 +4302,20 @@ export default function TicketManagement({ viewType }) {
                       renderInput={(params) => <TextField {...params} required label="Verified By" placeholder="Search employee..." />}
                     />
                   </Box>
+                  <Box sx={{ flex: 1, minWidth: '130px' }}>
+                    <Autocomplete
+                      size="small"
+                      options={employeesList.filter(e => e.isTaskTester === 'YES')}
+                      getOptionLabel={(option) => option.employeeName || ''}
+                      value={employeesList.find(e => e.employeeName === formTestedBy) || null}
+                      onChange={(event, selectedEmp) => {
+                        setFormTestedBy(selectedEmp ? (selectedEmp.employeeName || '') : '');
+                      }}
+                      renderInput={(params) => <TextField {...params} label="Tested By" placeholder="Search employee..." />}
+                    />
+                  </Box>
                   {/* Custom "Assigned Time" component exactly as designed */}
-                  <FormControl sx={{ flex: '1 1 auto', minWidth: 'max-content' }} variant="outlined">
+                  <FormControl sx={{ flex: 1, minWidth: '150px' }} variant="outlined">
                     <InputLabel shrink={true} required sx={{ bgcolor: 'white', px: 0.5, zIndex: 2 }}>Assigned Time</InputLabel>
                     <OutlinedInput
                       notched={true}
@@ -4412,7 +4484,7 @@ export default function TicketManagement({ viewType }) {
                     />
                   </FormControl>
                   {/* Target Date */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: '1 1 auto', minWidth: '200px' }}>
+                  <Box sx={{ flex: 1.2, minWidth: '180px' }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -4420,25 +4492,31 @@ export default function TicketManagement({ viewType }) {
                       label="Target Date (Auto-calculated)"
                       InputLabelProps={{ shrink: true }}
                       value={formTargetDate}
-                      InputProps={{ readOnly: true }}
+                      InputProps={{
+                        readOnly: true,
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <HtmlTooltip
+                              title={
+                                <Box sx={{ p: 1, maxHeight: 400, overflowY: 'auto' }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5 }}>
+                                    Developer Workload Details (9 AM To 6 PM)
+                                  </Typography>
+                                  {renderWorkloadTrail(devWorkloadTrail)}
+                                </Box>
+                              }
+                              placement="top"
+                              arrow
+                            >
+                              <IconButton size="small" sx={{ color: '#673ab7', mr: -0.5 }}>
+                                <InfoOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </HtmlTooltip>
+                          </InputAdornment>
+                        )
+                      }}
                       sx={{ '& .MuiInputBase-input': { color: formTargetDate ? '#1a7a4a' : 'text.disabled', fontWeight: 600 } }}
                     />
-                    <HtmlTooltip
-                      title={
-                        <Box sx={{ p: 1, maxHeight: 400, overflowY: 'auto' }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5 }}>
-                            Developer Workload Details (9 AM To 6 PM)
-                          </Typography>
-                          {renderWorkloadTrail(devWorkloadTrail)}
-                        </Box>
-                      }
-                      placement="top"
-                      arrow
-                    >
-                      <IconButton size="small" sx={{ color: '#673ab7' }}>
-                        <InfoOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </HtmlTooltip>
                   </Box>
                 </Box>
               </Box>
@@ -4827,11 +4905,11 @@ export default function TicketManagement({ viewType }) {
       </Dialog>
 
       {/* ── DIALOG: INLINE ATTACHMENT PREVIEW ── */}
-      <BOSFilePreview 
-        open={previewModalOpen} 
-        onClose={() => setPreviewModalOpen(false)} 
-        url={previewFileData?.url ? (previewFileData.url.startsWith('/api/') ? previewFileData.url : `/api/files/view?path=${encodeURIComponent(previewFileData.url)}`) : ''} 
-        fileName={previewFileData?.name} 
+      <BOSFilePreview
+        open={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        url={previewFileData?.url ? (previewFileData.url.startsWith('/api/') ? previewFileData.url : `/api/files/view?path=${encodeURIComponent(previewFileData.url)}`) : ''}
+        fileName={previewFileData?.name}
       />
 
       {/* Snackbar notification feedback */}

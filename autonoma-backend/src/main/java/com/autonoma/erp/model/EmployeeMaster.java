@@ -235,6 +235,15 @@ public class EmployeeMaster {
     @Column(name = "TASK_VERIFIER_FILE_INFO", columnDefinition = "NVARCHAR(MAX)")
     private String taskVerifierFileInfo;
 
+    @Column(name = "IS_TASK_TESTER", length = 10)
+    private String isTaskTester = "NO";
+
+    @Column(name = "TASK_TESTER_TYPE", length = 255)
+    private String taskTesterType;
+
+    @Column(name = "TASK_TESTER_FILE_INFO", columnDefinition = "NVARCHAR(MAX)")
+    private String taskTesterFileInfo;
+
     @Column(name = "IS_CHAIRED", length = 10)
     private String isChaired = "NO";
 
