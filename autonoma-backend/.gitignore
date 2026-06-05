@@ -23,3 +23,6 @@ application-local.properties
 .env
 .logs/
 .scratch/
+
+# Compiled Frontend Assets (Vite build output)
+src/main/resources/static/assets/

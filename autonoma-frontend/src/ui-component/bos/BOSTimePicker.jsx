@@ -53,7 +53,7 @@ const parseTimeStringToDate = (timeStr) => {
 export default function BOSTimePicker({
   label, value, onChange, disabled, required,
   error, helperText, minTime, maxTime, name,
-  onAccept,
+  onAccept, format24h = false,
   ...rest
 }) {
   const theme = useTheme();
@@ -80,6 +80,18 @@ export default function BOSTimePicker({
     return parseTimeStringToDate(maxTime) || undefined;
   }, [maxTime]);
 
+  // Base date/time for picker initialization when value is empty to ensure interactive dial
+  const referenceDateValue = useMemo(() => {
+    const now = new Date();
+    if (minTimeDate && now < minTimeDate) {
+      return minTimeDate;
+    }
+    if (maxTimeDate && now > maxTimeDate) {
+      return maxTimeDate;
+    }
+    return now;
+  }, [minTimeDate, maxTimeDate]);
+
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <MobileTimePicker
@@ -88,9 +100,11 @@ export default function BOSTimePicker({
       disabled={disabled}
       minTime={minTimeDate}
       maxTime={maxTimeDate}
+      ampm={!format24h}
+      referenceDate={referenceDateValue}
       onChange={(newValue) => {
         if (newValue && isValid(newValue)) {
-          const formatted = format(newValue, 'hh:mm a');
+          const formatted = format(newValue, format24h ? 'HH:mm' : 'hh:mm a');
           onChange({ target: { name, value: formatted } });
         } else if (newValue === null) {
           onChange({ target: { name, value: '' } });
@@ -165,5 +179,6 @@ BOSTimePicker.propTypes = {
   name: PropTypes.string,
   minTime: PropTypes.any,
   maxTime: PropTypes.any,
+  format24h: PropTypes.bool,
   onAccept: PropTypes.func
 };

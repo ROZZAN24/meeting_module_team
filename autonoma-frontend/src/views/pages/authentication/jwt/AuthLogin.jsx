@@ -151,13 +151,13 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                 return;
               }
             } else {
-              consecutiveFaces = Math.max(0, consecutiveFaces - 2);
+              consecutiveFaces = 0;
             }
           } catch (e) {
             console.error('Face detection error', e);
           }
         }
-
+        
         // Schedule next frame ONLY after current detection completes
         frameId = requestAnimationFrame(runDetection);
       }
@@ -447,7 +447,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                   {loginMethod === 'password' ? (
                     <>
                       <CustomFormControl fullWidth error={Boolean(touched.email && errors.email)} sx={{ mb: 2 }}>
-                        <InputLabel htmlFor="login-userid" sx={{ color: 'rgba(255,255,255,0.7)' }}>User ID</InputLabel>
+                        <InputLabel htmlFor="login-userid" sx={{ color: 'rgba(255,255,255,0.7)' }}>User ID / Email</InputLabel>
                         <OutlinedInput
                           id="login-userid"
                           type="text"
@@ -458,7 +458,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                             handleChange(e);
                             if (checkError) setCheckError(null);
                           }}
-                          label="User ID"
+                          label="User ID / Email"
                           autoComplete="username"
                           sx={{
                             borderRadius: '12px',
@@ -626,7 +626,30 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
               )}
             </Formik>
 
-
+            {/* Footer Features */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <IconShieldCheck size={20} color="#D4AF37" stroke={1.5} />
+                <Box>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Secure</Typography>
+                  <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>End-to-end encryption</Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <IconLock size={20} color="#D4AF37" stroke={1.5} />
+                <Box>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Private</Typography>
+                  <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>Your data is never shared</Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <IconActivity size={20} color="#D4AF37" stroke={1.5} />
+                <Box>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Fast</Typography>
+                  <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>Quick access to your workspace</Typography>
+                </Box>
+              </Box>
+            </Box>
           </motion.div>
         ) : (
           <motion.div
@@ -948,31 +971,6 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Footer Features (Globally visible) */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconShieldCheck size={20} color="#D4AF37" stroke={1.5} />
-          <Box>
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Secure</Typography>
-            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>End-to-end encryption</Typography>
-          </Box>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconLock size={20} color="#D4AF37" stroke={1.5} />
-          <Box>
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Private</Typography>
-            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>Your data is never shared</Typography>
-          </Box>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconActivity size={20} color="#D4AF37" stroke={1.5} />
-          <Box>
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff' }}>Fast</Typography>
-            <Typography sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>Quick access to your workspace</Typography>
-          </Box>
-        </Box>
-      </Box>
     </Box>
   );
 }

@@ -61,7 +61,7 @@ export async function drawFaceDetection(video, canvas) {
   faceapi.matchDimensions(canvas, displaySize);
 
   const detections = await faceapi
-    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }))
+    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.65 }))
     .withFaceLandmarks();
 
   const ctx = canvas.getContext('2d');
