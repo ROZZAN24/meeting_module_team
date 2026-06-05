@@ -82,7 +82,7 @@ public class CompanyCredential {
     @Column(name = "LIC_EXP_REMAINDER_DAYS")
     private long licExpRemainderDays;
 
-    @Column(name = "RESTORE_ENABLE_DAYS")
+    @Column(name = "restore_enable_days")
     private Integer restoreEnableDays;
 
     @Column(name = "IS_ACTIVE")

@@ -45,6 +45,33 @@ const columns = [
   { id: 'status', label: 'Status', minWidth: 100 }
 ];
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '-';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const dateStr = `${day}/${month}/${year}`;
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const hoursStr = String(hours).padStart(2, '0');
+  const timeStr = `${hoursStr}:${minutes} ${ampm}`;
+  return (
+    <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', textAlign: 'center' }}>
+      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+        {dateStr}
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+        {timeStr}
+      </Typography>
+    </Stack>
+  );
+};
+
 export default function MeetingMasterList() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
@@ -180,8 +207,7 @@ export default function MeetingMasterList() {
       return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE')} />;
     }
     if (col.id === 'createdAt') {
-      const dateVal = row[col.id];
-      return dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      return formatDateTime(row[col.id]);
     }
     if (col.id === 'createdUser') {
       return row.createdUser || row.createdBy || '-';
@@ -191,7 +217,7 @@ export default function MeetingMasterList() {
     }
     if (col.id === 'updatedAt') {
       const dateVal = row[col.id];
-      return (dateVal && (row.updatedUser || row.updatedBy)) ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      return (dateVal && (row.updatedUser || row.updatedBy)) ? formatDateTime(dateVal) : '-';
     }
     if (col.id === 'attachmentName') {
       const url = row.attachmentUrl;

@@ -50,6 +50,7 @@ public class VerificationCriteriaService {
             resolvedUser = currentUser;
         }
 
+
         if (entity.getId() == null) {
             entity.setCreatedAt(new Date());
             entity.setCreatedBy(resolvedUser);

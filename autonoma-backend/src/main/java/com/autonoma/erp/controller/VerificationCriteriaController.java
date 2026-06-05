@@ -38,7 +38,10 @@ public class VerificationCriteriaController {
     @RequirePagePermission(pageCode = "M2130", action = "write")
     public ResponseEntity<?> save(@RequestBody VerificationCriteria entity, Principal principal) {
         try {
-            String currentUser = principal != null ? principal.getName() : "SYSTEM";
+            String currentUser = com.autonoma.erp.util.SecurityUtils.getCurrentUserDisplayName();
+            if (currentUser == null) {
+                currentUser = principal != null ? principal.getName() : "SYSTEM";
+            }
             return ResponseEntity.ok(service.save(entity, currentUser));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -50,7 +53,10 @@ public class VerificationCriteriaController {
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody VerificationCriteria entity, Principal principal) {
         try {
             entity.setId(id);
-            String currentUser = principal != null ? principal.getName() : "SYSTEM";
+            String currentUser = com.autonoma.erp.util.SecurityUtils.getCurrentUserDisplayName();
+            if (currentUser == null) {
+                currentUser = principal != null ? principal.getName() : "SYSTEM";
+            }
             return ResponseEntity.ok(service.save(entity, currentUser));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

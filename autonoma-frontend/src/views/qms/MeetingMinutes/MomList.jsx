@@ -40,6 +40,37 @@ const columns = [
   { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal || dateVal === '-') return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const dateStr = `${day}/${month}/${year}`;
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = String(hours).padStart(2, '0');
+    const timeStr = `${hoursStr}:${minutes} ${ampm}`;
+    return (
+      <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', textAlign: 'center' }}>
+        <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          {dateStr}
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+          {timeStr}
+        </Typography>
+      </Stack>
+    );
+  } catch (e) {
+    return '-';
+  }
+};
+
 export default function MomList() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -101,7 +132,7 @@ export default function MomList() {
           { value: 'CANCELLED', label: 'Cancelled' },
           { value: 'All', label: 'All' }
         ],
-        defaultValue: 'PENDING'
+        defaultValue: 'All'
       },
       { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true },
       { id: 'toDate', label: 'To Date', type: 'date', isStarred: true },
@@ -184,7 +215,8 @@ export default function MomList() {
     setLoading(true);
     try {
       const response = await axios.get(API_PATHS.QMS.MOMS);
-      const data = Array.isArray(response.data) ? response.data : [];
+      const rawData = Array.isArray(response.data) ? response.data : [];
+      const data = [...rawData].sort((a, b) => b.id - a.id);
       setRows(data);
       
       // Flatten detail rows for the list view
@@ -258,7 +290,11 @@ export default function MomList() {
     }
 
     let val;
-    if (col.id === 'detailStatus') {
+    if (col.id === 'createdDate') {
+      val = formatDateTime(row._createdAt);
+    } else if (col.id === 'updatedDate') {
+      val = formatDateTime(row._updatedAt);
+    } else if (col.id === 'detailStatus') {
       const s = row.status || 'OPEN';
       let chipStatus = 'ACTIVE';
       if (s === 'CLOSED') chipStatus = 'ACTIVE';

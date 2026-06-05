@@ -4,10 +4,10 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Stack, Typography, Chip, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper,
-  Checkbox, Autocomplete
+  Checkbox, Autocomplete, Box
 } from '@mui/material';
 import { IconArrowsExchange } from '@tabler/icons-react';
-import { BOSTextField } from 'ui-component/bos';
+import { BOSTextField, BOSFormDialog, BOSDataTable } from 'ui-component/bos';
 import useLookups from 'hooks/useLookups';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -91,101 +91,100 @@ const ReassignDialog = ({ open, onClose, item, onConfirm }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle sx={{ bgcolor: 'warning.lighter', borderBottom: '2px solid', borderColor: 'warning.main' }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconArrowsExchange size={22} />
-          <Typography variant="h4">Reassign Meeting Minutes</Typography>
-        </Stack>
-      </DialogTitle>
-      <DialogContent sx={{ pt: 3 }}>
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          {/* Detail rows table */}
-          <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 350 }}>
-            <Table stickyHeader size="small">
-              <TableHead>
+    <BOSFormDialog
+      open={open}
+      onClose={onClose}
+      title="Reassign Meeting Minutes"
+      maxWidth="lg"
+      hideFooter={true}
+    >
+      <Stack spacing={3} sx={{ mt: 1 }}>
+        {/* Detail rows table */}
+        <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 350 }}>
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox">#</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Min No</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Discussed Point</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Process</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Assigned To</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Assigned By</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Target Date</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {details.length === 0 ? (
                 <TableRow>
-                  <TableCell padding="checkbox">#</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Min No</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Discussed Point</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Process</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Assigned To</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Assigned By</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Target Date</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                  <TableCell colSpan={8} align="center">
+                    <Typography variant="body2" color="text.secondary">No ACTION items found</Typography>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {details.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      <Typography variant="body2" color="text.secondary">No ACTION items found</Typography>
+              ) : (
+                details.map((d, idx) => (
+                  <TableRow
+                    key={d.id || idx}
+                    hover
+                    selected={selectedRows.includes(d.id)}
+                    onClick={() => handleToggle(d.id)}
+                    sx={{ cursor: 'pointer' }}
+                  >
+                    <TableCell padding="checkbox">
+                      <Checkbox checked={selectedRows.includes(d.id)} size="small" />
+                    </TableCell>
+                    <TableCell>{item?._momNo || '-'}</TableCell>
+                    <TableCell sx={{ maxWidth: 350, whiteSpace: 'normal' }}>{d.discussedPoint || '-'}</TableCell>
+                    <TableCell>{d.processType || '-'}</TableCell>
+                    <TableCell>{d.assignedTo?.employeeName || '-'}</TableCell>
+                    <TableCell>{d.assignedBy?.employeeName || '-'}</TableCell>
+                    <TableCell>{d.targetDate || '-'}</TableCell>
+                    <TableCell>
+                      <Chip label={d.status} size="small" color={getStatusColor(d.status)} variant="outlined" />
                     </TableCell>
                   </TableRow>
-                ) : (
-                  details.map((d, idx) => (
-                    <TableRow
-                      key={d.id || idx}
-                      hover
-                      selected={selectedRows.includes(d.id)}
-                      onClick={() => handleToggle(d.id)}
-                      sx={{ cursor: 'pointer' }}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox checked={selectedRows.includes(d.id)} size="small" />
-                      </TableCell>
-                      <TableCell>{item?._momNo || '-'}</TableCell>
-                      <TableCell sx={{ maxWidth: 350, whiteSpace: 'normal' }}>{d.discussedPoint || '-'}</TableCell>
-                      <TableCell>{d.processType || '-'}</TableCell>
-                      <TableCell>{d.assignedTo?.employeeName || '-'}</TableCell>
-                      <TableCell>{d.assignedBy?.employeeName || '-'}</TableCell>
-                      <TableCell>{d.targetDate || '-'}</TableCell>
-                      <TableCell>
-                        <Chip label={d.status} size="small" color={getStatusColor(d.status)} variant="outlined" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-          {/* Reassign fields */}
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Autocomplete
-              fullWidth
-              options={employees}
-              getOptionLabel={(option) => option.employeeName || ''}
-              value={assignBy}
-              onChange={(e, val) => setAssignBy(val)}
-              renderInput={(params) => <BOSTextField {...params} label="Assign By *" />}
-            />
-            <Autocomplete
-              fullWidth
-              options={employees}
-              getOptionLabel={(option) => option.employeeName || ''}
-              value={assignTo}
-              onChange={(e, val) => setAssignTo(val)}
-              renderInput={(params) => <BOSTextField {...params} label="Assign To *" />}
-            />
-            <BOSTextField
-              type="date"
-              label="Target Date *"
-              value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
-              fullWidth
-              inputProps={{ min: new Date().toISOString().split('T')[0] }}
-            />
-          </Stack>
+        {/* Reassign fields */}
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <Autocomplete
+            fullWidth
+            options={employees}
+            getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+            value={assignBy}
+            onChange={(e, val) => setAssignBy(val)}
+            renderInput={(params) => <BOSTextField {...params} label="Assign By *" />}
+          />
+          <Autocomplete
+            fullWidth
+            options={employees}
+            getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+            value={assignTo}
+            onChange={(e, val) => setAssignTo(val)}
+            renderInput={(params) => <BOSTextField {...params} label="Assign To *" />}
+          />
+          <BOSTextField
+            type="date"
+            label="Target Date *"
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+            fullWidth
+            inputProps={{ min: new Date().toISOString().split('T')[0] }}
+          />
         </Stack>
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" color="warning" onClick={handleConfirm} startIcon={<IconArrowsExchange size={18} />}>
-          Confirm
-        </Button>
-      </DialogActions>
-    </Dialog>
+
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+          <Button onClick={onClose} variant="outlined" color="secondary">Cancel</Button>
+          <Button variant="contained" color="warning" onClick={handleConfirm} startIcon={<IconArrowsExchange size={18} />}>
+            Confirm
+          </Button>
+        </Box>
+      </Stack>
+    </BOSFormDialog>
   );
 };
 

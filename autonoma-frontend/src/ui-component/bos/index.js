@@ -11,6 +11,7 @@ export { default as BOSStatusField } from './BOSStatusField';
 export { default as BOSAutocomplete } from './BOSAutocomplete';
 export { default as BOSDatePicker } from './BOSDatePicker';
 export { default as BOSTimePicker } from './BOSTimePicker';
+export { default as BOSAnalogTimePicker } from './BOSAnalogTimePicker';
 export * from './BOSFileGallery';
 export { default as BOSFileUpload } from './BOSFileUpload';
 export { default as BOSFilePreview } from './BOSFilePreview';
@@ -44,4 +45,3 @@ export { default as useBOSForm } from 'hooks/useBOSForm';
 export * from './BOSUtils';
 export { default as BOSTableToolbar } from './BOSTableToolbar';
 export { default as PageGuard } from './PageGuard';
-

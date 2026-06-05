@@ -59,10 +59,11 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
             const eligible = allSchedules.filter(s => {
-              // If not super admin, only show schedules where the current user is a participant
+              // If not super admin, only show schedules where the current user is a participant or the host
               if (user && user.userLevel !== 5) {
+                const isHost = s.hostBy && Number(s.hostBy.id) === Number(user?.empId);
                 const isParticipant = s.participants?.some(p => Number(p.employee?.id) === Number(user?.empId));
-                if (!isParticipant) return false;
+                if (!isParticipant && !isHost) return false;
               }
 
               // Handle potential null/undefined status from backend just like the list page does
@@ -127,7 +128,8 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
         setOutTime('');
         setOutTimeRaw('');
         if (user && user.userLevel !== 5) {
-          setAttendeeName(user.name || '');
+          const matchedEmp = employees.find(e => Number(e.id) === Number(user?.empId));
+          setAttendeeName(matchedEmp ? matchedEmp.employeeName : (user.name || ''));
         } else {
           setAttendeeName('');
         }
@@ -239,8 +241,11 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
           ) : (
             <Autocomplete
               options={employees.filter(emp => 
-                // Only show participants assigned to this schedule who haven't marked attendance yet
-                (!selectedSchedule || selectedSchedule.participants?.some(p => p.employee?.id === emp.id)) &&
+                // Show participants and host assigned to this schedule who haven't marked attendance yet
+                (!selectedSchedule || 
+                  selectedSchedule.participants?.some(p => p.employee?.id === emp.id) ||
+                  (selectedSchedule.hostBy && selectedSchedule.hostBy.id === emp.id)
+                ) &&
                 !existingAttendance.some(att => att.employee?.id === emp.id)
               )}
               getOptionLabel={(option) => option.employeeName || ''}
@@ -249,7 +254,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
               renderInput={(params) => (
                 <BOSTextField {...params} label="Select Attendee" required fullWidth />
               )}
-              noOptionsText={selectedSchedule ? "All assigned participants have marked attendance" : "Select a schedule first"}
+              noOptionsText={selectedSchedule ? "All assigned participants and host have marked attendance" : "Select a schedule first"}
             />
           )}
 

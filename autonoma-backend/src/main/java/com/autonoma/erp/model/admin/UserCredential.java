@@ -50,6 +50,7 @@ public class UserCredential {
     @Column(name = "IMG_NAME", columnDefinition = "NVARCHAR(255)")
     private String imgName;
 
+
     @Column(name = "FACE_IMAGE", columnDefinition = "NVARCHAR(MAX)")
     private String faceImage;
 

@@ -610,7 +610,7 @@ export default function UserTaskQueue() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(null);
   const [countdown, setCountdown] = useState(REFRESH_S);
 
   const [targetUserId, setTargetUserId] = useState('');
@@ -767,7 +767,7 @@ export default function UserTaskQueue() {
     TICKET: tasks.filter(t => t.type === 'TICKET').length,
     AUDIT: tasks.filter(t => t.type === 'AUDIT').length,
   };
-  const visibleTasks = activeTab === 0 ? tasks : tasks.filter(t => t.type === TAB_TYPES[activeTab]);
+  const visibleTasks = activeTab === null ? tasks : tasks.filter(t => t.type === activeTab);
 
   const overdueCount = tasks.filter(t =>
     isOverdue(t.dueDate) && !['Closed', 'Resolved', 'Approved', 'Completed'].includes(t.status)
@@ -958,8 +958,6 @@ export default function UserTaskQueue() {
           ))
         ) : (
           (() => {
-            const enabledAuths = pageAuths.filter(a => a.addTaskEnable === 1);
-
             const tasksByType = {
               'CHECKLIST': tasks.filter(t => t.type === 'CHECKLIST'),
               'MEETING': tasks.filter(t => t.type === 'MEETING'),
@@ -967,50 +965,57 @@ export default function UserTaskQueue() {
               'AUDIT': tasks.filter(t => t.type === 'AUDIT'),
             };
 
-            let modulesToRender = [];
+            // Check page authorization flags for the 4 task modules
+            const hasChecklistAuth = pageAuths.some(a => a.addTaskEnable === 1 && (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('CHECK'));
+            const hasMeetingAuth   = pageAuths.some(a => a.addTaskEnable === 1 && (
+              (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('MEET') ||
+              (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('MOM')
+            ));
+            const hasTicketAuth    = pageAuths.some(a => a.addTaskEnable === 1 && (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('TICKET'));
+            const hasAuditAuth     = pageAuths.some(a => a.addTaskEnable === 1 && (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('AUDIT'));
 
+            // If no dashboard authorizations are set for any task modules, show all 4 modules as fallback
+            const noTaskAuthsEnabled = !hasChecklistAuth && !hasMeetingAuth && !hasTicketAuth && !hasAuditAuth;
+
+            let dynamicModules = [];
+
+            if (noTaskAuthsEnabled) {
+              dynamicModules = [
+                { name: 'CHECKLISTS', count: tasksByType['CHECKLIST'].length, paletteKey: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 28 }} />, type: 'CHECKLIST' },
+                { name: 'MEETINGS', count: tasksByType['MEETING'].length, paletteKey: 'emerald', icon: <GroupsIcon sx={{ fontSize: 28 }} />, type: 'MEETING' },
+                { name: 'TICKETS', count: tasksByType['TICKET'].length, paletteKey: 'sky', icon: <ConfirmationNumberIcon sx={{ fontSize: 28 }} />, type: 'TICKET' },
+                { name: 'AUDITS', count: tasksByType['AUDIT'].length, paletteKey: 'amber', icon: <PolicyIcon sx={{ fontSize: 28 }} />, type: 'AUDIT' },
+              ];
+            } else {
+              if (hasChecklistAuth) {
+                dynamicModules.push({ name: 'CHECKLISTS', count: tasksByType['CHECKLIST'].length, paletteKey: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 28 }} />, type: 'CHECKLIST' });
+              }
+              if (hasMeetingAuth) {
+                dynamicModules.push({ name: 'MEETINGS', count: tasksByType['MEETING'].length, paletteKey: 'emerald', icon: <GroupsIcon sx={{ fontSize: 28 }} />, type: 'MEETING' });
+              }
+              if (hasTicketAuth) {
+                dynamicModules.push({ name: 'TICKETS', count: tasksByType['TICKET'].length, paletteKey: 'sky', icon: <ConfirmationNumberIcon sx={{ fontSize: 28 }} />, type: 'TICKET' });
+              }
+              if (hasAuditAuth) {
+                dynamicModules.push({ name: 'AUDITS', count: tasksByType['AUDIT'].length, paletteKey: 'amber', icon: <PolicyIcon sx={{ fontSize: 28 }} />, type: 'AUDIT' });
+              }
+            }
+
+            // Order by pending count ascending
+            dynamicModules.sort((a, b) => a.count - b.count);
+
+            let modulesToRender = [];
             // Always add ALL TASKS first
             modulesToRender.push({
               name: 'ALL TASKS',
               count: tasks.length,
               paletteKey: 'indigo',
               icon: <NotificationsActiveIcon sx={{ fontSize: 28 }} />,
-              tabIndex: 0
+              type: null
             });
 
-            let dynamicModules = [];
-
-            if (enabledAuths.length > 0) {
-              dynamicModules = enabledAuths.map(auth => {
-                const name = auth.page?.pageName || auth.page?.pageCode || `Module ${auth.pageId}`;
-                const upName = name.toUpperCase();
-                let modTasks = [];
-                let palette = 'indigo';
-                let icon = <DashboardRoundedIcon sx={{ fontSize: 28 }} />;
-
-                if (upName.includes('CHECK')) { modTasks = tasksByType['CHECKLIST']; palette = 'rose'; icon = <ChecklistRtlIcon sx={{ fontSize: 28 }} />; }
-                else if (upName.includes('MEET') || upName.includes('MOM')) { modTasks = tasksByType['MEETING']; palette = 'emerald'; icon = <GroupsIcon sx={{ fontSize: 28 }} />; }
-                else if (upName.includes('TICKET')) { modTasks = tasksByType['TICKET']; palette = 'sky'; icon = <ConfirmationNumberIcon sx={{ fontSize: 28 }} />; }
-                else if (upName.includes('AUDIT')) { modTasks = tasksByType['AUDIT']; palette = 'amber'; icon = <PolicyIcon sx={{ fontSize: 28 }} />; }
-
-                return { name, count: modTasks.length, paletteKey: palette, icon };
-              });
-            } else {
-              // Fallback structure to match the old dashboard exactly
-              dynamicModules = [
-                { name: 'CHECKLISTS', count: tasksByType['CHECKLIST'].length, paletteKey: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 28 }} /> },
-                { name: 'MEETINGS', count: tasksByType['MEETING'].length, paletteKey: 'emerald', icon: <GroupsIcon sx={{ fontSize: 28 }} /> },
-                { name: 'TICKETS', count: tasksByType['TICKET'].length, paletteKey: 'sky', icon: <ConfirmationNumberIcon sx={{ fontSize: 28 }} /> },
-                { name: 'AUDITS', count: tasksByType['AUDIT'].length, paletteKey: 'amber', icon: <PolicyIcon sx={{ fontSize: 28 }} /> },
-              ];
-            }
-
-            // Order by pending count ascending
-            dynamicModules.sort((a, b) => a.count - b.count);
-
-            // Append dynamic modules with incremented tab index
-            dynamicModules.forEach((mod, idx) => {
-              mod.tabIndex = idx + 1;
+            // Append dynamic modules
+            dynamicModules.forEach((mod) => {
               modulesToRender.push(mod);
             });
 
@@ -1023,9 +1028,9 @@ export default function UserTaskQueue() {
                   paletteKey={mod.paletteKey}
                   theme={theme}
                   isDark={isDark}
-                  active={activeTab === mod.tabIndex}
+                  active={activeTab === mod.type}
                   index={i}
-                  onClick={() => setActiveTab(mod.tabIndex)}
+                  onClick={() => setActiveTab(mod.type)}
                 />
               </Grid>
             ));

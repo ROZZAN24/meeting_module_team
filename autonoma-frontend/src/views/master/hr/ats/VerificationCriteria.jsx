@@ -6,9 +6,9 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField, BOSTableToolbar, getStatusChipSx } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| VERIFICATION CRITERIA MASTER ||============================== //
@@ -73,20 +73,33 @@ export default function VerificationCriteria() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [{
-      id: 'status',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { value: 'ALL', label: 'ALL' },
-        { value: 'ACTIVE', label: 'ACTIVE' },
-        { value: 'INACTIVE', label: 'INACTIVE' }
-      ],
-      defaultValue: 'ALL',
-      isStarred: true
-    },
-    ...getCommonDateFilters('createdAt', 'updatedAt')];
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const config = [
+      {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        options: [
+          { value: 'ALL', label: 'ALL' },
+          { value: 'ACTIVE', label: 'ACTIVE' },
+          { value: 'INACTIVE', label: 'INACTIVE' }
+        ],
+        defaultValue: 'ACTIVE',
+        isStarred: true
+      },
+      {
+        id: 'createdAt',
+        label: 'CREATED DATE',
+        type: 'dateRange',
+        isStarred: true
+      }
+    ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today
+    }));
     return () => {
       dispatch(setFilterConfig(null));
     };
@@ -190,19 +203,29 @@ export default function VerificationCriteria() {
       setDeleteDialogOpen(false);
       fetchRows();
     } catch (error) {
+      console.error('Failed to delete verification criteria:', error);
       dispatch(openSnackbar({ open: true, message: 'Failed to delete', variant: 'alert', severity: 'error' }));
     }
   };
 
   const resolvedRows = useMemo(() => {
-    return rows.map((r, i) => ({
-      ...r,
-      index: i + 1,
-      createdUser: r.createdUser || r.createdBy || '-',
-      updatedUser: r.updatedUser || r.updatedBy || '-',
-      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
-    }));
+    return rows.map((r, i) => {
+      const hasBeenUpdated = (() => {
+        if (!r.updatedAt || !r.createdAt) return false;
+        const createdTime = new Date(r.createdAt).getTime();
+        const updatedTime = new Date(r.updatedAt).getTime();
+        return Math.abs(updatedTime - createdTime) > 1000;
+      })();
+
+      return {
+        ...r,
+        index: i + 1,
+        createdUser: r.createdUser || r.createdBy || '-',
+        updatedUser: hasBeenUpdated ? (r.updatedUser || r.updatedBy || '-') : '-',
+        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
+        updatedAt: hasBeenUpdated ? new Date(r.updatedAt).toLocaleString() : '-'
+      };
+    });
   }, [rows]);
 
   return (
