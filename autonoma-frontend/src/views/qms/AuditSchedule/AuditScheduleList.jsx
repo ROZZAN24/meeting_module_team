@@ -57,10 +57,11 @@ export default function AuditScheduleList() {
         options: [
           { value: 'All', label: 'ALL' },
           { value: 'OPEN', label: 'OPEN' },
+          { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' },
           { value: 'CLOSED', label: 'CLOSED' },
           { value: 'CANCELLED', label: 'CANCELLED' }
         ],
-        defaultValue: 'OPEN',
+        defaultValue: 'All',
         isStarred: true
       },
       { id: 'scheduleNo', label: 'Schedule No', type: 'text', placeholder: 'Filter by No...', isStarred: true },
@@ -145,7 +146,7 @@ export default function AuditScheduleList() {
     const filtered = rows.filter((row) => {
       if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
 
-      const statusFilter = globalFilters.status || 'OPEN';
+      const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       
       const scheduleNoFilter = globalFilters.scheduleNo || '';
@@ -194,9 +195,11 @@ export default function AuditScheduleList() {
     }
     if (col.id === 'status') {
       const statusText = typeof val === 'object' ? val?.name : val;
-      return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'OPEN' ? 'ACTIVE' : 'INACTIVE')} />;
+      const displayLabel = statusText === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : statusText;
+      return <Chip label={displayLabel} size="small" sx={getStatusChipSx((statusText === 'OPEN' || statusText === 'CLOSED') ? 'ACTIVE' : (statusText === 'WAITING_APPROVAL' ? 'PENDING' : 'INACTIVE'))} />;
     }
-    if (col.id === 'auditDate' || col.id === 'createdDate' || col.id === 'updatedDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'auditDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'createdDate' || col.id === 'updatedDate') return val ? format(new Date(val), 'dd/MM/yyyy HH:mm') : '-';
     if (col.id === 'auditee' || col.id === 'auditor') {
       if (val && typeof val === 'string' && val.includes(' - ')) {
         return val.split(' - ')[0].trim();
@@ -214,7 +217,7 @@ export default function AuditScheduleList() {
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCalendarEvent size={24} />
-          <Typography variant="h3">Audit Schedule Master</Typography>
+          <Typography variant="h3">Audit Schedule</Typography>
         </Stack>
       }
       secondary={

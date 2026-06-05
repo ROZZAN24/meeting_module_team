@@ -180,8 +180,9 @@ export function JWTProvider({ children }) {
 
   const logout = async () => {
     try {
-      if (state.user?.id) {
-        await axios.post('/api/account/logout', { userId: state.user.id });
+      const uid = state.user?.userId || state.user?.id;
+      if (uid) {
+        await axios.post('/api/account/logout', { userId: uid });
       }
     } catch (err) {
       console.error('Logout audit failed:', err);
@@ -288,9 +289,12 @@ export function JWTProvider({ children }) {
           
           // Fetch company config for global input case style
           try {
-            const profileRes = await axios.get('/api/CompanyProfile/profile');
-            if (profileRes.data && profileRes.data.inputCaseStyle) {
-              window.localStorage.setItem('inputCaseStyle', profileRes.data.inputCaseStyle);
+            const profileRes = await axios.get('/api/company-profile/all');
+            if (Array.isArray(profileRes.data) && profileRes.data.length > 0) {
+              const profile = profileRes.data[0];
+              if (profile && profile.inputCaseStyle) {
+                window.localStorage.setItem('inputCaseStyle', profile.inputCaseStyle);
+              }
             }
           } catch (e) {
             console.error('Failed to load company profile config:', e);

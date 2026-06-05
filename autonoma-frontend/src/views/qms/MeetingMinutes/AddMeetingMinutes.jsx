@@ -707,7 +707,7 @@ export default function AddMeetingMinutes() {
                           type="date"
                           value={form.momDate}
                           onChange={(e) => setForm({ ...form, momDate: e.target.value })}
-                          disabled={!perms.write}
+                          disabled={true}
                           sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { py: 0.8 } }}
                         />
                       )
@@ -1018,9 +1018,8 @@ export default function AddMeetingMinutes() {
                         <Tooltip title="Add New Row" placement="top" arrow>
                           <IconButton
                             size="small"
-                            color="primary"
                             onClick={() => handleOpenDetailDialog(null)}
-                            sx={{ bgcolor: 'primary.lighter', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+                            sx={{ bgcolor: 'white', color: 'primary.dark', '&:hover': { bgcolor: 'primary.lighter', color: 'primary.dark' } }}
                           >
                             <IconPlus size={16} />
                           </IconButton>

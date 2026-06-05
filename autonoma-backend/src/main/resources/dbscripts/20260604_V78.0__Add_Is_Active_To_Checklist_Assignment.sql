@@ -1,0 +1,16 @@
+-- Add IS_ACTIVE column to QMS_CHECKLIST_ASSIGNMENT table if it does not exist
+IF OBJECT_ID('QMS_CHECKLIST_ASSIGNMENT', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('QMS_CHECKLIST_ASSIGNMENT') AND name = 'IS_ACTIVE')
+    BEGIN
+        ALTER TABLE QMS_CHECKLIST_ASSIGNMENT ADD IS_ACTIVE BIT DEFAULT 1;
+    END
+END
+ELSE IF OBJECT_ID('qms_checklist_assignment', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('qms_checklist_assignment') AND name = 'IS_ACTIVE')
+    BEGIN
+        ALTER TABLE qms_checklist_assignment ADD IS_ACTIVE BIT DEFAULT 1;
+    END
+END
+GO

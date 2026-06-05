@@ -15,9 +15,12 @@ import {
   TableRow,
   LinearProgress,
   IconButton,
-  Link
+  Link,
+  useTheme
 } from '@mui/material';
 import { styled, alpha, keyframes } from '@mui/system';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const glowPulse = keyframes`0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}`;
 import ReactApexChart from 'react-apexcharts';
@@ -161,7 +164,10 @@ const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   background: bg
 }));
 
-export default function OpenDashboard({ isDark, realTasks = [] }) {
+export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search?.filters || {});
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
 
@@ -485,24 +491,6 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
     tooltip: { theme: isDark ? 'dark' : 'light' }
   };
 
-  // Sparkline options for Developer table
-  const sparklineOptions = {
-    chart: { type: 'line', sparkline: { enabled: true } },
-    stroke: { curve: 'smooth', width: 2 },
-    tooltip: {
-      fixed: { enabled: false },
-      x: { show: false },
-      y: {
-        title: {
-          formatter: function (seriesName) {
-            return '';
-          }
-        }
-      },
-      marker: { show: false }
-    }
-  };
-
   if (activeView !== 'main') {
     return (
       <Box sx={{ animation: 'fadeIn 0.3s ease-in-out' }}>
@@ -692,7 +680,39 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
         sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 1.5, mb: 2.5 }}
       >
         {topStats.map((stat, idx) => (
-          <NeonCard key={idx} statcolor={stat.color} grad={stat.grad}>
+          <NeonCard 
+            key={idx} 
+            statcolor={stat.color}
+            onClick={() => {
+              const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+              const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+              
+              const initialFilters = {
+                taskScope: globalFilters?.performanceScope || 'Mine',
+                ticketStatus: 'Open'
+              };
+              
+              const now = new Date();
+              if (stat.title === 'Open This Week') {
+                const weekStart = new Date(now);
+                weekStart.setDate(now.getDate() - now.getDay());
+                initialFilters.startDate = weekStart.toISOString().split('T')[0];
+                initialFilters.endDate = now.toISOString().split('T')[0];
+              } else if (stat.title === 'New Open Today') {
+                initialFilters.startDate = now.toISOString().split('T')[0];
+                initialFilters.endDate = now.toISOString().split('T')[0];
+              }
+              
+              navigate(routePath, { 
+                state: { 
+                  fromDashboard: true, 
+                  fromTab: activeTab,
+                  dashboardFilters: globalFilters,
+                  initialFilters 
+                } 
+              });
+            }}
+          >
             {/* Absolute Backdrops */}
             <Box className="rotating-border" />
             <Box className="shimmer" />

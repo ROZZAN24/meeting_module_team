@@ -17,6 +17,8 @@ import {
   IconButton,
   Link
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { styled, alpha } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
 
@@ -157,9 +159,12 @@ const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   background: bg
 }));
 
-export default function InProgressDashboard({ isDark, realTasks = [] }) {
+export default function InProgressDashboard({ isDark, realTasks = [], activeTab }) {
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
+
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search.filters);
 
   const [activeView, setActiveView] = useState('main');
   const [trendPeriod, setTrendPeriod] = useState('weekly');
@@ -753,7 +758,50 @@ export default function InProgressDashboard({ isDark, realTasks = [] }) {
         sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(3,1fr)', lg: 'repeat(6,1fr)' }, gap: 1.5, mb: 1.5 }}
       >
         {topStats.map((stat, idx) => (
-          <NeonCard key={idx} statcolor={stat.color} grad={stat.grad}>
+          <NeonCard 
+            key={idx} 
+            statcolor={stat.color} 
+            grad={stat.grad}
+            onClick={() => {
+              if (stat.title === 'Total In Progress Tasks' || stat.title === 'Started Today' || stat.title === 'In Progress This Week' || stat.title === 'In Progress This Month') {
+                const initialFilters = { 
+                  ticketStatus: 'In Progress',
+                  taskScope: globalFilters?.performanceScope || 'Mine'
+                };
+                
+                const now = new Date();
+                
+                if (stat.title === 'Started Today') {
+                  initialFilters.startDate = now.toISOString().split('T')[0];
+                  initialFilters.endDate = now.toISOString().split('T')[0];
+                } else if (stat.title === 'In Progress This Week') {
+                  const weekStart = new Date(now);
+                  weekStart.setDate(now.getDate() - now.getDay()); // Sunday as start of week
+                  initialFilters.startDate = weekStart.toISOString().split('T')[0];
+                  initialFilters.endDate = now.toISOString().split('T')[0];
+                } else if (stat.title === 'In Progress This Month') {
+                  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                  initialFilters.startDate = monthStart.toISOString().split('T')[0];
+                  
+                  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                  initialFilters.endDate = monthEnd.toISOString().split('T')[0];
+                }
+
+                const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+                const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+
+                navigate(routePath, { 
+                  state: { 
+                    fromDashboard: true, 
+                    fromTab: activeTab,
+                    dashboardFilters: globalFilters,
+                    initialFilters 
+                  } 
+                });
+              }
+            }}
+            sx={{ cursor: (stat.title === 'Total In Progress Tasks' || stat.title === 'Started Today' || stat.title === 'In Progress This Week' || stat.title === 'In Progress This Month') ? 'pointer' : 'default' }}
+          >
             {/* Absolute Backdrops */}
             <Box className="rotating-border" />
             <Box className="shimmer" />

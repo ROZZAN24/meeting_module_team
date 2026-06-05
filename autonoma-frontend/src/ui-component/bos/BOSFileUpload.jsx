@@ -103,7 +103,8 @@ export default function BOSFileUpload({
   disabled = false,
   compact = false,
   label = 'Upload Files',
-  helperText = ''
+  helperText = '',
+  error = false
 }) {
   const theme = useTheme();
   const [dragActive, setDragActive] = useState(false);
@@ -221,7 +222,7 @@ export default function BOSFileUpload({
             gap: compact ? 1.5 : 1,
             p: compact ? 1.5 : 3,
             border: '2px dashed',
-            borderColor: dragActive ? 'primary.main' : 'divider',
+            borderColor: error ? 'error.main' : (dragActive ? 'primary.main' : 'divider'),
             borderRadius: 2.5,
             bgcolor: dragActive 
               ? alpha(theme.palette.primary.main, 0.04)
@@ -230,7 +231,7 @@ export default function BOSFileUpload({
             opacity: disabled ? 0.6 : 1,
             transition: 'all 0.25s ease',
             '&:hover': !disabled ? {
-              borderColor: 'primary.light',
+              borderColor: error ? 'error.main' : 'primary.light',
               bgcolor: alpha(theme.palette.primary.main, 0.02)
             } : {}
           }}
@@ -247,20 +248,20 @@ export default function BOSFileUpload({
           <Box sx={{
             p: compact ? 0.8 : 1.5,
             borderRadius: '50%',
-            bgcolor: alpha(disabled ? theme.palette.grey[500] : theme.palette.primary.main, 0.08),
+            bgcolor: alpha(disabled ? theme.palette.grey[500] : (error ? theme.palette.error.main : theme.palette.primary.main), 0.08),
             display: 'flex'
           }}>
             <IconCloudUpload 
               size={compact ? 20 : 32} 
-              color={disabled ? theme.palette.grey[500] : theme.palette.primary.main} 
+              color={disabled ? theme.palette.grey[500] : (error ? theme.palette.error.main : theme.palette.primary.main)} 
               stroke={1.5} 
             />
           </Box>
           <Box sx={{ textAlign: compact ? 'left' : 'center' }}>
-            <Typography variant={compact ? 'body2' : 'subtitle2'} fontWeight={600} color={disabled ? 'text.disabled' : 'text.primary'}>
+            <Typography variant={compact ? 'body2' : 'subtitle2'} fontWeight={600} color={error ? 'error.main' : (disabled ? 'text.disabled' : 'text.primary')}>
               {label} {disabled && '(Disabled)'}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color={error ? 'error.main' : 'text.secondary'}>
               {disabled ? 'NDA document not required' : (helperText || `Drag & drop or click • ${multiple ? `Up to ${maxFiles} files` : 'Single file'} • Max ${maxSizeMB}MB each`)}
             </Typography>
           </Box>
@@ -288,7 +289,7 @@ export default function BOSFileUpload({
 
       {/* ── File List ── */}
       {fileCount > 0 && (
-        <Stack spacing={0.75} sx={{ mt: 1.5 }}>
+        <Stack spacing={0.75} sx={{ mt: 1.5, maxHeight: '200px', overflowY: 'auto', pr: 0.5 }}>
           {files.map((file, i) => {
             const name = file.fileName || file.name || 'Unknown';
             const displayName = getDisplayName(name);
