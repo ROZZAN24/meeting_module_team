@@ -149,6 +149,38 @@ export default function BOSDataTable({
     }
   };
 
+  const getCellAlignment = (col, val) => {
+    if (col.id === 'index' || col.id === 'id') return 'center';
+    
+    const valStr = (val !== null && val !== undefined) ? String(val).trim() : '';
+    if (valStr === '' || valStr === '-') return 'left';
+
+    const nameLower = (col.id || '').toLowerCase();
+    const labelLower = (col.label || '').toLowerCase();
+    const isAmountCol = nameLower.includes('amount') || 
+                        nameLower.includes('price') || 
+                        nameLower.includes('cost') || 
+                        nameLower.includes('total') || 
+                        nameLower.includes('rate') || 
+                        nameLower.includes('value') ||
+                        nameLower.includes('salary') ||
+                        labelLower.includes('amount') || 
+                        labelLower.includes('price') || 
+                        labelLower.includes('cost') || 
+                        labelLower.includes('total') || 
+                        labelLower.includes('rate') || 
+                        labelLower.includes('value') ||
+                        labelLower.includes('salary');
+
+    if (isAmountCol) return 'right';
+
+    if (/^[+-]?\d+$/.test(valStr)) {
+      return 'center';
+    }
+
+    return 'left';
+  };
+
   const getCellDisplayValue = (col, row, idx) => {
     if (col.id === 'updatedBy' || col.id === 'updated_by') {
       const hasUpdate = row['updatedAt'] || row['updated_at'] || row['updatedDate'] || row['updated_date'];
@@ -479,7 +511,7 @@ export default function BOSDataTable({
               {columns.map((col, ci) => (
                 <TableCell
                   key={col.id}
-                  align={col.align || 'left'}
+                  align="center"
                   sx={{
                     ...tableHeadCellSx,
                     ...(ci === 0 ? { borderTopLeftRadius: '16px' } : {}),
@@ -554,30 +586,34 @@ export default function BOSDataTable({
                     onMouseLeave={(e) => onRowMouseLeave?.(e, row)}
                     onMouseMove={(e) => onRowMouseMove?.(e, row)}
                   >
-                  {columns.map((col) => (
-                    <TableCell
-                      key={col.id}
-                      align={col.align || 'left'}
-                      sx={{
-                        cursor: (onDoubleClickRow || onClickRow || onEditRow) ? 'pointer' : 'default',
-                        ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
-                        ...(col.bold ? { fontWeight: 600, color: '#37474f' } : {}),
-                        // SOP: Prevent column split issue by keeping text on one line unless explicitly long
-                        whiteSpace: (String(resolveNestedValue(col.id, row) || '').length > 50 || col.wrap) ? 'normal' : 'nowrap',
-                        ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis' } : {}),
-                        minWidth: col.id === 'index' ? 60 : (col.minWidth || 100),
-                        paddingX: 1.5
-                      }}
-                    >
-                      {(() => {
-                        if (renderCell) {
-                          const customVal = renderCell(col, row, idx);
-                          if (customVal !== null && customVal !== undefined) return customVal;
-                        }
-                        return defaultRenderCell(col, row, idx);
-                      })()}
-                    </TableCell>
-                  ))}
+                  {columns.map((col) => {
+                    const displayVal = getCellDisplayValue(col, row, idx);
+                    const cellAlign = col.align || getCellAlignment(col, displayVal);
+                    return (
+                      <TableCell
+                        key={col.id}
+                        align={cellAlign}
+                        sx={{
+                          cursor: (onDoubleClickRow || onClickRow || onEditRow) ? 'pointer' : 'default',
+                          ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
+                          ...(col.bold ? { fontWeight: 600, color: '#37474f' } : {}),
+                          // SOP: Prevent column split issue by keeping text on one line unless explicitly long
+                          whiteSpace: (String(resolveNestedValue(col.id, row) || '').length > 50 || col.wrap) ? 'normal' : 'nowrap',
+                          ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis' } : {}),
+                          minWidth: col.id === 'index' ? 60 : (col.minWidth || 100),
+                          paddingX: 1.5
+                        }}
+                      >
+                        {(() => {
+                          if (renderCell) {
+                            const customVal = renderCell(col, row, idx);
+                            if (customVal !== null && customVal !== undefined) return customVal;
+                          }
+                          return defaultRenderCell(col, row, idx);
+                        })()}
+                      </TableCell>
+                    );
+                  })}
                   {showActions && (
                     <TableCell align="center" sx={{ minWidth: 100 }}>
                       <Stack direction="row" justifyContent="center" spacing={1} sx={{ flexWrap: 'nowrap', alignItems: 'center' }}>

@@ -52,12 +52,14 @@ public class InductionTrainingService {
         
         int currentLevelNum = parseScreeningLevel(assignment.getScreeningLevel());
         
-        for (InductionAssignment other : sortedActive) {
-            int otherLevelNum = parseScreeningLevel(other.getScreeningLevel());
-            if (otherLevelNum < currentLevelNum) {
-                if (!"COMPLETED".equalsIgnoreCase(other.getCurrentStatus())) {
-                    return false;
-                }
+        // For each level lower than currentLevelNum, verify that there is at least one active assignment that has currentStatus = 'COMPLETED'
+        for (int lvl = 1; lvl < currentLevelNum; lvl++) {
+            final int targetLvl = lvl;
+            boolean levelCompleted = sortedActive.stream()
+                    .filter(a -> parseScreeningLevel(a.getScreeningLevel()) == targetLvl)
+                    .anyMatch(a -> "COMPLETED".equalsIgnoreCase(a.getCurrentStatus()));
+            if (!levelCompleted) {
+                return false;
             }
         }
         return true;

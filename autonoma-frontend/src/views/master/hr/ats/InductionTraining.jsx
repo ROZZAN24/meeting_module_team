@@ -755,14 +755,14 @@ export default function InductionTraining() {
                 <Table size="small" stickyHeader>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700, width: 60, bgcolor: 'background.paper', zIndex: 10 }}>SI.No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, minWidth: 200, bgcolor: 'background.paper', zIndex: 10 }}>Induction Details</TableCell>
-                      <TableCell sx={{ fontWeight: 700, width: 80, align: 'center', bgcolor: 'background.paper', zIndex: 10 }}>Answer</TableCell>
-                      <TableCell sx={{ fontWeight: 700, width: 80, bgcolor: 'background.paper', zIndex: 10 }}>Round</TableCell>
-                      <TableCell sx={{ fontWeight: 700, width: 220, bgcolor: 'background.paper', zIndex: 10 }}>Trainer Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700, width: 340, bgcolor: 'background.paper', zIndex: 10 }}>Skill Matrix</TableCell>
-                      <TableCell sx={{ fontWeight: 700, minWidth: 150, bgcolor: 'background.paper', zIndex: 10 }}>Comments</TableCell>
-                      <TableCell sx={{ fontWeight: 700, width: 100, align: 'center', bgcolor: 'background.paper', zIndex: 10 }}>Attachment</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 60, bgcolor: 'background.paper', zIndex: 10 }}>SI.No</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, minWidth: 200, bgcolor: 'background.paper', zIndex: 10 }}>Induction Details</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 80, bgcolor: 'background.paper', zIndex: 10 }}>Answer</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 80, bgcolor: 'background.paper', zIndex: 10 }}>Round</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 220, bgcolor: 'background.paper', zIndex: 10 }}>Trainer Status</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 340, bgcolor: 'background.paper', zIndex: 10 }}>Skill Matrix</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, minWidth: 150, bgcolor: 'background.paper', zIndex: 10 }}>Comments</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 100, bgcolor: 'background.paper', zIndex: 10 }}>Attachment</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -771,7 +771,7 @@ export default function InductionTraining() {
                         bgcolor: detail.trainerStatus === 'COMPLETED' ? 'success.lighter' : 'inherit',
                         '&:hover': { bgcolor: 'action.hover' }
                       }}>
-                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell align="center">{idx + 1}</TableCell>
                         <TableCell>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             {detail.inductionDetails || '-'}

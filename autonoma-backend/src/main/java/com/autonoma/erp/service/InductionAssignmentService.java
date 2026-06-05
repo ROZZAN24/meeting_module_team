@@ -161,6 +161,26 @@ public class InductionAssignmentService {
         // Validate Trainer Eligibility
         validateTrainerEligibility(trainee, newTrainer, entity.getInductionRound());
 
+        // Check if the trainer has previously rejected this screening level for this trainee
+        // OR if this screening level is already completed
+        List<InductionAssignment> empAssignments = repository.findByEmpCode(entity.getEmpCode());
+        for (InductionAssignment past : empAssignments) {
+            if (past.getScreeningLevel() != null && 
+                past.getScreeningLevel().trim().equalsIgnoreCase(entity.getScreeningLevel().trim()) &&
+                "ACTIVE".equalsIgnoreCase(past.getInductionStatus())) {
+                
+                if ("REJECTED".equalsIgnoreCase(past.getCurrentStatus()) &&
+                    past.getTrainerEmpCode() != null &&
+                    past.getTrainerEmpCode().equalsIgnoreCase(entity.getTrainerEmpCode())) {
+                    throw new RuntimeException("Trainer " + newTrainer.getEmployeeName() + " previously rejected " + entity.getScreeningLevel() + " and cannot be reassigned to it.");
+                }
+                
+                if ("COMPLETED".equalsIgnoreCase(past.getCurrentStatus())) {
+                    throw new RuntimeException("Screening level " + entity.getScreeningLevel() + " has already been completed for this trainee.");
+                }
+            }
+        }
+
         // Update trainer name in entity
         entity.setTrainerName(newTrainer.getEmployeeName());
 
@@ -269,13 +289,21 @@ public class InductionAssignmentService {
             }
         } else {
             // Check for other active assignments for this trainee and round
-            List<InductionAssignment> existingActive = repository.findActiveAssignmentsByEmpAndRound(entity.getEmpCode(), entity.getInductionRound());
-            for (InductionAssignment existing : existingActive) {
-                existing.setInductionStatus("IN ACTIVE");
-                existing.setCurrentStatus("IN ACTIVE");
-                existing.setUpdatedAt(new Date());
-                existing.setUpdatedBy(currentUser);
-                repository.save(existing);
+            List<InductionAssignment> allAssignments = repository.findByEmpCode(entity.getEmpCode());
+            for (InductionAssignment existing : allAssignments) {
+                if (existing.getInductionRound() != null && 
+                    existing.getInductionRound().trim().equalsIgnoreCase(entity.getInductionRound().trim()) &&
+                    "ACTIVE".equalsIgnoreCase(existing.getInductionStatus())) {
+                    
+                    existing.setInductionStatus("IN ACTIVE");
+                    if (!"COMPLETED".equalsIgnoreCase(existing.getCurrentStatus()) && 
+                        !"REJECTED".equalsIgnoreCase(existing.getCurrentStatus())) {
+                        existing.setCurrentStatus("IN ACTIVE");
+                    }
+                    existing.setUpdatedAt(new Date());
+                    existing.setUpdatedBy(currentUser);
+                    repository.save(existing);
+                }
             }
 
             // Create new record

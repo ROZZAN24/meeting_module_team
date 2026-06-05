@@ -14,7 +14,7 @@ import {
 // BOS Components
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, btnNew, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, btnNew, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, BOSDatePicker } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -296,19 +296,19 @@ const InductionAssignment = () => {
       cleanData.department = typeof row.department === 'object' ? row.department?.departmentName : (row.department || '');
       cleanData.designation = typeof row.designation === 'object' ? row.designation?.designationName : (row.designation || '');
       
-      const isCompleted = row.currentStatus === 'COMPLETED';
+      const isResolved = row.isVirtual || row.currentStatus === 'COMPLETED' || row.currentStatus === 'REJECTED';
       cleanData.levels = [
         {
-          id: row.isVirtual || isCompleted ? null : row.id,
-          screeningLevel: row.isVirtual || isCompleted ? `Level ${normalizedHistory.length + 1}` : normalizeScreeningLevel(row.screeningLevel),
-          inductionRound: row.isVirtual || isCompleted ? '' : (row.inductionRound && row.inductionRound !== '-' ? row.inductionRound : ''),
-          inductionDate: row.isVirtual || isCompleted ? new Date().toISOString().split('T')[0] : defaultDate,
-          inductionTime: row.isVirtual || isCompleted ? '09:00' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00'),
-          trainerName: row.isVirtual || isCompleted ? '' : (row.trainerName && row.trainerName !== '-' ? row.trainerName : ''),
-          trainerEmpCode: row.isVirtual || isCompleted ? '' : (row.trainerEmpCode && row.trainerEmpCode !== '-' ? row.trainerEmpCode : ''),
-          currentStatus: row.isVirtual || isCompleted ? 'PENDING' : (row.currentStatus || 'PENDING'),
-          inductionStatus: row.isVirtual || isCompleted ? 'ACTIVE' : (row.inductionStatus || 'ACTIVE'),
-          remarks: row.isVirtual || isCompleted ? '' : (row.remarks || '')
+          id: isResolved ? null : row.id,
+          screeningLevel: isResolved ? `Level ${normalizedHistory.length + 1}` : normalizeScreeningLevel(row.screeningLevel),
+          inductionRound: isResolved ? '' : (row.inductionRound && row.inductionRound !== '-' ? row.inductionRound : ''),
+          inductionDate: isResolved ? new Date().toISOString().split('T')[0] : defaultDate,
+          inductionTime: isResolved ? '09:00' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00'),
+          trainerName: isResolved ? '' : (row.trainerName && row.trainerName !== '-' ? row.trainerName : ''),
+          trainerEmpCode: isResolved ? '' : (row.trainerEmpCode && row.trainerEmpCode !== '-' ? row.trainerEmpCode : ''),
+          currentStatus: isResolved ? 'PENDING' : (row.currentStatus || 'PENDING'),
+          inductionStatus: isResolved ? 'ACTIVE' : (row.inductionStatus || 'ACTIVE'),
+          remarks: isResolved ? '' : (row.remarks || '')
         }
       ];
  
@@ -320,7 +320,7 @@ const InductionAssignment = () => {
       const defaultDate = row.inductionDate && row.inductionDate !== '-'
         ? new Date(row.inductionDate).toISOString().split('T')[0]
         : new Date().toISOString().split('T')[0];
-      const isCompleted = row.currentStatus === 'COMPLETED';
+      const isResolved = row.isVirtual || row.currentStatus === 'COMPLETED' || row.currentStatus === 'REJECTED';
       setFormData({
         empCode: row.empCode,
         empName: row.empName || row.employeeName,
@@ -329,16 +329,16 @@ const InductionAssignment = () => {
         oldEmpCode: row.oldEmpCode,
         levels: [
           {
-            id: row.isVirtual || isCompleted ? null : row.id,
-            screeningLevel: row.isVirtual || isCompleted ? 'Level 1' : normalizeScreeningLevel(row.screeningLevel),
-            inductionRound: row.isVirtual || isCompleted ? '' : (row.inductionRound && row.inductionRound !== '-' ? row.inductionRound : ''),
-            inductionDate: row.isVirtual || isCompleted ? new Date().toISOString().split('T')[0] : defaultDate,
-            inductionTime: row.isVirtual || isCompleted ? '09:00' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00'),
-            trainerName: row.isVirtual || isCompleted ? '' : (row.trainerName && row.trainerName !== '-' ? row.trainerName : ''),
-            trainerEmpCode: row.isVirtual || isCompleted ? '' : (row.trainerEmpCode && row.trainerEmpCode !== '-' ? row.trainerEmpCode : ''),
-            currentStatus: row.isVirtual || isCompleted ? 'PENDING' : (row.currentStatus || 'PENDING'),
-            inductionStatus: row.isVirtual || isCompleted ? 'ACTIVE' : (row.inductionStatus || 'ACTIVE'),
-            remarks: row.isVirtual || isCompleted ? '' : (row.remarks || '')
+            id: isResolved ? null : row.id,
+            screeningLevel: isResolved ? 'Level 1' : normalizeScreeningLevel(row.screeningLevel),
+            inductionRound: isResolved ? '' : (row.inductionRound && row.inductionRound !== '-' ? row.inductionRound : ''),
+            inductionDate: isResolved ? new Date().toISOString().split('T')[0] : defaultDate,
+            inductionTime: isResolved ? '09:00' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00'),
+            trainerName: isResolved ? '' : (row.trainerName && row.trainerName !== '-' ? row.trainerName : ''),
+            trainerEmpCode: isResolved ? '' : (row.trainerEmpCode && row.trainerEmpCode !== '-' ? row.trainerEmpCode : ''),
+            currentStatus: isResolved ? 'PENDING' : (row.currentStatus || 'PENDING'),
+            inductionStatus: isResolved ? 'ACTIVE' : (row.inductionStatus || 'ACTIVE'),
+            remarks: isResolved ? '' : (row.remarks || '')
           }
         ]
       });
@@ -388,31 +388,11 @@ const InductionAssignment = () => {
             <span>
               <IconButton 
                 onClick={() => handleAssign(row)} 
-                size="small" 
+                 size="small" 
                 color={row.isVirtual ? "primary" : "secondary"}
                 disabled={!perms.write}
               >
                 {row.isVirtual ? <IconUserPlus size={18} /> : <IconEdit size={18} />}
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip 
-            title={
-              row.isVirtual 
-                ? "Cannot delete unassigned employee" 
-                : row.currentStatus === 'COMPLETED' 
-                  ? "Cannot delete completed assignment" 
-                  : "Delete Assignment"
-            }
-          >
-            <span>
-              <IconButton
-                onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); setDeleteDialogOpen(true); }}
-                size="small"
-                color="error"
-                disabled={row.isVirtual || row.currentStatus === 'COMPLETED' || !perms.delete}
-              >
-                <IconTrash size={18} />
               </IconButton>
             </span>
           </Tooltip>
@@ -585,7 +565,11 @@ const InductionAssignment = () => {
       if (fieldName === 'screeningLevel' && value) {
         const normValue = normalizeScreeningLevel(value);
         const duplicateInForm = updatedLevels.some((l, idx) => idx !== index && normalizeScreeningLevel(l.screeningLevel) === normValue);
-        const duplicateInHistory = history.some(h => normalizeScreeningLevel(h.screeningLevel) === normValue);
+        const duplicateInHistory = history.some(h => 
+          normalizeScreeningLevel(h.screeningLevel) === normValue && 
+          h.currentStatus !== 'REJECTED' && 
+          h.inductionStatus === 'ACTIVE'
+        );
         
         if (duplicateInForm || duplicateInHistory) {
           updatedLevels[index] = { ...updatedLevels[index], screeningLevel: '' };
@@ -597,6 +581,15 @@ const InductionAssignment = () => {
           }));
           return { ...prev, levels: updatedLevels };
         }
+        const hasRejectedInHistory = history.some(h => 
+          normalizeScreeningLevel(h.screeningLevel) === normValue && 
+          h.currentStatus === 'REJECTED' && 
+          h.inductionStatus === 'ACTIVE'
+        );
+        updatedLevels[index] = { 
+          ...updatedLevels[index], 
+          currentStatus: hasRejectedInHistory ? 'RESCHEDULE' : 'PENDING' 
+        };
       }
       return { ...prev, levels: updatedLevels };
     });
@@ -1005,26 +998,16 @@ const InductionAssignment = () => {
               </Box>
               <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
                 <Box sx={{ flex: 1 }}>
-                  <BOSTextField
-                    type="date"
+                  <BOSDatePicker
                     name="inductionDate"
                     label="INDUCTION DATE"
                     value={level.inductionDate}
                     onChange={(e) => handleLevelInputChange(index, 'inductionDate', e.target.value)}
                     required
                     disabled={!perms.write}
-                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                    InputLabelProps={{ shrink: true }}
-                    onClick={(e) => {
-                      try {
-                        e.target.showPicker();
-                      } catch (err) {
-                        // Fallback
-                      }
-                    }}
+                    minDate={new Date()}
                     error={!!errors[`level_${index}_inductionDate`]}
                     helperText={errors[`level_${index}_inductionDate`]}
-                    sx={errorStyle(!!errors[`level_${index}_inductionDate`])}
                   />
                 </Box>
                 <Box sx={{ flex: 1 }}>
@@ -1066,38 +1049,48 @@ const InductionAssignment = () => {
                     sx={errorStyle(!!errors[`level_${index}_trainerName`])}
                   >
                     <MenuItem value="">-Select-</MenuItem>
-                    {employees
-                      .filter(emp => {
-                        if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
-                        if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
-                        if (emp.status !== 'Active') return false;
-
-                        const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
-                        const round = level.inductionRound;
-                        
-                        if (round === 'HR') {
-                          const deptUpper = (empDept || '').toUpperCase();
-                          const hrKeywords = ['HR', 'H.R.', 'HUMAN RESOURCE', 'PEOPLE OPERATIONS', 'PERSONNEL'];
-                          return hrKeywords.some(keyword => deptUpper.includes(keyword));
-                        }
-                        if (round === 'QMS') {
-                          const deptUpper = (empDept || '').toUpperCase();
-                          const qmsKeywords = ['QMS', 'QUALITY', 'Q.M.S.'];
-                          return qmsKeywords.some(keyword => deptUpper.includes(keyword));
-                        }
-                        if (round === 'DEPARTMENT') {
-                          return empDept?.toLowerCase() === formData.department?.toLowerCase();
-                        }
-                        if (round === 'MANAGEMENT') {
-                          return topTwoLevels.includes(Number(emp.empLevelId));
-                        }
-                        return true;
-                      })
-                      .map(emp => (
-                        <MenuItem key={emp.id} value={emp.empCode}>
-                          {emp.employeeName} ({emp.empCode})
-                        </MenuItem>
-                      ))}
+                    {(() => {
+                      const rejectedTrainerCodes = history
+                        .filter(h => 
+                          normalizeScreeningLevel(h.screeningLevel) === normalizeScreeningLevel(level.screeningLevel) && 
+                          h.currentStatus === 'REJECTED'
+                        )
+                        .map(h => h.trainerEmpCode)
+                        .filter(Boolean);
+                      return employees
+                        .filter(emp => {
+                          if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
+                          if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
+                          if (emp.status !== 'Active') return false;
+                          if (rejectedTrainerCodes.includes(emp.empCode)) return false;
+  
+                          const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
+                          const round = level.inductionRound;
+                          
+                          if (round === 'HR') {
+                            const deptUpper = (empDept || '').toUpperCase();
+                            const hrKeywords = ['HR', 'H.R.', 'HUMAN RESOURCE', 'PEOPLE OPERATIONS', 'PERSONNEL'];
+                            return hrKeywords.some(keyword => deptUpper.includes(keyword));
+                          }
+                          if (round === 'QMS') {
+                            const deptUpper = (empDept || '').toUpperCase();
+                            const qmsKeywords = ['QMS', 'QUALITY', 'Q.M.S.'];
+                            return qmsKeywords.some(keyword => deptUpper.includes(keyword));
+                          }
+                          if (round === 'DEPARTMENT') {
+                            return empDept?.toLowerCase() === formData.department?.toLowerCase();
+                          }
+                          if (round === 'MANAGEMENT') {
+                            return topTwoLevels.includes(Number(emp.empLevelId));
+                          }
+                          return true;
+                        })
+                        .map(emp => (
+                          <MenuItem key={emp.id} value={emp.empCode}>
+                            {emp.employeeName} ({emp.empCode})
+                          </MenuItem>
+                        ));
+                    })()}
                   </BOSTextField>
                 </Box>
               </Box>
@@ -1144,15 +1137,15 @@ const InductionAssignment = () => {
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: 'primary.light' }}>
-                  <TableCell sx={{ fontWeight: 700, width: 50 }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Screening Level</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Round</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Induction by</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Induction Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Rescheduled</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>CREATED USER</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700, width: 50 }}>#</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Screening Level</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Round</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Date</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Induction by</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Induction Status</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Rescheduled</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>CREATED USER</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1163,46 +1156,48 @@ const InductionAssignment = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  history.map((h, i) => (
-                    <TableRow key={h.id || i} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
-                      <TableCell>{i + 1}</TableCell>
-                      <TableCell>{h.screeningLevel || '-'}</TableCell>
-                      <TableCell>{h.inductionRound || '-'}</TableCell>
-                      <TableCell>{h.inductionDate ? `${formatDateDDMMYYYY(h.inductionDate)} ${h.inductionTime || ''}` : '-'}</TableCell>
-                      <TableCell>{h.trainerName || '-'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={h.currentStatus || 'PENDING'}
-                          size="small"
-                          color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')}
-                          sx={{ fontWeight: 600 }}
-                        />
-                      </TableCell>
-                      <TableCell>NO</TableCell>
-                      <TableCell>{(h.createdUser || h.createdBy) || '-'}</TableCell>
-                      <TableCell>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Chip 
-                            label={h.inductionStatus || 'ACTIVE'} 
-                            size="small" 
-                            variant="outlined" 
-                            color={h.inductionStatus === 'ACTIVE' ? 'success' : 'default'} 
+                  history.map((h, i) => {
+                    const isRescheduled = history.some(other => 
+                      other.id !== h.id && 
+                      normalizeScreeningLevel(other.screeningLevel) === normalizeScreeningLevel(h.screeningLevel) && 
+                      (other.id > h.id || new Date(other.inductionDate) > new Date(h.inductionDate))
+                    );
+                    let recordStatus = h.inductionStatus || 'ACTIVE';
+                    let statusColor = recordStatus === 'ACTIVE' ? 'success' : 'default';
+                    if (recordStatus === 'ACTIVE' && isRescheduled) {
+                      recordStatus = 'SUPERSEDED';
+                      statusColor = 'default';
+                    }
+                    return (
+                      <TableRow key={h.id || i} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                        <TableCell align="center">{i + 1}</TableCell>
+                        <TableCell>{h.screeningLevel || '-'}</TableCell>
+                        <TableCell>{h.inductionRound || '-'}</TableCell>
+                        <TableCell>{h.inductionDate ? `${formatDateDDMMYYYY(h.inductionDate)} ${h.inductionTime || ''}` : '-'}</TableCell>
+                        <TableCell>{h.trainerName || '-'}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={h.currentStatus || 'PENDING'}
+                            size="small"
+                            color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')}
+                            sx={{ fontWeight: 600 }}
                           />
-                          {perms.delete && (
-                            <Tooltip title="Delete">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleDeleteHistoryItem(h)}
-                              >
-                                <IconTrash size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                        <TableCell>{isRescheduled ? 'YES' : 'NO'}</TableCell>
+                        <TableCell>{(h.createdUser || h.createdBy) || '-'}</TableCell>
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Chip 
+                              label={recordStatus} 
+                              size="small" 
+                              variant="outlined" 
+                              color={statusColor} 
+                            />
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

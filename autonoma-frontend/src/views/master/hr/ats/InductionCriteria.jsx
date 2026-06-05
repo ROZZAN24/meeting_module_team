@@ -437,8 +437,8 @@ export default function InductionCriteria() {
         departmentCodes: deptNames, // Render friendly department names in table row
         createdUser: r.createdUser || r.createdBy || '-',
         updatedUser: r.updatedUser || r.updatedBy || '-',
-        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
-        updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
+        createdAt: r.createdAt || '-',
+        updatedAt: r.updatedAt || '-'
       };
     });
   }, [rows, departments]);

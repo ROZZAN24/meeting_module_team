@@ -181,8 +181,8 @@ export default function InductionRoundMaster() {
     return rows.map((r, i) => ({
       ...r,
       index: i + 1,
-      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
+      createdAt: r.createdAt || '-',
+      updatedAt: r.updatedAt || '-'
     }));
   }, [rows]);
 

@@ -306,14 +306,14 @@ export default function InductionTrainee() {
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ bgcolor: 'info.lighter' }}>
-                      <TableCell sx={{ fontWeight: 700, width: 50 }}>#</TableCell>
-                      <TableCell sx={{ fontWeight: 700, minWidth: 200 }}>Induction Details</TableCell>
-                      <TableCell sx={{ fontWeight: 700, minWidth: 120 }}>Round</TableCell>
-                      <TableCell sx={{ fontWeight: 700, width: 120 }}>Trainer Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700, minWidth: 130 }}>Trainer Rating</TableCell>
-                      <TableCell sx={{ fontWeight: 700, minWidth: 180 }}>Trainer Feedback</TableCell>
-                      <TableCell sx={{ fontWeight: 700, width: 170 }}>Trainee Status *</TableCell>
-                      <TableCell sx={{ fontWeight: 700, minWidth: 200 }}>Trainee Comments *</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 50 }}>#</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, minWidth: 200 }}>Induction Details</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, minWidth: 120 }}>Round</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 120 }}>Trainer Status</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, minWidth: 130 }}>Trainer Rating</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, minWidth: 180 }}>Trainer Feedback</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, width: 170 }}>Trainee Status *</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, minWidth: 200 }}>Trainee Comments *</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -330,7 +330,7 @@ export default function InductionTrainee() {
                                    detail.traineeStatus === 'NEED MORE TRAINING' ? 'error.lighter' : 'inherit',
                           '&:hover': { bgcolor: 'action.hover' }
                         }}>
-                          <TableCell>{idx + 1}</TableCell>
+                          <TableCell align="center">{idx + 1}</TableCell>
                           <TableCell>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
                               {detail.inductionDetails || '-'}

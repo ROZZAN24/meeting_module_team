@@ -11,7 +11,7 @@ public interface InductionAssignmentRepository extends JpaRepository<InductionAs
     
     List<InductionAssignment> findByEmpCode(String empCode);
     
-    @Query("SELECT a FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionRound = :round AND a.inductionStatus = 'ACTIVE'")
+    @Query("SELECT a FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionRound = :round AND a.inductionStatus = 'ACTIVE' AND a.currentStatus NOT IN ('COMPLETED', 'REJECTED')")
     List<InductionAssignment> findActiveAssignmentsByEmpAndRound(@org.springframework.data.repository.query.Param("empCode") String empCode, @org.springframework.data.repository.query.Param("round") String round);
 
     @Query("SELECT a FROM InductionAssignment a WHERE a.inductionStatus = 'ACTIVE'")
@@ -29,7 +29,7 @@ public interface InductionAssignmentRepository extends JpaRepository<InductionAs
     List<InductionAssignment> findAllTraineeRecords();
 
     // === Check if all rounds are completed for an employee ===
-    @Query("SELECT COUNT(a) FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionStatus = 'ACTIVE' AND a.currentStatus != 'COMPLETED'")
+    @Query("SELECT COUNT(a) FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionStatus = 'ACTIVE' AND a.currentStatus IN ('PENDING', 'RESCHEDULE', 'TRAINING STARTED', 'TRAINING GIVEN')")
     long countIncompleteByEmpCode(@org.springframework.data.repository.query.Param("empCode") String empCode);
 
     @Query("SELECT COUNT(DISTINCT a.screeningLevel) FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionStatus = 'ACTIVE' AND a.currentStatus = 'COMPLETED'")
