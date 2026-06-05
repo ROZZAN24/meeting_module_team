@@ -131,6 +131,22 @@ export const masters = {
               pageCode: 'HA1110'
             },
             {
+              id: 'hra-ats-interview-process',
+              title: 'Interview Process',
+              type: 'item',
+              url: '/hra/ats/interview-process',
+              icon: icons.IconRotate2,
+              pageCode: 'HA1110'
+            },
+            {
+              id: 'hra-ats-interview-final-process',
+              title: 'Interview Final Process',
+              type: 'item',
+              url: '/hra/ats/interview-final-process',
+              icon: icons.IconUserCheck,
+              pageCode: 'HA1110'
+            },
+            {
               id: 'hra-ats-interview',
               title: 'Interview Criteria Master',
               type: 'item',

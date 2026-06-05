@@ -1,10 +1,35 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { MobileTimePicker } from '@mui/x-date-pickers/MobileTimePicker';
 import { useTheme } from '@mui/material/styles';
 import { useColorScheme } from '@mui/material/styles';
 import { getInputStyles } from './BOSStyles';
 import { parse, format, isValid } from 'date-fns';
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+/** Parse a time string to total minutes.
+ *  Accepts "HH:MM" (24-h) or "hh:mm AM/PM" (12-h). */
+const parseTimeToMinutes = (timeStr) => {
+  if (!timeStr) return null;
+  const clean = timeStr.trim().toUpperCase();
+  const match = clean.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/);
+  if (!match) return null;
+  let h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const ampm = match[3]; // undefined when no meridiem (24-h input)
+
+  if (ampm) {
+    // 12-hour input
+    if (h < 1 || h > 12 || m < 0 || m > 59) return null;
+    if (ampm === 'PM' && h !== 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+  } else {
+    // 24-hour input
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  }
+  return h * 60 + m;
+};
 
 const parseTimeStringToDate = (timeStr) => {
   if (!timeStr || timeStr === 'undefined' || timeStr === 'null' || typeof timeStr !== 'string') return null;
@@ -25,19 +50,11 @@ const parseTimeStringToDate = (timeStr) => {
  * BOSTimePicker
  * Wraps MUI MobileTimePicker with standardized BOS styles and an analog clock dial face.
  */
-export default function BOSTimePicker({ 
-  label, 
-  value, 
-  onChange, 
-  disabled, 
-  required, 
-  error, 
-  helperText, 
-  minTime, 
-  maxTime, 
-  name,
+export default function BOSTimePicker({
+  label, value, onChange, disabled, required,
+  error, helperText, minTime, maxTime, name,
   onAccept,
-  ...rest 
+  ...rest
 }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
@@ -63,6 +80,7 @@ export default function BOSTimePicker({
     return parseTimeStringToDate(maxTime) || undefined;
   }, [maxTime]);
 
+  // ── render ────────────────────────────────────────────────────────────────
   return (
     <MobileTimePicker
       label={`${label}${required ? ' *' : ''}`}
@@ -117,6 +135,7 @@ export default function BOSTimePicker({
               marginLeft: 0,
               height: '100% !important',
               alignSelf: 'center !important',
+              cursor: 'pointer',
             },
             '& .MuiIconButton-root': {
               padding: '4px !important',
@@ -148,6 +167,3 @@ BOSTimePicker.propTypes = {
   maxTime: PropTypes.any,
   onAccept: PropTypes.func
 };
-
-
-

@@ -20,6 +20,7 @@ const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'departmentNo', label: 'Dept No.', minWidth: 120, bold: true, required: true },
   { id: 'departmentName', label: 'Department Name', minWidth: 180, required: true },
+  { id: 'departmentMailId', label: 'Department Mail Id', minWidth: 180, required: true },
   { id: 'ndaCertificate', label: 'NDA', minWidth: 80 },
   { id: 'sequenceNo', label: 'Seq No.', minWidth: 100 },
   { id: 'status', label: 'Status', minWidth: 100 },

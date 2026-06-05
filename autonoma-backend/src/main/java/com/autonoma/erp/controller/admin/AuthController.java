@@ -359,6 +359,9 @@ public class AuthController {
                         userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                         userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
                         userMap.put("employeeCode", emp.getEmpCode());
+                        if (emp.getOfficeMail() != null && !emp.getOfficeMail().isEmpty()) {
+                            userMap.put("email", emp.getOfficeMail());
+                        }
                     }
                 }
                 userMap.put("name", empName);
@@ -415,6 +418,9 @@ public class AuthController {
                                 userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                                 userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
                                 userMap.put("employeeCode", emp.getEmpCode());
+                                if (emp.getOfficeMail() != null && !emp.getOfficeMail().isEmpty()) {
+                                    userMap.put("email", emp.getOfficeMail());
+                                }
                             }
                         }
                         userMap.put("name", empName);
@@ -883,6 +889,9 @@ public class AuthController {
                     userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                     userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
                     userMap.put("employeeCode", emp.getEmpCode());
+                    if (emp.getOfficeMail() != null && !emp.getOfficeMail().isEmpty()) {
+                        userMap.put("email", emp.getOfficeMail());
+                    }
                 }
             }
             userMap.put("name", empName);
