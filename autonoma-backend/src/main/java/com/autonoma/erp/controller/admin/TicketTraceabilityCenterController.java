@@ -64,19 +64,19 @@ public class TicketTraceabilityCenterController {
         Optional<UserCredential> userOpt = userRepository.findByUserId(userId);
         if (userOpt.isPresent()) {
             UserCredential user = userOpt.get();
-            return (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1) || user.getEmpId() != null;
+            return (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN) || user.getEmpId() != null;
         }
         return false;
     }
 
-    private boolean isBosAdmin() {
+    private boolean isUserSuperAdmin() {
         String userId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         if (userId == null)
             return false;
         Optional<UserCredential> userOpt = userRepository.findByUserId(userId);
         if (userOpt.isPresent()) {
             UserCredential user = userOpt.get();
-            return (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1);
+            return (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
         }
         return false;
     }
@@ -87,48 +87,12 @@ public class TicketTraceabilityCenterController {
     }
 
     @GetMapping
-    @Operation(summary = "Get All Tickets", description = "Fetches tickets list based on current user roles")
+    @Operation(summary = "Get All Tickets", description = "Fetches tickets list. Scope filtering (Mine/Team/Company) is handled by the frontend.")
     public List<TicketTraceabilityCenter> getAllTickets() {
         log.info("Fetching tickets");
-        List<TicketTraceabilityCenter> allTickets = ticketRepository.findAllByOrderByCreatedAtDesc();
-        boolean isAdmin = isBosAdmin();
-        String currentUserId = getCurrentUser();
-        String currentUserEmail = currentUserId;
-        String currentUserName = currentUserId;
-        
-        Optional<UserCredential> userOpt = userRepository.findByUserId(currentUserId);
-        if (userOpt.isPresent()) {
-            UserCredential user = userOpt.get();
-            if (user.getEmpId() != null) {
-                Optional<EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
-                if (empOpt.isPresent()) {
-                    EmployeeMaster emp = empOpt.get();
-                    if (emp.getOfficeMail() != null) currentUserEmail = emp.getOfficeMail();
-                    if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
-                }
-            }
-        }
-
-        List<TicketTraceabilityCenter> filtered = new ArrayList<>();
-        for (TicketTraceabilityCenter t : allTickets) {
-            if (isAdmin) {
-                filtered.add(t);
-                continue;
-            }
-
-            boolean isCreator = t.getCreatedBy() != null && (t.getCreatedBy().equalsIgnoreCase(currentUserId) || t.getCreatedBy().equalsIgnoreCase(currentUserName));
-            boolean isEmail = t.getEmail() != null && t.getEmail().equalsIgnoreCase(currentUserEmail);
-            boolean isEmpName = t.getEmployeeName() != null && t.getEmployeeName().equalsIgnoreCase(currentUserName);
-            boolean isVerifier = t.getVerifiedBy() != null && (t.getVerifiedBy().equalsIgnoreCase(currentUserId) || t.getVerifiedBy().equalsIgnoreCase(currentUserName) || t.getVerifiedBy().equalsIgnoreCase(currentUserEmail));
-            boolean isAssignee = t.getAssignedTo() != null && (t.getAssignedTo().equalsIgnoreCase(currentUserId) || t.getAssignedTo().equalsIgnoreCase(currentUserName));
-            boolean isDev = t.getDeveloperName() != null && t.getDeveloperName().equalsIgnoreCase(currentUserName);
-            boolean isDevEmail = t.getDeveloperEmail() != null && t.getDeveloperEmail().equalsIgnoreCase(currentUserEmail);
-
-            if (isCreator || isEmail || isEmpName || isVerifier || isAssignee || isDev || isDevEmail) {
-                filtered.add(t);
-            }
-        }
-        return filtered;
+        // Returning all tickets here. The frontend TicketManagement.jsx strictly filters 
+        // these based on the user's role (Mine, Team, Company) and permissions.
+        return ticketRepository.findAllByOrderByCreatedAtDesc();
     }
 
     @GetMapping("/{rowId}")
@@ -141,7 +105,7 @@ public class TicketTraceabilityCenterController {
         }
 
         TicketTraceabilityCenter ticket = ticketOpt.get();
-        boolean isAdmin = isBosAdmin();
+        boolean isAdmin = isUserSuperAdmin();
         String currentUserId = getCurrentUser();
         String currentUserEmail = currentUserId;
         String currentUserName = currentUserId;
@@ -262,7 +226,7 @@ public class TicketTraceabilityCenterController {
             }
 
             TicketTraceabilityCenter existingTicket = ticketOpt.get();
-            boolean isAdmin = isBosAdmin();
+            boolean isAdmin = isUserSuperAdmin();
         String currentUserId = getCurrentUser();
         String currentUserEmail = currentUserId;
         String currentUserName = currentUserId;
@@ -329,6 +293,8 @@ public class TicketTraceabilityCenterController {
                 existingTicket.setSeverityLevel(ticketDetails.getSeverityLevel());
             if (ticketDetails.getVerifiedBy() != null)
                 existingTicket.setVerifiedBy(ticketDetails.getVerifiedBy());
+            if (ticketDetails.getTestedBy() != null)
+                existingTicket.setTestedBy(ticketDetails.getTestedBy());
 
             // Workflow details
             if (ticketDetails.getAssignedTo() != null) {
@@ -460,7 +426,7 @@ public class TicketTraceabilityCenterController {
 
                         SupportTicketReopenHistory reopenHistory = SupportTicketReopenHistory.builder()
                                 .ticketRowId(existingTicket.getRowId())
-                                .reopenedBy(currentUserId)
+                                .reopenedBy(currentUserId != null ? currentUserId : "System")
                                 .reason(ticketDetails.getResolutionSummary() != null
                                         ? ticketDetails.getResolutionSummary()
                                         : "Reopened by user")
@@ -506,7 +472,7 @@ public class TicketTraceabilityCenterController {
             if (ticketOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
-            if (!isBosAdmin()) {
+            if (!isUserSuperAdmin()) {
                 return ResponseEntity.status(403).build();
             }
             ticketRepository.deleteById(rowId);

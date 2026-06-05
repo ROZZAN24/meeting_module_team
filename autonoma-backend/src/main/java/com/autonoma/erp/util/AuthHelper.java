@@ -53,7 +53,7 @@ public class AuthHelper {
             return false;
         String userId = principal.getName();
         return userRepo.findByUserId(userId)
-                .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN)
                 .orElse(false);
     }
 

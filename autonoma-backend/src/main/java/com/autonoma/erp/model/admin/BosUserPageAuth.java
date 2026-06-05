@@ -62,6 +62,18 @@ public class BosUserPageAuth {
     @Column(name = "add_task_enable")
     private Integer addTaskEnable;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "created_date")
+    private java.time.LocalDateTime createdDate;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @Column(name = "updated_date")
+    private java.time.LocalDateTime updatedDate;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
@@ -202,6 +214,38 @@ public class BosUserPageAuth {
 
     public void setAddTaskEnable(Integer addTaskEnable) {
         this.addTaskEnable = addTaskEnable;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public java.time.LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(java.time.LocalDateTime createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(String updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    public java.time.LocalDateTime getUpdatedDate() {
+        return updatedDate;
+    }
+
+    public void setUpdatedDate(java.time.LocalDateTime updatedDate) {
+        this.updatedDate = updatedDate;
     }
 
     public UserCredential getUser() {

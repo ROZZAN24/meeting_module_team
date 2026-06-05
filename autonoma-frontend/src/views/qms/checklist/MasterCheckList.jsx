@@ -35,16 +35,18 @@ const formatDate = (dateVal) => {
   }
 };
 
-// ── DateTime formatter (Date + Time) ────────────────────────────────────────────
+// ── DateTime formatter (Date + Time, 12-hour AM/PM) ─────────────────────────────
 const formatDateTime = (dateVal) => {
   if (!dateVal) return '-';
   try {
     const d = new Date(dateVal);
     if (isNaN(d.getTime())) return '-';
     const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-    const hours = String(d.getHours()).padStart(2, '0');
+    let hours = d.getHours();
     const mins  = String(d.getMinutes()).padStart(2, '0');
-    return `${date} ${hours}:${mins}`;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${date} ${String(hours).padStart(2, '0')}:${mins} ${ampm}`;
   } catch {
     return '-';
   }
@@ -133,7 +135,7 @@ const columns = [
   },
   { 
     id: 'taskStatus',   
-    label: 'Status',     
+    label: 'Task Status',     
     minWidth: 120,
     render: (row) => {
       const statusText = row._displayTaskStatus || 'UN ASSIGNED';
@@ -203,11 +205,11 @@ const columns = [
     }
   },
   { id: 'verifiedBy',   label: 'Verified By',     minWidth: 120 },
-  { id: 'verifiedDate', label: 'Verified Date',   minWidth: 120 },
-  { id: 'createdUser',  label: 'CREATED USER',    minWidth: 120 },
-  { id: 'createdDate',  label: 'CREATED DATE',    minWidth: 140 },
-  { id: 'updatedUser',  label: 'UPDATED USER',    minWidth: 120 },
-  { id: 'updatedDate',  label: 'UPDATED DATE',    minWidth: 160 },
+  { id: 'verifiedDate', label: 'Verify Date & Time',   minWidth: 160, render: (row) => formatDateTime(row.verifiedDate) },
+  { id: 'createdUser',  label: 'Created By',      minWidth: 120 },
+  { id: 'createdDate',  label: 'Created Date & Time',  minWidth: 160, render: (row) => formatDateTime(row.createdDate) },
+  { id: 'updatedUser',  label: 'Updated By',       minWidth: 120 },
+  { id: 'updatedDate',  label: 'Update Date & Time',    minWidth: 160, render: (row) => formatDateTime(row.updatedDate) },
 ];
 
 // ── Export columns ──────────────────────────────────────────────────────────────
@@ -230,14 +232,14 @@ const exportColumns = [
   { header: 'Level',              key: 'levelIds' },
   { header: 'Assign To',          key: 'assignTo' },
   { header: 'Status',             key: 'status' },
-  { header: 'Status',             key: 'taskStatus' },
+  { header: 'Task Status',        key: 'taskStatus' },
   { header: 'Verify Status',      key: 'verifyStatus' },
   { header: 'Verified By',        key: 'verifiedBy' },
-  { header: 'Verified Date',      key: (r) => formatDateTime(r.verifiedDate) },
-  { header: 'CREATED USER',       key: 'createdUser' },
-  { header: 'CREATED DATE',       key: (r) => formatDateTime(r.createdAt) },
-  { header: 'UPDATED USER',       key: 'updatedUser' },
-  { header: 'UPDATED DATE',       key: (r) => formatDateTime(r.updatedAt) },
+  { header: 'Verify Date & Time',      key: (r) => formatDateTime(r.verifiedDate) },
+  { header: 'Created By',         key: 'createdUser' },
+  { header: 'Created Date & Time',       key: (r) => formatDateTime(r.createdDate) },
+  { header: 'Updated By',         key: 'updatedUser' },
+  { header: 'Update Date & Time',       key: (r) => formatDateTime(r.updatedDate) },
 ];
 
 // ── Static filter options (department options are loaded dynamically) ────────────
@@ -335,6 +337,7 @@ export default function MasterCheckList() {
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
     try {
+      const considerDate = globalFilters.createdDateConsider || 'No';
       const params = {
         page, size,
         department:   filters.department   !== 'All' ? filters.department   : undefined,
@@ -346,7 +349,28 @@ export default function MasterCheckList() {
         stockLink:    filters.stockLink     !== 'All' ? filters.stockLink     : undefined,
         photoRequired:filters.photoRequired !== 'All' ? filters.photoRequired : undefined,
         searchValue:  searchQuery || undefined,
+        fromDate:     globalFilters.createdDateStart || undefined,
+        toDate:       globalFilters.createdDateEnd || undefined,
+        considerDate: considerDate !== 'All' ? considerDate : undefined,
+        considerDateValue: (String(considerDate).trim().toUpperCase() === 'YES' && globalFilters.createdDateConsiderValue) ? globalFilters.createdDateConsiderValue : undefined,
       };
+
+      // Validation: If Consider Date is Yes and outside From/To range, return no records
+      if (String(considerDate).trim().toUpperCase() === 'YES' && globalFilters.createdDateConsiderValue) {
+        const considerVal = new Date(globalFilters.createdDateConsiderValue);
+        const fromVal = params.fromDate ? new Date(params.fromDate) : null;
+        const toVal = params.toDate ? new Date(params.toDate) : null;
+        let isInvalid = false;
+        if (fromVal && considerVal < fromVal) isInvalid = true;
+        if (toVal && considerVal > toVal) isInvalid = true;
+        if (isInvalid) {
+          setRows([]);
+          setTotalElements(0);
+          setLoading(false);
+          return;
+        }
+      }
+
       const res = await axios.get('/api/qms/checklist', { params });
       setRows(res.data.content || []);
       setTotalElements(res.data.totalElements || 0);
@@ -355,7 +379,7 @@ export default function MasterCheckList() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, filters, searchQuery]);
+  }, [page, size, filters, searchQuery, globalFilters]);
 
   useEffect(() => { fetchChecklists(); }, [fetchChecklists]);
 
@@ -375,6 +399,26 @@ export default function MasterCheckList() {
     const isAssigned = row.assignTo && row.assignTo !== '-' && row.assignTo.trim() !== '';
     const displayTaskStatus = isAssigned ? 'ASSIGNED' : 'UN ASSIGNED';
 
+    let isUpdated = false;
+    if (row.updatedAt && row.createdAt) {
+      const msDiff = Math.abs(new Date(row.updatedAt) - new Date(row.createdAt));
+      if (msDiff > 60000) {
+        isUpdated = true;
+      }
+    }
+
+    let upUser = isUpdated ? (row.updatedUser || row.updatedBy || '-') : '-';
+    if (upUser === 'Admin istrator' || upUser === 'Administrator') {
+      upUser = 'Admin';
+    }
+    
+    let upDate = isUpdated ? formatDateTime(row.updatedAt) : '-';
+
+    let vBy = row.verifiedBy || '-';
+    if (vBy === 'Admin istrator' || vBy === 'Administrator') {
+      vBy = 'Admin';
+    }
+
     return {
       ...row,
       department:    (row.departments || []).map(d => d.departmentName).join(', '),
@@ -386,8 +430,9 @@ export default function MasterCheckList() {
       verifiedDate:  formatDateTime(row.verifiedDate),
       createdUser:   row.createdUser || row.createdBy || '-',
       createdDate:   formatDate(row.createdAt),
-      updatedUser:   (row.updatedAt && row.createdAt && Math.abs(new Date(row.updatedAt) - new Date(row.createdAt)) > 5000) ? (row.updatedUser || row.updatedBy || '-') : '-',
-      updatedDate:   (row.updatedAt && row.createdAt && Math.abs(new Date(row.updatedAt) - new Date(row.createdAt)) > 5000) ? formatDateTime(row.updatedAt) : '-',
+      updatedUser:   upUser,
+      updatedDate:   upDate,
+      verifiedBy:    vBy,
       status:        row.status || 'Active',
     };
   }), [rows]);

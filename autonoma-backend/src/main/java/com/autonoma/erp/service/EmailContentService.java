@@ -38,15 +38,24 @@ public class EmailContentService {
             throw new RuntimeException("Yours Windfully is mandatory.");
         }
 
+        // Standardize status for checking
+        if (entity.getId() == null && entity.getStatus() == null) {
+            entity.setStatus("ACTIVE");
+        }
+
         // Apply rules for active status:
-        // When user creates a email content in one type and user edits/saves it as ACTIVE,
-        // all other active email contents of the same type must be set to INACTIVE.
-        if ("ACTIVE".equalsIgnoreCase(entity.getStatus())) {
-            List<EmailContent> activeOthers = repository.findByTypeAndStatus(entity.getType(), "ACTIVE");
-            for (EmailContent other : activeOthers) {
-                if (entity.getId() == null || !other.getId().equals(entity.getId())) {
-                    other.setStatus("INACTIVE");
-                    repository.save(other);
+        // When a new record is created duplicately(type) the previous record(original record) should become inactive on its own
+        if ("ACTIVE".equalsIgnoreCase(entity.getStatus()) || Boolean.TRUE.equals(entity.getIsActive())) {
+            List<EmailContent> allOthers = repository.findAll();
+            for (EmailContent other : allOthers) {
+                if (other.getType() != null && other.getType().trim().equalsIgnoreCase(entity.getType().trim())) {
+                    if (entity.getId() == null || !other.getId().equals(entity.getId())) {
+                        if ("ACTIVE".equalsIgnoreCase(other.getStatus()) || Boolean.TRUE.equals(other.getIsActive())) {
+                            other.setStatus("INACTIVE");
+                            other.setIsActive(false);
+                            repository.save(other);
+                        }
+                    }
                 }
             }
         }
@@ -56,6 +65,9 @@ public class EmailContentService {
             entity.setCreatedBy(currentUser);
             if (entity.getStatus() == null) {
                 entity.setStatus("ACTIVE");
+            }
+            if (entity.getIsActive() == null) {
+                entity.setIsActive(true);
             }
         } else {
             Long entityId = entity.getId();
@@ -70,6 +82,9 @@ public class EmailContentService {
             entity.setUpdatedBy(currentUser);
             if (entity.getStatus() == null) {
                 entity.setStatus(existing.getStatus());
+            }
+            if (entity.getIsActive() == null) {
+                entity.setIsActive(existing.getIsActive());
             }
         }
 

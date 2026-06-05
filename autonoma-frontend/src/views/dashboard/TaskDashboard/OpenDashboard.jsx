@@ -15,9 +15,14 @@ import {
   TableRow,
   LinearProgress,
   IconButton,
-  Link
+  Link,
+  useTheme
 } from '@mui/material';
-import { styled, alpha } from '@mui/system';
+import { styled, alpha, keyframes } from '@mui/system';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
+const glowPulse = keyframes`0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}`;
 import ReactApexChart from 'react-apexcharts';
 
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
@@ -46,6 +51,108 @@ const StyledCard = styled(Paper)(({ theme }) => ({
   flexDirection: 'column'
 }));
 
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+
+const NeonCard = styled(Paper)(({ theme, statcolor }) => ({
+  borderRadius: '24px',
+  position: 'relative',
+  overflow: 'hidden',
+  background: `linear-gradient(180deg, ${alpha(statcolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
+  backgroundColor: '#060B14',
+  backdropFilter: 'blur(16px)',
+  border: `1px solid ${alpha(statcolor, 0.2)}`,
+  boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(statcolor, 0.3)}`,
+  height: '138px',
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '16px',
+  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+  cursor: 'pointer',
+
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: '-50%', left: '-50%', width: '200%', height: '200%',
+    background: `radial-gradient(circle at 50% 50%, ${alpha(statcolor, 0.15)} 0%, transparent 60%)`,
+    transition: 'all 0.5s ease',
+    zIndex: 0,
+    pointerEvents: 'none'
+  },
+
+  '& .hud-corner': {
+    position: 'absolute',
+    width: '12px', height: '12px',
+    borderColor: alpha(statcolor, 0.4),
+    borderStyle: 'solid',
+    borderWidth: 0,
+    zIndex: 1,
+    transition: 'all 0.4s ease',
+  },
+  '& .hud-tl': { top: '12px', left: '12px', borderTopWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-tr': { top: '12px', right: '12px', borderTopWidth: '2px', borderRightWidth: '2px' },
+  '& .hud-bl': { bottom: '12px', left: '12px', borderBottomWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-br': { bottom: '12px', right: '12px', borderBottomWidth: '2px', borderRightWidth: '2px' },
+
+  '& .rotating-border': {
+    position: 'absolute', inset: 0, borderRadius: '24px', padding: '2px',
+    background: `conic-gradient(from 0deg, transparent 70%, ${statcolor} 100%)`,
+    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+    WebkitMaskComposite: 'xor',
+    maskComposite: 'exclude',
+    opacity: 0, zIndex: 1, pointerEvents: 'none',
+    transition: 'opacity 0.5s',
+  },
+
+  '& .shimmer': {
+    position: 'absolute', top: 0, left: '-150%', width: '100%', height: '100%',
+    background: `linear-gradient(90deg, transparent, ${alpha('#ffffff', 0.15)}, transparent)`,
+    transform: 'skewX(-20deg)', transition: 'none', zIndex: 3, pointerEvents: 'none'
+  },
+
+  '& .hover-emoji': {
+    position: 'absolute', right: 24, top: 24, fontSize: '2rem',
+    opacity: 0, transform: 'translateY(15px) scale(0.8)',
+    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 4, pointerEvents: 'none',
+    filter: `drop-shadow(0px 0px 15px ${statcolor})`
+  },
+
+  '& .particles': {
+    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.6, pointerEvents: 'none',
+    backgroundImage: `radial-gradient(${alpha(statcolor, 0.4)} 1px, transparent 1px)`,
+    backgroundSize: '24px 24px',
+  },
+
+  '&:hover': {
+    transform: 'translateY(-8px) scale(1.03)',
+    boxShadow: `0 25px 50px -12px ${alpha(statcolor, 0.7)}, inset 0 1px 3px 0 ${alpha(statcolor, 0.9)}`,
+    border: `1px solid transparent`,
+
+    '&::before': {
+      background: `radial-gradient(circle at 50% 50%, ${alpha(statcolor, 0.35)} 0%, transparent 70%)`,
+    },
+
+    '& .rotating-border': {
+      opacity: 1,
+      animation: 'spin-border 3s linear infinite',
+    },
+
+    '& .shimmer': {
+      animation: 'sweep 2s ease-in-out',
+    },
+
+    '& .hover-emoji': {
+      opacity: 1, transform: 'translateY(-5px) scale(1.2)',
+      animation: 'float 3s ease-in-out infinite'
+    },
+
+    '& .hud-corner': {
+      borderColor: statcolor,
+      width: '18px', height: '18px',
+      filter: `drop-shadow(0 0 8px ${statcolor})`
+    },
+  },
+}));
+
 const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   width: size,
   height: size,
@@ -57,7 +164,10 @@ const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   background: bg
 }));
 
-export default function OpenDashboard({ isDark, realTasks = [] }) {
+export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search?.filters || {});
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
 
@@ -158,11 +268,12 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
     if (pInfo.label === 'Critical' || pInfo.label === 'High') critHighCount++;
 
     const u = t._user || 'Unassigned';
-    if (!userMap[u]) userMap[u] = { name: u, total: 0, high: 0, medium: 0, low: 0, totalWait: 0 };
+    if (!userMap[u]) userMap[u] = { name: u, total: 0, critical: 0, high: 0, medium: 0, low: 0, totalWait: 0 };
     userMap[u].total++;
     userMap[u].totalWait += diffDays;
 
-    if (pInfo.label === 'Critical' || pInfo.label === 'High') userMap[u].high++;
+    if (pInfo.label === 'Critical') userMap[u].critical++;
+    else if (pInfo.label === 'High') userMap[u].high++;
     else if (pInfo.label === 'Medium') userMap[u].medium++;
     else userMap[u].low++;
   });
@@ -184,40 +295,45 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
       value: openTasks.length,
       subtitle: 'All open tasks',
       icon: <AssignmentRoundedIcon fontSize="small" />,
-      color: '#3B82F6',
-      bg: '#EFF6FF'
+      color: '#FFB020',
+      grad: ['#1F1200', '#3A2200', '#FFB020'],
+      hoverEmoji: '📈'
     },
     {
       title: 'Assigned Developers',
       value: developersWorkingCount,
       subtitle: 'Developers with open tasks',
       icon: <GroupRoundedIcon fontSize="small" />,
-      color: '#8B5CF6',
-      bg: '#F5F3FF'
+      color: '#00D4FF',
+      grad: ['#001B2E', '#003B5C', '#00D4FF'],
+      hoverEmoji: '👨‍💻'
     },
     {
       title: 'Open This Week',
       value: openedThisWeek,
-      subtitle: 'Tasks opened this week',
+      subtitle: 'Current week',
       icon: <CalendarMonthRoundedIcon fontSize="small" />,
-      color: '#10B981',
-      bg: '#F0FDF4'
+      color: '#A855F7',
+      grad: ['#12001F', '#25003D', '#A855F7'],
+      hoverEmoji: '📅'
     },
     {
-      title: 'Avg Waiting Days',
-      value: avgWaitingDays,
-      subtitle: 'Average since created',
+      title: 'Avg. In Open Time',
+      value: `${avgWaitingDays} Days`,
+      subtitle: 'Across all tasks',
       icon: <AccessTimeRoundedIcon fontSize="small" />,
-      color: '#F59E0B',
-      bg: '#FFFBEB'
+      color: '#00E676',
+      grad: ['#001F18', '#003D2E', '#00E676'],
+      hoverEmoji: '⏳'
     },
     {
       title: 'New Open Today',
       value: openedToday,
       subtitle: 'Tasks opened today',
       icon: <TimelineRoundedIcon fontSize="small" />,
-      color: '#0EA5E9',
-      bg: '#F0F9FF'
+      color: '#00CFFD',
+      grad: ['#001B2A', '#00384D', '#00CFFD'],
+      hoverEmoji: '▶️'
     }
   ];
 
@@ -375,24 +491,6 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
     tooltip: { theme: isDark ? 'dark' : 'light' }
   };
 
-  // Sparkline options for Developer table
-  const sparklineOptions = {
-    chart: { type: 'line', sparkline: { enabled: true } },
-    stroke: { curve: 'smooth', width: 2 },
-    tooltip: {
-      fixed: { enabled: false },
-      x: { show: false },
-      y: {
-        title: {
-          formatter: function (seriesName) {
-            return '';
-          }
-        }
-      },
-      marker: { show: false }
-    }
-  };
-
   if (activeView !== 'main') {
     return (
       <Box sx={{ animation: 'fadeIn 0.3s ease-in-out' }}>
@@ -498,7 +596,10 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
                       Total Open Tasks
                     </TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>
-                      High / Critical
+                      Critical
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>
+                      High
                     </TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Medium</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Low</TableCell>
@@ -521,6 +622,11 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Typography variant="body2" fontWeight={900} fontSize="0.9rem" color={textColor}>
                           {row.total}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color={row.critical > 0 ? '#991B1B' : textMuted}>
+                          {row.critical}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
@@ -555,28 +661,143 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
   }
 
   return (
-    <Box sx={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+    <Box
+      sx={{
+        animation: 'fadeIn 0.3s ease-in-out',
+        '@keyframes fadeIn': { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'none' } },
+        '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+        '@keyframes sweep': { '0%': { left: '-100%' }, '100%': { left: '200%' } },
+        '@keyframes spin-border': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+        '@keyframes floatIcon': {
+          '0%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-5px)' },
+          '100%': { transform: 'translateY(0px)' }
+        }
+      }}
+    >
       {/* ROW 1: STATS */}
       <Box
-        sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 2, mb: 2.5 }}
+        sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 1.5, mb: 2.5 }}
       >
         {topStats.map((stat, idx) => (
-          <StyledCard key={idx} sx={{ p: 2, borderBottom: `3px solid ${stat.color}` }}>
-            <Stack direction="row" alignItems="center" gap={1.5} mb={1.5}>
-              <IconBox color={stat.color} bg={isDark ? alpha(stat.color, 0.2) : stat.bg} size={36}>
-                {stat.icon}
-              </IconBox>
-              <Typography variant="body2" color="text.primary" fontWeight={700} sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
+          <NeonCard 
+            key={idx} 
+            statcolor={stat.color}
+            onClick={() => {
+              const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+              const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+              
+              const initialFilters = {
+                taskScope: globalFilters?.performanceScope || 'Mine',
+                ticketStatus: 'Open'
+              };
+              
+              const now = new Date();
+              if (stat.title === 'Open This Week') {
+                const weekStart = new Date(now);
+                weekStart.setDate(now.getDate() - now.getDay());
+                initialFilters.startDate = weekStart.toISOString().split('T')[0];
+                initialFilters.endDate = now.toISOString().split('T')[0];
+              } else if (stat.title === 'New Open Today') {
+                initialFilters.startDate = now.toISOString().split('T')[0];
+                initialFilters.endDate = now.toISOString().split('T')[0];
+              }
+              
+              navigate(routePath, { 
+                state: { 
+                  fromDashboard: true, 
+                  fromTab: activeTab,
+                  dashboardFilters: globalFilters,
+                  initialFilters 
+                } 
+              });
+            }}
+          >
+            {/* Absolute Backdrops */}
+            <Box className="rotating-border" />
+            <Box className="shimmer" />
+            <Box className="hud-corner hud-tl" />
+            <Box className="hud-corner hud-tr" />
+            <Box className="hud-corner hud-bl" />
+            <Box className="hud-corner hud-br" />
+            <Box className="particles" />
+
+            <Box className="hover-emoji">{stat.hoverEmoji}</Box>
+
+            <IconButton
+              size="small"
+              sx={{ position: 'absolute', top: 12, right: 12, color: alpha('#fff', 0.4), '&:hover': { color: '#fff' } }}
+            >
+              <MoreVertRoundedIcon fontSize="small" />
+            </IconButton>
+
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              flex={1}
+              zIndex={2}
+              position="relative"
+              sx={{ textAlign: 'center' }}
+            >
+              {/* Icon */}
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `radial-gradient(circle, ${alpha(stat.color, 0.4)} 0%, ${alpha(stat.color, 0.05)} 70%)`,
+                  boxShadow: `0 0 20px ${alpha(stat.color, 0.6)}, inset 0 0 15px ${alpha(stat.color, 0.5)}`,
+                  border: `1px solid ${alpha(stat.color, 0.6)}`,
+                  color: '#fff',
+                  backdropFilter: 'blur(8px)',
+                  animation: 'floatIcon 4s ease-in-out infinite'
+                }}
+              >
+                {React.cloneElement(stat.icon, { sx: { fontSize: '1.5rem' } })}
+              </Box>
+
+              {/* Title */}
+              <Typography
+                variant="body2"
+                fontWeight={800}
+                sx={{ fontSize: '0.8rem', color: '#E2E8F0', mb: 0.5, letterSpacing: '0.5px', textAlign: 'center', lineHeight: 1.2 }}
+              >
                 {stat.title}
               </Typography>
-            </Stack>
-            <Typography variant="h4" fontWeight={900} color="text.primary" mb={0.25}>
-              {stat.value}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.65rem' }}>
-              {stat.subtitle}
-            </Typography>
-          </StyledCard>
+
+              {/* Value */}
+              <Typography
+                variant="h3"
+                fontWeight={900}
+                sx={{
+                  color: '#FFFFFF',
+                  mb: 0.25,
+                  textShadow: `0 0 20px ${alpha(stat.color, 0.8)}`,
+                  fontSize: '2rem',
+                  fontFamily: 'monospace',
+                  textAlign: 'center',
+                  lineHeight: 1.1
+                }}
+              >
+                {stat.value}
+              </Typography>
+
+              {/* Subtitle */}
+              <Typography
+                variant="caption"
+                fontWeight={600}
+                sx={{ fontSize: '0.65rem', color: alpha('#fff', 0.6), textAlign: 'center', lineHeight: 1.1 }}
+              >
+                {stat.subtitle}
+              </Typography>
+            </Box>
+          </NeonCard>
         ))}
       </Box>
 
@@ -597,6 +818,11 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Developer</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Open Tasks</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>
+                      <Box display="inline-flex" alignItems="center" gap={0.5}>
+                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#991B1B' }} /> Critical
+                      </Box>
+                    </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>
                       <Box display="inline-flex" alignItems="center" gap={0.5}>
                         <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#EF4444' }} /> High
@@ -631,6 +857,11 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Typography fontWeight={800} fontSize="0.75rem" color={textColor}>
                           {row.total}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        <Typography fontWeight={700} fontSize="0.75rem" color={row.critical > 0 ? '#991B1B' : textMuted}>
+                          {row.critical}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
@@ -682,15 +913,15 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
 
         {/* Priority Distribution */}
         <StyledCard sx={{ p: 2 }}>
-          <Stack direction="row" alignItems="center" gap={1.5} mb={2}>
+          <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
             <ShowChartRoundedIcon fontSize="small" sx={{ color: '#3B82F6' }} />
             <Typography variant="subtitle2" fontWeight={800} color="text.primary">
               Open Task Priority Distribution
             </Typography>
           </Stack>
           <Box flex={1} display="flex" flexDirection="column" alignItems="center" justifyContent="center">
-            <ReactApexChart options={priorityPieOptions} series={priorityPieSeries} type="donut" height={220} />
-            <Stack mt={2} spacing={1} width="100%">
+            <ReactApexChart options={priorityPieOptions} series={priorityPieSeries} type="donut" height={160} />
+            <Stack mt={1} spacing={1} width="100%">
               {allPriorities.map((p, i) => (
                 <Stack key={i} direction="row" alignItems="center" justifyContent="space-between">
                   <Stack direction="row" alignItems="center" gap={1}>
@@ -713,7 +944,7 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
 
         {/* Waiting Duration */}
         <StyledCard sx={{ p: 2 }}>
-          <Stack direction="row" alignItems="center" gap={1.5} mb={2}>
+          <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
             <FormatListBulletedRoundedIcon fontSize="small" sx={{ color: '#3B82F6' }} />
             <Typography variant="subtitle2" fontWeight={800} color="text.primary">
               Open Tasks Waiting Duration
@@ -724,11 +955,11 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
               Tasks
             </Typography>
             <Box width="100%">
-              <ReactApexChart options={waitDurationOptions} series={waitDurationSeries} type="bar" height={220} />
+              <ReactApexChart options={waitDurationOptions} series={waitDurationSeries} type="bar" height={160} />
             </Box>
             <Box
               sx={{
-                mt: 2,
+                mt: 1,
                 bgcolor: isDark ? alpha('#3B82F6', 0.1) : '#EFF6FF',
                 p: 1.5,
                 borderRadius: 2,

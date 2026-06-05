@@ -74,8 +74,7 @@ export const resolveNestedValue = (keyPath, obj) => {
  * Common date range filter configuration for global filter system.
  */
 export const getCommonDateFilters = (createdAtId = 'createdAt', updatedAtId = 'updatedAt') => [
-  { id: createdAtId, label: 'CREATED DATE', type: 'dateRange', isStarred: true },
-  { id: updatedAtId, label: 'UPDATED DATE', type: 'dateRange', isStarred: true }
+  { id: createdAtId, label: 'CREATED DATE', type: 'dateRange', isStarred: true }
 ];
 
 /**
@@ -85,10 +84,23 @@ export const matchDateRange = (row, globalFilters, filterId, rowDateKey = filter
   if (!globalFilters) return true;
   const startVal = globalFilters[`${filterId}Start`];
   const endVal = globalFilters[`${filterId}End`];
-  const considerVal = globalFilters[`${filterId}Consider`] || 'Yes';
+  const considerVal = globalFilters[`${filterId}Consider`] || 'No';
 
   if (!startVal && !endVal) return true;
   if (considerVal === 'No') return true;
+
+  const considerValue = globalFilters[`${filterId}ConsiderValue`];
+  if (considerVal === 'Yes' && considerValue) {
+    const considerValDate = new Date(considerValue);
+    const startValDate = startVal ? new Date(startVal) : null;
+    const endValDate = endVal ? new Date(endVal) : null;
+    let isOutside = false;
+    if (startValDate && !isNaN(startValDate.getTime()) && considerValDate < startValDate) isOutside = true;
+    if (endValDate && !isNaN(endValDate.getTime()) && considerValDate > endValDate) isOutside = true;
+    if (isOutside) {
+      return false;
+    }
+  }
 
   // Resolve cell value
   let cellVal = resolveNestedValue(rowDateKey, row);

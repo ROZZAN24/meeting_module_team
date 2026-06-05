@@ -23,9 +23,113 @@ import {
   DialogContent,
   Slide
 } from '@mui/material';
+import { useSelector, useDispatch } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { setFilterConfig, resetFilters, setFilters } from 'store/slices/search';
 import { styled, alpha, keyframes } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
 import axios from 'utils/axios';
+
+/**
+ * Calculates Delay Hours for a task based on its history of status changes.
+ * 
+ * Rules:
+ * 1. Starts when current date/time exceeds Target Date.
+ * 2. Stops when status goes to "To Be Tested".
+ * 3. Starts again if reopened, from the Reopen Date/Time.
+ * 4. Stops again when status goes back to "To Be Tested".
+ * 5. Cycles accumulate.
+ * 6. Sundays and Holidays are excluded from the delay hours calculation.
+ * 
+ * NOTE: This function requires an audit history array of the task.
+ * Currently, it serves as the planned logic since the backend API does not return history.
+ */
+// eslint-disable-next-line no-unused-vars
+export const calculateDelayHours = (targetDateStr, statusHistory, holidays = []) => {
+  if (!targetDateStr || !statusHistory || statusHistory.length === 0) return 0;
+  
+  let totalDelayMs = 0;
+  const targetDate = new Date(targetDateStr);
+  const now = new Date();
+  
+  if (now <= targetDate) return 0; // No delay yet
+
+  // Sort history chronologically
+  const history = [...statusHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  let currentDelayStart = targetDate;
+  let isDelaying = true; // Initially delaying if past target date
+
+  for (const log of history) {
+    const logDate = new Date(log.date);
+    if (logDate < targetDate) continue; // Ignore logs before target date
+    
+    const status = String(log.status).toLowerCase();
+    
+    if (['to be tested', 'completed', 'closed'].includes(status)) {
+      if (isDelaying) {
+        // Stop delay clock
+        totalDelayMs += calculateWorkingMs(currentDelayStart, logDate, holidays);
+        isDelaying = false;
+      }
+    } else if (['reopened', 're-opened', 'in progress'].includes(status)) {
+      if (!isDelaying) {
+        // Start delay clock again
+        currentDelayStart = logDate;
+        isDelaying = true;
+      }
+    }
+  }
+
+  // If currently still delaying (e.g. not moved to To Be Tested again)
+  if (isDelaying) {
+    totalDelayMs += calculateWorkingMs(currentDelayStart, now, holidays);
+  }
+
+  // Convert to hours
+  return Math.round(totalDelayMs / (1000 * 60 * 60));
+};
+
+/** Helper to calculate ms between two dates excluding Sundays and Holidays */
+const calculateWorkingMs = (start, end, holidays = []) => {
+  if (start >= end) return 0;
+  
+  const holidaySet = new Set(holidays.map((h) => h.dateStr));
+  let totalMs = 0;
+  let current = new Date(start);
+
+  while (current < end) {
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    const dd = String(current.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    
+    const isSunday = current.getDay() === 0;
+    const isHoliday = holidaySet.has(dateStr);
+    
+    // 9 AM to 6 PM mapping
+    const workStart = new Date(current);
+    workStart.setHours(9, 0, 0, 0);
+    
+    const workEnd = new Date(current);
+    workEnd.setHours(18, 0, 0, 0);
+    
+    if (!isSunday && !isHoliday) {
+      const overlapStart = new Date(Math.max(current.getTime(), workStart.getTime()));
+      const intervalEnd = new Date(Math.min(end.getTime(), workEnd.getTime()));
+      
+      if (overlapStart < intervalEnd) {
+        totalMs += (intervalEnd.getTime() - overlapStart.getTime());
+      }
+    }
+    
+    // Move to next day 00:00:00
+    current.setDate(current.getDate() + 1);
+    current.setHours(0, 0, 0, 0);
+  }
+  
+  return totalMs;
+};
 import useAuth from 'hooks/useAuth';
 
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
@@ -57,6 +161,11 @@ import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
 import ErrorRoundedIcon from '@mui/icons-material/ErrorRounded';
+import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
+import ThumbUpAltRoundedIcon from '@mui/icons-material/ThumbUpAltRounded';
+import MonitorHeartRoundedIcon from '@mui/icons-material/MonitorHeartRounded';
+import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded';
+import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
 
 import ReopenDashboard from './ReopenDashboard';
 import ToBeTestedDashboard from './ToBeTestedDashboard';
@@ -74,8 +183,10 @@ const floatAnim = keyframes`0%{transform:translateY(0px)}50%{transform:translate
 const PageContainer = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
   background: theme.palette.mode === 'dark' ? '#0F172A' : '#F0F4F8',
-  padding: theme.spacing(2.5),
-  fontFamily: "'Inter','Roboto',sans-serif"
+  padding: theme.spacing(2, 1.5),
+  fontFamily: "'Inter','Roboto',sans-serif",
+  width: '100%',
+  maxWidth: '100%'
 }));
 
 const Card = styled(Paper)(({ theme }) => ({
@@ -147,8 +258,161 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
+const glowPulse = keyframes`0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}`;
+
+const NeonMetricCard = styled(Paper)(({ theme, basecolor }) => ({
+  borderRadius: '24px',
+  position: 'relative',
+  overflow: 'hidden',
+  background: `linear-gradient(180deg, ${alpha(basecolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
+  backgroundColor: '#060B14',
+  backdropFilter: 'blur(16px)',
+  border: `1px solid ${alpha(basecolor, 0.2)}`,
+  boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(basecolor, 0.3)}`,
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '16px',
+  height: '138px',
+  width: '100%',
+  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+  cursor: 'pointer',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: '-50%', left: '-50%', width: '200%', height: '200%',
+    background: `radial-gradient(circle at 50% 50%, ${alpha(basecolor, 0.15)} 0%, transparent 60%)`,
+    transition: 'all 0.5s ease',
+    pointerEvents: 'none',
+    zIndex: 0
+  },
+  '& .rotating-border': {
+    position: 'absolute', inset: 0, borderRadius: '24px', padding: '2px',
+    background: `conic-gradient(from 0deg, transparent 70%, ${basecolor} 100%)`,
+    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+    WebkitMaskComposite: 'xor',
+    maskComposite: 'exclude',
+    opacity: 0, zIndex: 1, pointerEvents: 'none',
+    transition: 'opacity 0.5s',
+  },
+  '& .shimmer': {
+    position: 'absolute', top: 0, left: '-150%', width: '100%', height: '100%',
+    background: `linear-gradient(90deg, transparent, ${alpha('#ffffff', 0.15)}, transparent)`,
+    transform: 'skewX(-20deg)', transition: 'none', zIndex: 3, pointerEvents: 'none'
+  },
+  '& .hover-emoji': {
+    position: 'absolute', right: 24, top: 24, fontSize: '2rem',
+    opacity: 0, transform: 'translateY(15px) scale(0.8)',
+    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 4, pointerEvents: 'none',
+    filter: `drop-shadow(0px 0px 15px ${basecolor})`
+  },
+  '&:hover': {
+    transform: 'translateY(-8px) scale(1.03)',
+    boxShadow: `0 25px 50px -12px ${alpha(basecolor, 0.7)}, inset 0 1px 3px 0 ${alpha(basecolor, 0.9)}`,
+    border: `1px solid transparent`,
+    '&::before': {
+      background: `radial-gradient(circle at 50% 50%, ${alpha(basecolor, 0.35)} 0%, transparent 70%)`,
+    },
+    '& .rotating-border': {
+      opacity: 1,
+      animation: 'spin-border 3s linear infinite',
+    },
+    '& .shimmer': {
+      animation: 'sweep 2s ease-in-out',
+    },
+    '& .hover-emoji': {
+      opacity: 1, transform: 'translateY(-5px) scale(1.2)',
+      animation: 'float 3s ease-in-out infinite'
+    },
+    '& .hud-corner': {
+      borderColor: basecolor,
+      width: '18px', height: '18px',
+      filter: `drop-shadow(0 0 8px ${basecolor})`
+    },
+    '& .metric-icon-box': {
+      transform: 'scale(1.1)',
+      boxShadow: `0 0 25px ${alpha(basecolor, 0.6)}`
+    }
+  },
+  '& .particles': {
+    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.15, pointerEvents: 'none',
+    backgroundImage: `radial-gradient(${alpha(basecolor, 0.4)} 1px, transparent 1px)`,
+    backgroundSize: '20px 20px',
+  },
+  '& .hud-corner': {
+    position: 'absolute',
+    width: '12px', height: '12px',
+    borderColor: alpha(basecolor, 0.4),
+    borderStyle: 'solid',
+    borderWidth: 0,
+    zIndex: 1,
+    transition: 'all 0.4s ease',
+  },
+  '& .hud-tl': { top: '12px', left: '12px', borderTopWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-tr': { top: '12px', right: '12px', borderTopWidth: '2px', borderRightWidth: '2px' },
+  '& .hud-bl': { bottom: '12px', left: '12px', borderBottomWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-br': { bottom: '12px', right: '12px', borderBottomWidth: '2px', borderRightWidth: '2px' },
+  '& .metric-icon-box': {
+    transition: 'all 0.3s ease',
+  }
+}));
+
+const GlowingIcon = styled(Box)(({ color }) => ({
+  width: 32,
+  height: 32,
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: `radial-gradient(circle, ${alpha(color, 0.4)} 0%, ${alpha(color, 0.05)} 70%)`,
+  boxShadow: `0 0 25px ${alpha(color, 0.6)}, inset 0 0 15px ${alpha(color, 0.5)}`,
+  border: `1px solid ${alpha(color, 0.6)}`,
+  color: '#fff',
+  backdropFilter: 'blur(8px)',
+  zIndex: 1,
+  position: 'relative',
+  marginBottom: '8px'
+}));
+
+const VerticalSummaryCard = styled(Paper)(({ theme, basecolor }) => ({
+  borderRadius: '24px',
+  background: theme.palette.mode === 'dark' ? '#1E293B' : '#FFFFFF',
+  border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'}`,
+  boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  padding: '10px 10px',
+  position: 'relative',
+  overflow: 'hidden',
+  transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease',
+  cursor: 'pointer',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '4px',
+    background: `linear-gradient(90deg, ${alpha(basecolor, 0.8)} 0%, ${alpha(basecolor, 0.1)} 100%)`,
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: 0, left: 0, width: '40%', height: '40%',
+    background: `radial-gradient(circle at top left, ${alpha(basecolor, 0.12)} 0%, transparent 70%)`,
+    pointerEvents: 'none',
+  },
+  '&:hover': {
+    transform: 'translateY(-12px)',
+    boxShadow: `0 24px 48px ${alpha(basecolor, 0.18)}`,
+    '& .icon-box': {
+      animation: `${floatAnim} 2s ease-in-out infinite`
+    }
+  }
+}));
+
 // ── Workload View ─────────────────────────────────────────────────────────────
-const WorkloadView = ({ realWorkload, isDark }) => {
+const WorkloadView = ({ realWorkload, isDark, navigate, filterRequestManagement, isCurrentUser, activeTab, globalFilters }) => {
   const [viewAllOpen, setViewAllOpen] = useState(false);
 
   const criticalCount = realWorkload.filter((w) => w.status === 'Critical').length;
@@ -161,10 +425,42 @@ const WorkloadView = ({ realWorkload, isDark }) => {
   const healthyEmployees = realWorkload.filter((w) => w.status === 'Healthy').length;
 
   const sparklineOptions = (color) => ({
-    chart: { type: 'line', sparkline: { enabled: true }, animations: { enabled: false } },
-    stroke: { curve: 'smooth', width: 2 },
+    chart: {
+      type: 'line',
+      sparkline: { enabled: true },
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+      dropShadow: { enabled: true, top: 3, left: 0, blur: 4, opacity: 0.5, color: color }
+    },
+    stroke: { curve: 'smooth', width: 3 },
     colors: [color],
-    tooltip: { fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
+    markers: { size: 0, hover: { size: 5 } },
+    tooltip: { theme: 'dark', fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
+  });
+
+  const areaSparklineOptions = (color) => ({
+    chart: {
+      type: 'area',
+      sparkline: { enabled: true },
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+    },
+    stroke: { curve: 'smooth', width: 2 },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.0, stops: [0, 100] }
+    },
+    colors: [color],
+    markers: {
+      size: 0,
+      discrete: [{
+        seriesIndex: 0,
+        dataPointIndex: 5,
+        fillColor: color,
+        strokeColor: '#fff',
+        size: 4,
+        shape: "circle"
+      }]
+    },
+    tooltip: { theme: isDark ? 'dark' : 'light', fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
   });
 
   const borderColor = isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0';
@@ -225,7 +521,27 @@ const WorkloadView = ({ realWorkload, isDark }) => {
         </TableHead>
         <TableBody sx={{ bgcolor: isDark ? '#1E293B' : '#FFFFFF' }}>
           {rows.map((row, idx) => (
-            <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === rows.length - 1 ? 'none' : `1px solid ${borderColor}` } }}>
+            <TableRow 
+              key={idx} 
+              hover 
+              sx={{ 
+                cursor: filterRequestManagement === 'My Request' && !isCurrentUser(row.user) ? 'pointer' : 'default',
+                '& td': { borderBottom: idx === rows.length - 1 ? 'none' : `1px solid ${borderColor}` } 
+              }}
+              onDoubleClick={() => {
+                if (filterRequestManagement === 'My Request' && !isCurrentUser(row.user)) {
+                  navigate('/support/ticket-by-me', {
+                    state: {
+                      openNewTask: true,
+                      assignTo: row.user,
+                      fromDashboard: true,
+                      fromTab: activeTab,
+                      dashboardFilters: globalFilters
+                    }
+                  });
+                }
+              }}
+            >
               <TableCell sx={{ py: 1.5 }}>
                 <Stack direction="row" alignItems="center" gap={2}>
                   <Avatar sx={{ width: 32, height: 32, bgcolor: row.color, fontSize: '14px', fontWeight: 700, color: '#fff' }}>
@@ -332,160 +648,132 @@ const WorkloadView = ({ realWorkload, isDark }) => {
 
   return (
     <Box sx={{ p: 0 }}>
-      <Grid container spacing={2.5} mb={2.5}>
-        <Grid item xs={12} lg={8}>
-          <Grid container spacing={2.5} sx={{ height: '100%' }}>
-            {[
-              {
-                c: '#EF4444',
-                bg: isDark ? '#2A161A' : '#FFF0F2',
-                label: 'Critical',
-                n: criticalCount,
-                emoji: '1f6a8',
-                data: [10, 25, 15, 40, 20, 50]
-              },
-              {
-                c: '#3B82F6',
-                bg: isDark ? '#17223B' : '#F0F5FF',
-                label: 'Normal',
-                n: normalCount,
-                emoji: '1f44d',
-                data: [20, 10, 30, 15, 40, 25]
-              },
-              {
-                c: '#10B981',
-                bg: isDark ? '#14251E' : '#F0FAF5',
-                label: 'Healthy',
-                n: healthyCount,
-                emoji: '1f60e',
-                data: [30, 40, 20, 50, 30, 60]
-              }
-            ].map((s, i) => (
-              <Grid item xs={12} sm={4} key={i}>
-                <Card
-                  sx={{
-                    p: 2,
-                    pb: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    bgcolor: s.bg,
-                    border: `1px solid ${borderColor}`,
-                    boxShadow: 'none',
-                    height: '100%',
-                    borderRadius: 3
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        width: 40,
-                        height: 40
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          bottom: -2,
-                          width: 24,
-                          height: 6,
-                          bgcolor: s.c,
-                          filter: 'blur(8px)',
-                          opacity: 0.5,
-                          borderRadius: '50%'
-                        }}
-                      />
-                      <NotoEmoji hex={s.emoji} size={40} />
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color={s.c} fontWeight={800} sx={{ lineHeight: 1 }}>
-                        {s.label}
-                      </Typography>
-                      <Typography variant="h5" fontWeight={900} sx={{ lineHeight: 1.1, mt: 0.3 }} color="text.primary">
-                        {s.n}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        fontWeight={600}
-                        sx={{ fontSize: '0.6rem', display: 'block', mt: 0.1 }}
-                      >
-                        Employees
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ mt: 'auto', pt: 1 }}>
-                    <ReactApexChart options={sparklineOptions(s.c)} series={[{ data: s.data }]} type="line" height={25} width="100%" />
-                  </Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Grid>
-        <Grid item xs={12} lg={4}>
-          <Card
-            sx={{
-              height: '100%',
-              background: isDark ? '#1E293B' : '#F8FAFC',
-              border: `1px solid ${borderColor}`,
-              boxShadow: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              p: 2,
-              borderRadius: 3,
-              overflow: 'hidden',
-              position: 'relative'
-            }}
-          >
-            <Box sx={{ zIndex: 2, flex: 1 }}>
-              <Typography variant="h6" fontWeight={900} mb={0.5} color="text.primary">
-                Team Performance <NotoEmoji hex="1f680" size={20} style={{ display: 'inline-block', verticalAlign: 'text-bottom' }} />
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                fontWeight={600}
-                sx={{ maxWidth: 200, display: 'block', lineHeight: 1.4, mb: 1.5 }}
-              >
-                Track workload, active tasks and productivity in real-time.
-              </Typography>
-              <Button
-                variant="contained"
-                endIcon={<TrendingUpRoundedIcon />}
-                onClick={() => setViewAllOpen(true)}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+          gap: 2.5,
+          mb: 2.5
+        }}
+      >
+        {[
+          {
+            c: '#8B5CF6',
+            label: 'All Employees',
+            n: realWorkload.length,
+            icon: <AssignmentRoundedIcon fontSize="small" />,
+            data: [40, 60, 45, 80, 50, 90],
+            trend: '+5%',
+            hoverEmoji: '📋'
+          },
+          {
+            c: '#EF4444',
+            label: 'Critical',
+            n: criticalCount,
+            icon: <NotificationsActiveRoundedIcon fontSize="small" />,
+            data: [10, 25, 15, 40, 20, 50],
+            trend: '+25%',
+            hoverEmoji: '🚨'
+          },
+          {
+            c: '#3B82F6',
+            label: 'Normal',
+            n: normalCount,
+            icon: <ThumbUpAltRoundedIcon fontSize="small" />,
+            data: [20, 10, 30, 15, 40, 25],
+            trend: '+12%',
+            hoverEmoji: '👍'
+          },
+          {
+            c: '#10B981',
+            label: 'Healthy',
+            n: healthyCount,
+            icon: <MonitorHeartRoundedIcon fontSize="small" />,
+            data: [30, 40, 20, 50, 30, 60],
+            trend: '+40%',
+            hoverEmoji: '📈'
+          }
+        ].map((s, i) => (
+          <NeonMetricCard key={i} basecolor={s.c}>
+            <Box className="hud-corner hud-tl" />
+            <Box className="hud-corner hud-tr" />
+            <Box className="hud-corner hud-bl" />
+            <Box className="hud-corner hud-br" />
+            <Box className="particles" />
+            <Box className="rotating-border" />
+            <Box className="shimmer" />
+
+            <Typography className="hover-emoji">{s.hoverEmoji}</Typography>
+
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              flex={1}
+              zIndex={2}
+              position="relative"
+              sx={{ textAlign: 'center' }}
+            >
+              <Box
+                className="metric-icon-box"
                 sx={{
-                  bgcolor: '#6366F1',
-                  '&:hover': { bgcolor: '#4F46E5' },
-                  borderRadius: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  px: 2,
-                  py: 0.6,
-                  fontSize: '0.75rem'
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `radial-gradient(circle, ${alpha(s.c, 0.4)} 0%, ${alpha(s.c, 0.05)} 70%)`,
+                  boxShadow: `0 0 20px ${alpha(s.c, 0.6)}, inset 0 0 15px ${alpha(s.c, 0.5)}`,
+                  border: `1px solid ${alpha(s.c, 0.6)}`,
+                  color: '#fff',
+                  backdropFilter: 'blur(8px)',
+                  animation: 'floatIcon 4s ease-in-out infinite',
                 }}
               >
-                View All
-              </Button>
-            </Box>
-            <Box sx={{ zIndex: 2, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 0.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.5, mb: 1 }}>
-                <Box sx={{ width: 12, height: 24, bgcolor: '#A855F7', borderRadius: '3px 3px 0 0' }} />
-                <Box sx={{ width: 12, height: 40, bgcolor: '#8B5CF6', borderRadius: '3px 3px 0 0' }} />
-                <Box sx={{ width: 12, height: 56, bgcolor: '#06B6D4', borderRadius: '3px 3px 0 0' }} />
+                {s.icon}
               </Box>
-              <Box sx={{ position: 'relative', bottom: -5 }}>
-                <NotoEmoji hex="1f3c6" size={80} />
-              </Box>
+              <Typography variant="subtitle2" color="#fff" fontWeight={800} sx={{ lineHeight: 1, fontSize: '0.85rem', mb: 1, letterSpacing: '0.5px' }}>
+                {s.label}
+              </Typography>
+              <Typography variant="h3" fontWeight={900} sx={{ lineHeight: 1, color: '#fff', textShadow: `0 0 20px ${alpha(s.c, 0.9)}, 0 0 10px ${s.c}`, mb: 0.5, fontFamily: "'Inter', sans-serif" }}>
+                {s.n}
+              </Typography>
+              <Typography variant="caption" sx={{ color: s.c, fontWeight: 800, fontSize: '0.7rem', opacity: 0.9 }}>
+                {s.trend} <span style={{ color: alpha('#fff', 0.5), fontWeight: 500 }}>vs last 7 days</span>
+              </Typography>
             </Box>
-          </Card>
-        </Grid>
-      </Grid>
+            <Box sx={{ position: 'absolute', bottom: -10, left: 0, right: 0, height: 35, zIndex: 1, opacity: 0.3, pointerEvents: 'none' }}>
+              <ReactApexChart options={sparklineOptions(s.c)} series={[{ data: s.data }]} type="line" height="100%" width="100%" />
+            </Box>
+          </NeonMetricCard>
+        ))}
+      </Box>
 
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+        <Typography variant="h6" fontWeight={900} color="text.primary">
+          Employee Workload
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => setViewAllOpen(true)}
+          endIcon={<TrendingUpRoundedIcon />}
+          sx={{
+            bgcolor: '#6366F1',
+            '&:hover': { bgcolor: '#4F46E5' },
+            borderRadius: 1.5,
+            textTransform: 'none',
+            fontWeight: 700,
+            px: 2,
+            py: 0.8,
+            fontSize: '0.75rem'
+          }}
+        >
+          View All
+        </Button>
+      </Box>
       <Card sx={{ p: 0, borderRadius: 3, border: `1px solid ${borderColor}`, boxShadow: 'none', mb: 2.5 }}>
         <DataTable rows={realWorkload.slice(0, 5)} />
       </Card>
@@ -507,7 +795,7 @@ const WorkloadView = ({ realWorkload, isDark }) => {
             bgcolor: isDark ? '#1E293B' : '#FFFFFF'
           }}
         >
-          <Typography variant="h5" fontWeight={900}>
+          <Typography variant="h5" fontWeight={900} color="text.primary">
             All Employees Workload List
           </Typography>
           <IconButton onClick={() => setViewAllOpen(false)} sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }}>
@@ -522,198 +810,145 @@ const WorkloadView = ({ realWorkload, isDark }) => {
       </Dialog>
 
       {/* Footer Area */}
-      <Grid container spacing={2.5}>
-        <Grid item xs={12} md={5}>
-          <Card
-            sx={{
-              p: 3,
-              bgcolor: isDark ? '#2A161A' : '#F5F3FF',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-              height: '100%',
-              borderRadius: 3,
-              boxShadow: 'none',
-              position: 'relative'
-            }}
-          >
-            <Box sx={{ width: 64, height: 64, flexShrink: 0 }}>
-              <NotoEmoji hex="1f3c6" size={64} />
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
+          gap: 2.5
+        }}
+      >
+        <Card
+          sx={{
+            p: 2,
+            background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            height: '100px',
+            minHeight: '100px',
+            borderRadius: 3,
+            boxShadow: '0 4px 15px rgba(168, 85, 247, 0.3)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <Box sx={{ position: 'absolute', top: -20, left: -20, width: 80, height: 80, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(15px)' }} />
+          <Box sx={{ position: 'absolute', bottom: -20, right: -20, width: 100, height: 100, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(20px)' }} />
+
+          <Box display="flex" alignItems="center" gap={1.5} zIndex={2}>
+            <Box sx={{ filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.2))' }}>
+              <NotoEmoji hex="1f3c6" size={40} />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={900} color="text.primary" mb={0.5}>
-                Great job team! 🎊
+              <Typography variant="h5" fontWeight={900} color="#FDE047" sx={{ lineHeight: 1 }}>
+                2 Employees
               </Typography>
-              <Typography variant="body2" color="text.secondary" fontWeight={600} lineHeight={1.5}>
-                {healthyEmployees} employees are performing great.
-                <br />
-                Let's keep the momentum going!
+              <Typography variant="caption" fontWeight={600} color="rgba(255,255,255,0.9)" sx={{ lineHeight: 1.2, mt: 0.5, display: 'block' }}>
+                Great job team! 🎊 Let's keep the momentum going!
               </Typography>
-              <Box sx={{ width: 40, height: 4, bgcolor: '#8B5CF6', borderRadius: 2, mt: 1.5 }} />
+            </Box>
+          </Box>
+        </Card>
+
+        {[
+          {
+            title: 'Average Workload',
+            val: `${avgWorkload}%`,
+            trend: '↑ 12%',
+            trendColor: '#8B5CF6',
+            icon: <TrendingUpRoundedIcon fontSize="small" />,
+            data: [20, 40, 30, 50, 40, 60]
+          },
+          {
+            title: 'Average Active Tasks',
+            val: avgActiveTasks,
+            trend: '↓ 8%',
+            trendColor: '#3B82F6',
+            icon: <AccessTimeRoundedIcon fontSize="small" />,
+            data: [10, 25, 20, 40, 30, 50]
+          },
+          {
+            title: 'Overall Productivity',
+            val: overallProductivity,
+            trend: '↑ 14%',
+            trendColor: '#10B981',
+            icon: <TrackChangesRoundedIcon fontSize="small" />,
+            data: [30, 50, 40, 60, 50, 70]
+          }
+        ].map((s, i) => (
+          <Card
+            key={i}
+            sx={{
+              p: 1.5,
+              bgcolor: isDark ? '#1E293B' : '#FFFFFF',
+              border: `1px solid ${borderColor}`,
+              height: '100px',
+              minHeight: '100px',
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: 3,
+              boxShadow: isDark ? 'none' : '0 4px 15px rgba(0,0,0,0.03)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="center" zIndex={2} mb={0.5}>
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Box sx={{ width: 26, height: 26, borderRadius: '8px', bgcolor: alpha(s.trendColor, 0.15), color: s.trendColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {React.cloneElement(s.icon, { sx: { fontSize: 14 } })}
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight={800} sx={{ fontSize: '0.75rem' }}>
+                  {s.title}
+                </Typography>
+              </Stack>
+              <IconButton size="small" sx={{ color: '#94A3B8', p: 0 }}>
+                <MoreVertRoundedIcon fontSize="small" />
+              </IconButton>
+            </Box>
+
+            <Typography variant="h4" fontWeight={900} color={s.trendColor} sx={{ lineHeight: 1, zIndex: 2, mb: 0.5 }}>
+              {s.val}
+            </Typography>
+            <Stack direction="row" alignItems="center" gap={1} zIndex={2}>
+              <Chip label={s.trend} size="small" sx={{ bgcolor: alpha(s.trendColor, 0.1), color: s.trendColor, fontWeight: 800, fontSize: '0.6rem', height: 18 }} />
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>vs last 7 days</Typography>
+            </Stack>
+
+            <Box sx={{ position: 'absolute', bottom: -15, left: 0, right: 0, height: 40, zIndex: 1, pointerEvents: 'none' }}>
+              <ReactApexChart options={areaSparklineOptions(s.trendColor)} series={[{ data: s.data }]} type="area" height="100%" width="100%" />
             </Box>
           </Card>
-        </Grid>
-        <Grid item xs={12} md={7}>
-          <Grid container spacing={2.5} sx={{ height: '100%' }}>
-            <Grid item xs={4}>
-              <Card
-                sx={{
-                  p: 2.5,
-                  pb: 1.5,
-                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
-                  border: `1px solid ${borderColor}`,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  boxShadow: 'none'
-                }}
-              >
-                <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '30%',
-                      bgcolor: alpha('#8B5CF6', 0.15),
-                      color: '#8B5CF6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <TrendingUpRoundedIcon fontSize="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.65rem' }}>
-                      Average Workload
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight={900} color="#8B5CF6" sx={{ lineHeight: 1.2 }}>
-                      {avgWorkload}%
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Box sx={{ mt: 'auto', mx: -2 }}>
-                  <ReactApexChart
-                    options={sparklineOptions('#8B5CF6')}
-                    series={[{ data: [20, 40, 30, 50, 40, 60] }]}
-                    type="line"
-                    height={30}
-                    width="100%"
-                  />
-                </Box>
-              </Card>
-            </Grid>
-            <Grid item xs={4}>
-              <Card
-                sx={{
-                  p: 2.5,
-                  pb: 1.5,
-                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
-                  border: `1px solid ${borderColor}`,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  boxShadow: 'none'
-                }}
-              >
-                <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '30%',
-                      bgcolor: alpha('#3B82F6', 0.15),
-                      color: '#3B82F6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <AccessTimeRoundedIcon fontSize="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.65rem' }}>
-                      Average Active Tasks
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight={900} color="#3B82F6" sx={{ lineHeight: 1.2 }}>
-                      {avgActiveTasks}
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Box sx={{ mt: 'auto', mx: -2 }}>
-                  <ReactApexChart
-                    options={sparklineOptions('#3B82F6')}
-                    series={[{ data: [10, 25, 20, 40, 30, 50] }]}
-                    type="line"
-                    height={30}
-                    width="100%"
-                  />
-                </Box>
-              </Card>
-            </Grid>
-            <Grid item xs={4}>
-              <Card
-                sx={{
-                  p: 2.5,
-                  pb: 1.5,
-                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
-                  border: `1px solid ${borderColor}`,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  boxShadow: 'none'
-                }}
-              >
-                <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '30%',
-                      bgcolor: alpha('#10B981', 0.15),
-                      color: '#10B981',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <TrackChangesRoundedIcon fontSize="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.65rem' }}>
-                      Overall Productivity
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight={900} color="#10B981" sx={{ lineHeight: 1.2 }}>
-                      {overallProductivity}
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Box sx={{ mt: 'auto', mx: -2 }}>
-                  <ReactApexChart
-                    options={sparklineOptions('#10B981')}
-                    series={[{ data: [30, 50, 40, 60, 50, 70] }]}
-                    type="line"
-                    height={30}
-                    width="100%"
-                  />
-                </Box>
-              </Card>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
+        ))}
+      </Box>
     </Box>
   );
 };
 
+// Helper to format decimal hours into HH:mm format
+const formatHHMM = (hours = 0) => {
+  const isNegative = hours < 0;
+  const absHours = Math.abs(hours);
+  const h = Math.floor(absHours);
+  const m = Math.round((absHours - h) * 60);
+  let mm = m;
+  let hh = h;
+  if (mm === 60) { hh += 1; mm = 0; }
+  const sign = isNegative ? '-' : '';
+  return `${sign}${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+};
+
 // ── Performance Overview ──────────────────────────────────────────────────────
 const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
+  const [devSortCol, setDevSortCol] = useState('performance');
+  const [devSortDir, setDevSortDir] = useState('desc');
+  const [showDevViewAll, setShowDevViewAll] = useState(false);
+
   const totalAssigned = devStats.reduce((s, d) => s + d.assignedHrs, 0);
   const totalCompleted = devStats.reduce((s, d) => s + d.completedHrs, 0);
+  const totalTaken = devStats.reduce((s, d) => s + (d.takenHrs || 0), 0);
+  const totalRework = devStats.reduce((s, d) => s + (d.reworkHrs || 0), 0);
+  const totalDelay = devStats.reduce((s, d) => s + (d.delayHrs || 0), 0);
   const pendingHrs = Math.max(0, totalAssigned - totalCompleted);
   const activeDev = devStats.length;
   const avgPerf = devStats.length > 0 ? (devStats.reduce((s, d) => s + d.performance, 0) / devStats.length).toFixed(2) : '0.00';
@@ -733,25 +968,41 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
       <NotoEmoji hex="1f621" size={20} style={{ filter: 'none' }} />
     );
 
+  // Summary area chart options
+  const summaryAreaOptions = (color) => ({
+    chart: {
+      type: 'area',
+      sparkline: { enabled: true },
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+    },
+    stroke: { curve: 'smooth', width: 2 },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.0, stops: [0, 100] }
+    },
+    colors: [color],
+    tooltip: { fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
+  });
+
   // Summary cards config
   const summaryCards = [
-    { label: 'Total Assigned Hours', value: `${totalAssigned} Hrs`, sub: 'All Developers', svgIcon: <ClipboardSVG />, color: '#3B82F6' },
+    { label: 'Total Assigned Hours', value: `${totalAssigned.toFixed(2)}`, sub: 'All Developers', svgIcon: <NotoEmoji hex="1f4da" size={36} />, color: '#8B5CF6', chartData: [10, 25, 15, 30, 20, 35, 25] },
     {
       label: 'Total Completed Hours',
-      value: `${totalCompleted} Hrs`,
+      value: `${totalCompleted.toFixed(2)}`,
       sub: 'All Developers',
-      svgIcon: <GreenTargetSVG />,
-      color: '#10B981'
+      svgIcon: <NotoEmoji hex="1f525" size={36} />,
+      color: '#10B981', chartData: [5, 15, 10, 25, 20, 30, 25]
     },
-    { label: 'Pending Hours', value: `${pendingHrs} Hrs`, sub: 'Remaining Work', svgIcon: <HourglassSVG />, color: '#F59E0B' },
-    { label: 'Total Developers', value: `${activeDev}`, sub: 'Active Developers', svgIcon: <PeopleSVG />, color: '#8B5CF6' },
-    { label: 'Avg Performance', value: `${avgPerf}%`, sub: 'Across all developers', svgIcon: <BarChartSVG />, color: '#0EA5E9' },
+      { label: 'Pending Hours', value: `${pendingHrs.toFixed(2)}`, sub: 'Remaining Work', svgIcon: <NotoEmoji hex="23f3" size={36} />, color: '#F59E0B', chartData: [35, 30, 32, 25, 28, 20, 18] },
+    { label: 'Total Developers', value: `${activeDev}`, sub: 'Active Developers', svgIcon: <NotoEmoji hex="1f4bb" size={36} />, color: '#8B5CF6', chartData: [5, 5, 5, 5, 5, 5, 5] },
+    { label: 'Avg Performance', value: `${avgPerf}%`, sub: 'Across all developers', svgIcon: <NotoEmoji hex="1f4c8" size={36} />, color: '#3B82F6', chartData: [60, 65, 62, 70, 68, 75, 78] },
     {
       label: 'Outstanding Performers',
       value: `${outstandingDevs.length}`,
       sub: 'Completed less than assigned',
-      svgIcon: <TrophySVG />,
-      color: '#EAB308'
+      svgIcon: <NotoEmoji hex="1f3c6" size={36} />,
+      color: '#EF4444', chartData: [1, 2, 1, 3, 2, 3, 3]
     }
   ];
 
@@ -802,11 +1053,24 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
     },
     tooltip: { y: { formatter: (v) => `${v}%` } }
   };
-  const trendSeries = [
-    { name: 'Outstanding', data: [94, 96, 95, 97, 95, 96, 95] },
-    { name: 'Perfect', data: [100, 100, 100, 100, 100, 100, 100] },
-    { name: 'Low', data: [106, 108, 105, 110, 107, 109, 110] }
-  ];
+  const outAvg = outstandingDevs.length > 0 ? (outstandingDevs.reduce((s, d) => s + d.performance, 0) / outstandingDevs.length) : null;
+  const perfAvg = perfectDevs.length > 0 ? (perfectDevs.reduce((s, d) => s + d.performance, 0) / perfectDevs.length) : null;
+  const lowAvg = lowDevs.length > 0 ? (lowDevs.reduce((s, d) => s + d.performance, 0) / lowDevs.length) : null;
+
+  const trendSeries = [];
+  const trendColors = [];
+  if (outAvg !== null) {
+    trendSeries.push({ name: 'Outstanding', data: genTrend(outAvg) });
+    trendColors.push('#10B981');
+  }
+  if (perfAvg !== null) {
+    trendSeries.push({ name: 'Perfect', data: genTrend(perfAvg) });
+    trendColors.push('#3B82F6');
+  }
+  if (lowAvg !== null) {
+    trendSeries.push({ name: 'Low', data: genTrend(lowAvg) });
+    trendColors.push('#F59E0B');
+  }
 
   // Time of day bar chart
   const todOptions = {
@@ -886,468 +1150,825 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
 
   return (
     <PageContainer>
-      {/* ── TOP 6 SUMMARY CARDS ── */}
-      <Box
-        sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', lg: 'repeat(6,1fr)' }, gap: 2, mb: 2.5 }}
-      >
-        {summaryCards.map((c, i) => (
-          <Card
-            key={i}
-            sx={{ p: 2, bgcolor: alpha(c.color, 0.02), border: `1px solid ${alpha(c.color, 0.15)}`, display: 'flex', alignItems: 'center' }}
-          >
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%' }}>
-              <Box
-                sx={{
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 52,
-                  height: 52,
-                  borderRadius: 3,
-                  bgcolor: alpha(c.color, 0.1)
-                }}
-              >
+      {/* Background Blobs for Premium Feel */}
+      <Box sx={{ position: 'fixed', top: '-10%', right: '-5%', width: '40vw', height: '40vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
+      <Box sx={{ position: 'fixed', bottom: '-10%', left: '-5%', width: '50vw', height: '50vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.03) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
+
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        {/* ── TOP 6 SUMMARY CARDS ── */}
+        <Box
+          sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: 'repeat(3,1fr)', lg: 'repeat(6,1fr)' }, gap: 3, mb: 3 }}
+        >
+          {summaryCards.map((c, i) => (
+            <VerticalSummaryCard key={i} basecolor={c.color}>
+              <Box className="icon-box" sx={{ mb: 0.5, zIndex: 2, filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }}>
                 {c.svgIcon}
               </Box>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" mb={0.2}>
-                  {c.label}
-                </Typography>
-                <Typography variant="h5" fontWeight={900} color={c.color} lineHeight={1.2}>
-                  {c.value}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                  {c.sub}
-                </Typography>
-              </Box>
-            </Stack>
-          </Card>
-        ))}
-      </Box>
-
-      {/* ── MIDDLE ROW: TABLE + STATUS CARDS ── */}
-      <Grid container spacing={2} mb={2.5}>
-        {/* Performance by Developer Table */}
-        <Grid item xs={12} lg={8}>
-          <Card sx={{ height: '100%' }}>
-            <Box px={2.5} pt={2} pb={1.5} borderBottom={`1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`}>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Performance by Developer
+              <Typography variant="subtitle2" color="text.primary" fontWeight={800} align="center" mb={0.25} sx={{ zIndex: 2, fontSize: '0.8rem' }}>
+                {c.label}
               </Typography>
-            </Box>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC' }}>
-                    {['Developer', 'Assigned Hours', 'Completed Hours', 'Variance', 'Performance', 'Status', 'Trend (Last 7 Days)'].map(
-                      (h) => (
-                        <TableCell
-                          key={h}
-                          sx={{ fontWeight: 700, py: 1.2, fontSize: '12px', textAlign: h === 'Developer' ? 'left' : 'center' }}
-                        >
-                          {h}
-                        </TableCell>
-                      )
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {devStats.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: textMuted }}>
-                        No data available.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {devStats.map((dev, idx) => {
-                    const varNum = dev.completedHrs - dev.assignedHrs;
-                    const varStr = varNum === 0 ? '0 Hrs' : `${varNum > 0 ? '+' : ''}${varNum} Hrs`;
-                    const varColor = varNum < 0 ? '#10B981' : varNum === 0 ? '#3B82F6' : '#F59E0B';
-                    const sparkOpts = {
-                      chart: { type: 'line', sparkline: { enabled: true } },
-                      stroke: { curve: 'smooth', width: 2 },
-                      colors: [getPerfColor(dev.perfStatus)],
-                      tooltip: { fixed: { enabled: false } }
-                    };
-                    return (
-                      <TableRow key={idx} hover sx={{ '&:last-child td': { border: 0 } }}>
-                        <TableCell sx={{ py: 1 }}>
-                          <Stack direction="row" alignItems="center" gap={1.5}>
-                            <Avatar
-                              sx={{
-                                width: 30,
-                                height: 30,
-                                bgcolor: AVATAR_COLORS[idx % AVATAR_COLORS.length],
-                                fontSize: '12px',
-                                fontWeight: 700
-                              }}
-                            >
-                              {dev.user.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Typography variant="body2" fontWeight={600}>
-                              {dev.user}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
-                          <Typography variant="body2" fontWeight={600}>
-                            {dev.assignedHrs} Hrs
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
-                          <Typography variant="body2" fontWeight={600}>
-                            {dev.completedHrs} Hrs
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
-                          <Typography variant="body2" fontWeight={700} color={varColor}>
-                            {varStr}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
-                          <Typography variant="body2" fontWeight={700} color={getPerfColor(dev.perfStatus)}>
-                            {dev.performance}%
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
-                          <Chip
-                            size="small"
-                            label={dev.perfStatus}
-                            icon={getPerfIcon(dev.perfStatus)}
-                            sx={{
-                              bgcolor: getPerfBg(dev.perfStatus),
-                              color: getPerfColor(dev.perfStatus),
-                              fontWeight: 700,
-                              fontSize: '11px',
-                              border: `1px solid ${getPerfBorder(dev.perfStatus)}`,
-                              '& .MuiChip-icon': { fontSize: 14 }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1, width: 120 }}>
-                          <ReactApexChart options={sparkOpts} series={[{ data: dev.trend }]} type="line" height={36} width={100} />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {/* Total Row */}
-                  {devStats.length > 0 && (
-                    <TableRow sx={{ bgcolor: isDark ? 'rgba(59,130,246,0.08)' : '#EFF6FF' }}>
-                      <TableCell sx={{ py: 1.5 }}>
-                        <Typography variant="body2" fontWeight={800} color="#3B82F6">
-                          Total
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'center', py: 1.5 }}>
-                        <Typography variant="body2" fontWeight={800} color="#3B82F6">
-                          {totalAssigned} Hrs
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'center', py: 1.5 }}>
-                        <Typography variant="body2" fontWeight={800} color="#3B82F6">
-                          {totalCompleted} Hrs
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'center', py: 1.5 }}>
-                        <Typography variant="body2" fontWeight={800} color={totalCompleted - totalAssigned >= 0 ? '#F59E0B' : '#10B981'}>
-                          {totalCompleted - totalAssigned >= 0 ? '+' : ''}
-                          {totalCompleted - totalAssigned} Hrs
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'center', py: 1.5 }}>
-                        <Typography variant="body2" fontWeight={800} color="#3B82F6">
-                          {avgPerf}%
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
-                          -
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
-                          -
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Card>
-        </Grid>
+              <Box display="flex" alignItems="baseline" gap={0.5} zIndex={2} mb={0}>
+                <Typography variant="h4" fontWeight={900} color={c.color} sx={{ lineHeight: 1 }}>
+                  {c.value.split(' ')[0]}
+                </Typography>
+                {c.value.split(' ')[1] && (
+                  <Typography variant="subtitle2" fontWeight={800} color={c.color}>
+                    {c.value.split(' ')[1]}
+                  </Typography>
+                )}
+              </Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} align="center" sx={{ zIndex: 2, minHeight: 'auto', mb: 1, fontSize: '0.65rem' }}>
+                {c.sub}
+              </Typography>
 
-        {/* Status Summary Cards with 3D mascots */}
-        <Grid item xs={12} lg={4}>
-          <Stack spacing={2} height="100%">
-            {[
-              { status: 'Outstanding', devs: outstandingDevs, desc: 'Completed less than assigned hours', SVG: GreenHappySVG },
-              { status: 'Perfect', devs: perfectDevs, desc: 'Completed equal to assigned hours', SVG: BlueBullseyeSVG },
-              { status: 'Low', devs: lowDevs, desc: 'Completed more than assigned hours', SVG: RedSadSVG }
-            ].map((grp, i) => (
-              <Card
-                key={i}
+              <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 24, zIndex: 1, opacity: 0.8, pointerEvents: 'none' }}>
+                <ReactApexChart options={summaryAreaOptions(c.color)} series={[{ data: c.chartData }]} type="area" height="100%" width="100%" />
+              </Box>
+            </VerticalSummaryCard>
+          ))}
+        </Box>
+
+        {/* ── MIDDLE ROW: TABLE + STATUS CARDS ── */}
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2, mb: 2.5, alignItems: 'stretch' }}>
+          {/* Performance by Developer Table */}
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box
                 sx={{
-                  p: 2.5,
-                  bgcolor: getPerfBg(grp.status),
-                  border: `1.5px solid ${getPerfBorder(grp.status)}`,
-                  flex: 1,
+                  px: 2.5,
+                  pt: 2,
+                  pb: 1.5,
+                  borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   position: 'relative',
-                  overflow: 'visible'
+                  overflow: 'hidden',
+                  bgcolor: isDark ? '#1E293B' : '#F8FAFF',
                 }}
               >
-                <Stack direction="row" alignItems="center" spacing={3}>
-                  <Box sx={{ flexShrink: 0 }}>
-                    <grp.SVG />
+                <Box sx={{ position: 'absolute', right: 50, top: -20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)' }} />
+                <Box sx={{ position: 'absolute', right: 150, bottom: -20, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)' }} />
+                <Stack direction="row" alignItems="center" gap={2} zIndex={1}>
+                  <Box
+                    sx={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 8px 16px rgba(99,102,241,0.25)'
+                    }}
+                  >
+                    <TrendingUpRoundedIcon sx={{ color: '#fff', fontSize: 28 }} />
                   </Box>
-                  <Box flex={1}>
-                    <Box
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        px: 1.5,
-                        py: 0.4,
-                        borderRadius: 20,
-                        bgcolor: getPerfColor(grp.status),
-                        mb: 0.5
-                      }}
-                    >
-                      <Typography variant="caption" fontWeight={800} color="white">
-                        {grp.status}
-                      </Typography>
-                      {grp.status === 'Outstanding' && <Typography variant="caption">✨</Typography>}
-                    </Box>
-                    <Typography variant="caption" display="block" color="text.secondary" fontWeight={600} mb={1.5}>
-                      {grp.desc}
+                  <Box>
+                    <Typography variant="h5" fontWeight={800} color="text.primary" mb={0.5}>
+                      Performance by Developer
                     </Typography>
-                    <Stack direction="row" spacing={3}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                          Total Developers
-                        </Typography>
-                        <Typography variant="subtitle1" fontWeight={900} color={getPerfColor(grp.status)}>
-                          {grp.devs.length}{' '}
-                          <Typography component="span" variant="caption" color="text.secondary" fontWeight={600}>
-                            ({activeDev > 0 ? Math.round((grp.devs.length / activeDev) * 100) : 0}%)
-                          </Typography>
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                          Total Hours
-                        </Typography>
-                        <Typography variant="subtitle1" fontWeight={900} color={getPerfColor(grp.status)}>
-                          {grp.devs.reduce((s, d) => s + d.completedHrs, 0)} Hrs
-                        </Typography>
-                      </Box>
-                    </Stack>
+                    <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                      Track and monitor developer productivity and performance
+                    </Typography>
                   </Box>
                 </Stack>
-              </Card>
-            ))}
-          </Stack>
-        </Grid>
-      </Grid>
-
-      {/* ── BOTTOM ROW: DONUT + TREND + TOP PERFORMERS ── */}
-      <Grid container spacing={2} mb={2.5}>
-        {/* Donut */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={2}>
-              Performance Distribution
-            </Typography>
-            <Stack direction="row" alignItems="center" justifyContent="center">
-              <Box width={175}>
-                <ReactApexChart options={perfDistOptions} series={perfDistSeries} type="donut" height={190} />
-              </Box>
-              <Stack gap={1.5} ml={2} flex={1}>
-                {[
-                  {
-                    l: 'Outstanding (< 100%)',
-                    v: outstandingDevs.length,
-                    p: activeDev > 0 ? `${Math.round((outstandingDevs.length / activeDev) * 100)}%` : '0%',
-                    c: '#10B981'
-                  },
-                  {
-                    l: 'Perfect (= 100%)',
-                    v: perfectDevs.length,
-                    p: activeDev > 0 ? `${Math.round((perfectDevs.length / activeDev) * 100)}%` : '0%',
-                    c: '#3B82F6'
-                  },
-                  {
-                    l: 'Low (> 100%)',
-                    v: lowDevs.length,
-                    p: activeDev > 0 ? `${Math.round((lowDevs.length / activeDev) * 100)}%` : '0%',
-                    c: '#F59E0B'
-                  }
-                ].map((item, i) => (
-                  <Box key={i} display="flex" alignItems="center" justifyContent="space-between">
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.c }} />
-                      <Typography variant="caption" color="text.secondary">
-                        {item.l}
-                      </Typography>
-                    </Box>
-                    <Box textAlign="right" ml={1}>
-                      <Typography variant="body2" fontWeight={800} color={item.c}>
-                        {item.v}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {' '}
-                        ({item.p})
-                      </Typography>
-                    </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowDevViewAll(true)}
+                  endIcon={<TrendingUpRoundedIcon />}
+                  sx={{
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
+                    color: textColor,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    zIndex: 2,
+                    '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }
+                  }}
+                >
+                  View all
+                </Button>
+                <Box sx={{ position: 'relative', width: 120, height: 60, zIndex: 1, display: { xs: 'none', sm: 'block' } }}>
+                  <Box sx={{ position: 'absolute', bottom: 0, left: 10, width: 14, height: 25, borderRadius: '4px 4px 0 0', bgcolor: '#A78BFA' }} />
+                  <Box sx={{ position: 'absolute', bottom: 0, left: 30, width: 14, height: 40, borderRadius: '4px 4px 0 0', bgcolor: '#8B5CF6' }} />
+                  <Box sx={{ position: 'absolute', bottom: 0, left: 50, width: 14, height: 55, borderRadius: '4px 4px 0 0', bgcolor: '#6D28D9' }} />
+                  <Box sx={{ position: 'absolute', bottom: 10, left: 75 }}>
+                    <NotoEmoji hex="1f3c6" size={28} />
                   </Box>
-                ))}
-              </Stack>
-            </Stack>
-          </Card>
-        </Grid>
-
-        {/* Trend */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={1}>
-              Performance Trend (All Developers)
-            </Typography>
-            <ReactApexChart options={trendOptions} series={trendSeries} type="line" height={200} />
-          </Card>
-        </Grid>
-
-        {/* Top Performers */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ height: '100%' }}>
-            <Box px={2.5} pt={2} pb={1.5} borderBottom={`1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`}>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Top Performers (By Efficiency)
-              </Typography>
-            </Box>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC' }}>
-                    {['Developer', 'Efficiency', 'Variance', 'Status'].map((h) => (
-                      <TableCell
-                        key={h}
-                        sx={{ fontWeight: 700, fontSize: '12px', py: 1, textAlign: h === 'Developer' ? 'left' : 'center' }}
-                      >
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {topPerformers.map((dev, idx) => {
-                    const varNum = dev.completedHrs - dev.assignedHrs;
-                    const varStr = `${varNum >= 0 ? '+' : ''}${varNum} Hrs`;
-                    const varColor = varNum < 0 ? '#10B981' : varNum === 0 ? '#3B82F6' : '#F59E0B';
-                    return (
-                      <TableRow key={idx} hover sx={{ '&:last-child td': { border: 0 } }}>
-                        <TableCell sx={{ py: 1 }}>
-                          <Stack direction="row" alignItems="center" gap={1}>
-                            <Avatar
-                              sx={{
-                                width: 26,
-                                height: 26,
-                                bgcolor: AVATAR_COLORS[idx % AVATAR_COLORS.length],
-                                fontSize: '11px',
-                                fontWeight: 700
-                              }}
-                            >
-                              {dev.user.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Typography variant="body2" fontWeight={600}>
-                              {dev.user}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
-                          <Typography variant="body2" fontWeight={700} color={getPerfColor(dev.perfStatus)}>
-                            {dev.performance}%
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
-                          <Typography variant="body2" fontWeight={700} color={varColor}>
-                            {varStr}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1 }}>{getPerfIcon(dev.perfStatus)}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {topPerformers.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} sx={{ textAlign: 'center', py: 3, color: textMuted }}>
-                        No data yet.
-                      </TableCell>
+                  <TrendingUpRoundedIcon sx={{ position: 'absolute', top: 0, left: 40, color: '#6366F1', fontSize: 30, opacity: 0.8 }} />
+                </Box>
+              </Box>
+              <TableContainer sx={{ flexGrow: 1 }}>
+                <Table size="small" sx={{ height: '100%' }}>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC' }}>
+                      {[
+                        { key: 'user', label: 'Developer' },
+                        { key: 'assignedHrs', label: 'Assigned Hrs' },
+                        { key: 'takenHrs', label: 'Taken Time' },
+                        { key: 'reworkHrs', label: 'Rework Time' },
+                        { key: 'delayHrs', label: 'Delay Hrs' },
+                        { key: 'completedHrs', label: 'Completed Hrs' },
+                        { key: 'performance', label: 'Performance %' },
+                        { key: 'perfStatus', label: 'Status' },
+                        { key: null, label: 'Trend' }
+                      ].map(
+                        (h) => (
+                          <TableCell
+                            key={h.label}
+                            onClick={() => {
+                              if (!h.key) return;
+                              if (devSortCol === h.key) setDevSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                              else {
+                                setDevSortCol(h.key);
+                                setDevSortDir('asc');
+                              }
+                            }}
+                            sx={{
+                              fontWeight: 700, py: 0.5, fontSize: '11px',
+                              textAlign: h.label === 'Developer' ? 'left' : 'center',
+                              cursor: h.key ? 'pointer' : 'default',
+                              userSelect: 'none',
+                              '&:hover': h.key ? { color: '#6366F1' } : {}
+                            }}
+                          >
+                            {h.label}
+                            {h.key && (
+                              <Box component="span" sx={{ fontSize: '10px', ml: 0.3, color: devSortCol === h.key ? '#6366F1' : 'inherit' }}>
+                                {devSortCol === h.key ? (devSortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                              </Box>
+                            )}
+                          </TableCell>
+                        )
+                      )}
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Card>
-        </Grid>
-      </Grid>
+                  </TableHead>
+                  <TableBody>
+                    {devStats.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4, color: textMuted }}>
+                          No data available.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {([...devStats].sort((a, b) => {
+                      const col = devSortCol;
+                      const aVal = typeof a[col] === 'string' ? a[col].toLowerCase() : (a[col] || 0);
+                      const bVal = typeof b[col] === 'string' ? b[col].toLowerCase() : (b[col] || 0);
+                      if (aVal < bVal) return devSortDir === 'asc' ? -1 : 1;
+                      if (aVal > bVal) return devSortDir === 'asc' ? 1 : -1;
+                      return 0;
+                    })).slice(0, 5).map((dev, idx) => {
+                      const sparkOpts = {
+                        chart: { type: 'line', sparkline: { enabled: true } },
+                        stroke: { curve: 'smooth', width: 2 },
+                        colors: [getPerfColor(dev.perfStatus)],
+                        tooltip: { fixed: { enabled: false } }
+                      };
+                      return (
+                        <TableRow key={idx} hover sx={{ '&:last-child td': { border: 0 } }}>
+                          <TableCell sx={{ py: 0.5 }}>
+                            <Stack direction="row" alignItems="center" gap={1.5}>
+                              <Avatar
+                                sx={{
+                                  width: 30,
+                                  height: 30,
+                                  bgcolor: AVATAR_COLORS[idx % AVATAR_COLORS.length],
+                                  fontSize: '12px',
+                                  fontWeight: 700
+                                }}
+                              >
+                                {dev.user.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <Typography variant="body2" fontWeight={600}>
+                                {dev.user}
+                              </Typography>
+                            </Stack>
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: textMuted, textAlign: 'center' }}>
+                            {formatHHMM(dev.assignedHrs)}
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: textMuted, textAlign: 'center' }}>
+                            {formatHHMM(dev.takenHrs)}
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: dev.reworkHrs > 0 ? '#EF4444' : textMuted, textAlign: 'center' }}>
+                            {formatHHMM(dev.reworkHrs)}
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: dev.delayHrs > 0 ? '#F59E0B' : '#10B981', textAlign: 'center' }}>
+                            {formatHHMM(dev.delayHrs)}
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: textColor, textAlign: 'center' }}>
+                            {formatHHMM(dev.completedHrs)}
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5, fontWeight: 800, color: getPerfColor(dev.perfStatus), textAlign: 'center' }}>
+                            {dev.performance.toFixed(2)}%
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center', py: 0.5 }}>
+                            <Chip
+                              size="small"
+                              label={dev.perfStatus}
+                              icon={getPerfIcon(dev.perfStatus)}
+                              sx={{
+                                bgcolor: getPerfBg(dev.perfStatus),
+                                color: getPerfColor(dev.perfStatus),
+                                fontWeight: 700,
+                                fontSize: '11px',
+                                border: `1px solid ${getPerfBorder(dev.perfStatus)}`,
+                                '& .MuiChip-icon': { fontSize: 14 }
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center', py: 0.5, width: 80 }}>
+                            <ReactApexChart options={sparkOpts} series={[{ data: dev.trend }]} type="line" height={25} width={70} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {/* Spacer row to push total to bottom */}
+                    {devStats.length > 0 && (
+                      <TableRow sx={{ height: '100%', border: 0 }}>
+                        <TableCell colSpan={9} sx={{ border: 0, p: 0 }} />
+                      </TableRow>
+                    )}
+                    {/* Total Row */}
+                    {devStats.length > 0 && (
+                      <TableRow sx={{ bgcolor: isDark ? 'rgba(59,130,246,0.08)' : '#EFF6FF' }}>
+                        <TableCell sx={{ py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            Total
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {formatHHMM(totalAssigned)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {formatHHMM(totalTaken)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {formatHHMM(totalRework)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {formatHHMM(totalDelay)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {formatHHMM(totalCompleted)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {avgPerf}%
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            -
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            -
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          </Box>
 
-      {/* ── INSIGHTS + TIME OF DAY ── */}
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={2}>
-              Performance Insights
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {insights.map((ins, i) => (
-                <Box
+          {/* Status Summary Cards with 3D mascots */}
+          <Box sx={{ flexShrink: 0, width: { xs: '100%', lg: 280 } }}>
+            <Stack spacing={1.5} sx={{ height: '100%', justifyContent: 'space-between' }}>
+              {[
+                { status: 'Outstanding', devs: outstandingDevs, desc: 'Completed less than assigned', SVG: GreenHappySVG, grad: isDark ? 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(6,182,212,0.2) 100%)' : 'linear-gradient(135deg, #d1fae5 0%, #cffafe 100%)' },
+                { status: 'Perfect', devs: perfectDevs, desc: 'Completed exactly as assigned', SVG: BlueBullseyeSVG, grad: isDark ? 'linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(139,92,246,0.2) 100%)' : 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)' },
+                { status: 'Low', devs: lowDevs, desc: 'Completed more than assigned', SVG: RedSadSVG, grad: isDark ? 'linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(239,68,68,0.2) 100%)' : 'linear-gradient(135deg, #fef3c7 0%, #fee2e2 100%)' }
+              ].map((grp, i) => (
+                <Card
                   key={i}
                   sx={{
                     p: 1.5,
+                    background: grp.grad,
+                    border: `1px solid ${getPerfBorder(grp.status)}`,
                     borderRadius: 3,
-                    bgcolor: ins.bg,
-                    border: `1px solid ${ins.border}`,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    transition: 'transform 0.2s',
+                    '&:hover': { transform: 'translateY(-2px)' },
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 2
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    flex: 1,
+                    maxHeight: 180,
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                 >
-                  <Box sx={{ flexShrink: 0 }}>{ins.emoji}</Box>
-                  <Box>
-                    <Stack direction="row" alignItems="baseline" gap={0.5}>
-                      <Typography variant="subtitle1" fontWeight={900} color={ins.color}>
-                        {ins.v}
-                      </Typography>
-                      <Typography variant="caption" fontWeight={800} color={ins.color}>
-                        {ins.label}
-                      </Typography>
+                  {/* Dotted pattern top right */}
+                  <Box sx={{ position: 'absolute', top: 12, right: 12, opacity: 0.4 }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <circle cx="2" cy="2" r="1.5" fill={getPerfColor(grp.status)} />
+                      <circle cx="10" cy="2" r="1.5" fill={getPerfColor(grp.status)} />
+                      <circle cx="18" cy="2" r="1.5" fill={getPerfColor(grp.status)} />
+                      <circle cx="2" cy="10" r="1.5" fill={getPerfColor(grp.status)} />
+                      <circle cx="10" cy="10" r="1.5" fill={getPerfColor(grp.status)} />
+                      <circle cx="18" cy="10" r="1.5" fill={getPerfColor(grp.status)} />
+                      <circle cx="2" cy="18" r="1.5" fill={getPerfColor(grp.status)} />
+                      <circle cx="10" cy="18" r="1.5" fill={getPerfColor(grp.status)} />
+                      <circle cx="18" cy="18" r="1.5" fill={getPerfColor(grp.status)} />
+                    </svg>
+                  </Box>
+
+                  {/* Wave bottom right */}
+                  <Box sx={{ position: 'absolute', bottom: -5, right: -5, opacity: 0.15, width: '65%' }}>
+                    <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+                      <path fill={getPerfColor(grp.status)} d="M0,100 C50,100 80,40 200,60 L200,100 Z" />
+                      <path fill={getPerfColor(grp.status)} opacity="0.5" d="M0,100 C60,80 120,30 200,50 L200,100 Z" />
+                    </svg>
+                  </Box>
+
+                  <Box sx={{ position: 'relative', zIndex: 2 }}>
+                    <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+                      <Box sx={{ flexShrink: 0, p: 0.5, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.6)', boxShadow: `0 8px 16px ${alpha(getPerfColor(grp.status), 0.15)}` }}>
+                        <grp.SVG />
+                      </Box>
+                      <Box>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            px: 1,
+                            py: 0.2,
+                            borderRadius: 20,
+                            bgcolor: getPerfColor(grp.status),
+                            mb: 0.5
+                          }}
+                        >
+                          <Typography variant="caption" fontWeight={800} color="white" sx={{ fontSize: '0.65rem' }}>
+                            {grp.status}
+                          </Typography>
+                          {grp.status === 'Outstanding' && <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>✨</Typography>}
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ lineHeight: 1.1, display: 'block', fontSize: '0.65rem' }}>
+                          {grp.desc}
+                        </Typography>
+                      </Box>
                     </Stack>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      whiteSpace="pre-line"
-                      lineHeight={1.3}
-                      fontWeight={600}
-                      display="block"
-                    >
-                      {ins.desc}
-                    </Typography>
+                    <Box sx={{ display: 'flex', borderTop: `1px dashed ${alpha(getPerfColor(grp.status), 0.3)}`, pt: 1, mt: 0.5 }}>
+                      <Box flex={1}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" mb={0} sx={{ fontSize: '0.6rem' }}>
+                          Total Developers
+                        </Typography>
+                        <Typography variant="subtitle2" fontWeight={900} color={getPerfColor(grp.status)}>
+                          {grp.devs.length} <Typography component="span" variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.6rem' }}>({activeDev > 0 ? Math.round((grp.devs.length / activeDev) * 100) : 0}%)</Typography>
+                        </Typography>
+                      </Box>
+                      <Box flex={1}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" mb={0} sx={{ fontSize: '0.6rem' }}>
+                          Total Consumed
+                        </Typography>
+                        <Typography variant="subtitle2" fontWeight={900} color={getPerfColor(grp.status)}>
+                          {formatHHMM(grp.devs.reduce((s, d) => s + d.completedHrs, 0))}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Card>
+              ))}
+            </Stack>
+          </Box>
+        </Box>
+
+        {/* ── PREMIUM LIGHT DASHBOARD BOTTOM 4-BOX LAYOUT ── */}
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(1, 1fr)', lg: 'repeat(4, 1fr)' },
+          gap: 2,
+          mb: 3,
+          width: '100%',
+          '@keyframes floatObj': { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-5px)' } },
+          '@keyframes driveFast': { '0%': { transform: 'translateX(10px) skewX(10deg)' }, '50%': { transform: 'translateX(-15px) skewX(15deg) translateY(-2px)' }, '100%': { transform: 'translateX(10px) skewX(10deg)' } },
+          '@keyframes driveMedium': { '0%, 100%': { transform: 'translateX(4px)' }, '50%': { transform: 'translateX(-8px) translateY(-1px)' } },
+          '@keyframes breakdown': { '0%, 100%': { transform: 'rotate(0deg)' }, '25%': { transform: 'rotate(-5deg) translateY(2px)' }, '50%': { transform: 'rotate(5deg) translateY(-2px)' }, '75%': { transform: 'rotate(-5deg) translateY(2px)' } }
+        }}>
+
+          {/* 1. Team Performance Trend (Top Left) */}
+          <Box>
+            <Card sx={{
+              p: 2,
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 100%)',
+              backdropFilter: 'blur(20px)',
+              color: '#0F172A',
+              height: '290px',
+              position: 'relative',
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.8)',
+              borderRadius: '24px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.05)',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              zIndex: 1,
+              '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }
+            }}>
+              {/* Header badge style */}
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={0}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, borderRadius: '20px', background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(99,102,241,0.15)', boxShadow: '0 2px 8px rgba(99,102,241,0.08)' }}>
+                  <Typography sx={{ fontSize: '1rem' }}>💠</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#1E293B" sx={{ letterSpacing: 0.5 }}>PERFORMANCE</Typography>
+                </Box>
+              </Stack>
+              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.65rem', pl: 0.5 }}>Trend across all developers</Typography>
+
+              <Box mt={0} sx={{ position: 'relative', zIndex: 2, mx: -1, '& .apexcharts-series path': { filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.1))' } }}>
+                <ReactApexChart
+                  options={{
+                    ...trendOptions,
+                    chart: { type: 'line', toolbar: { show: false }, foreColor: '#64748B', fontFamily: "'Inter',sans-serif", background: 'transparent' },
+                    grid: { borderColor: '#F8FAFC', strokeDashArray: 0, position: 'back', xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } }, padding: { top: -10, bottom: -10, left: 10, right: 10 } },
+                    tooltip: { theme: 'light' },
+                    colors: trendColors.length > 0 ? trendColors : ['#10B981'],
+                    stroke: { curve: 'smooth', width: 3 },
+                    markers: { size: 4, colors: ['#fff'], strokeColors: trendColors.length > 0 ? trendColors : ['#10B981'], strokeWidth: 2, hover: { size: 6 } },
+                    legend: { show: false },
+                    xaxis: { ...trendOptions.xaxis, labels: { style: { colors: '#94A3B8', fontSize: '9px', fontWeight: 600 } } },
+                    yaxis: { ...trendOptions.yaxis, labels: { show: false } }
+                  }}
+                  series={trendSeries}
+                  type="line"
+                  height={120}
+                />
+              </Box>
+
+              <Stack direction="row" justifyContent="space-between" gap={1} sx={{ position: 'relative', zIndex: 2 }}>
+                <Box flex={1} sx={{ bgcolor: 'rgba(16,185,129,0.05)', p: 1, borderRadius: '12px', border: '1px solid rgba(16,185,129,0.1)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#10B981', mb: 0.5 }} />
+                  <Typography variant="caption" sx={{ color: '#10B981', fontSize: '0.6rem', display: 'block', fontWeight: 800, textTransform: 'uppercase' }}>Outstanding</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>{outstandingDevs.length > 0 ? (outstandingDevs.reduce((s, d) => s + d.performance, 0) / outstandingDevs.length).toFixed(2) : '0.00'}%</Typography>
+                </Box>
+                <Box flex={1} sx={{ bgcolor: 'rgba(59,130,246,0.05)', p: 1, borderRadius: '12px', border: '1px solid rgba(59,130,246,0.1)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#3B82F6', mb: 0.5 }} />
+                  <Typography variant="caption" sx={{ color: '#3B82F6', fontSize: '0.6rem', display: 'block', fontWeight: 800, textTransform: 'uppercase' }}>Perfect</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>{perfectDevs.length > 0 ? (perfectDevs.reduce((s, d) => s + d.performance, 0) / perfectDevs.length).toFixed(2) : '0.00'}%</Typography>
+                </Box>
+                <Box flex={1} sx={{ bgcolor: 'rgba(245,158,11,0.05)', p: 1, borderRadius: '12px', border: '1px solid rgba(245,158,11,0.1)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#F59E0B', mb: 0.5 }} />
+                  <Typography variant="caption" sx={{ color: '#F59E0B', fontSize: '0.6rem', display: 'block', fontWeight: 800, textTransform: 'uppercase' }}>Low</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>{lowDevs.length > 0 ? (lowDevs.reduce((s, d) => s + d.performance, 0) / lowDevs.length).toFixed(2) : '0.00'}%</Typography>
+                </Box>
+              </Stack>
+            </Card>
+          </Box>
+
+          {/* 2. Top Performer Spotlight (Top Right) */}
+          <Box>
+            <Card sx={{
+              p: 2,
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 100%)',
+              backdropFilter: 'blur(20px)',
+              color: '#0F172A',
+              height: '290px',
+              position: 'relative',
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.8)',
+              borderRadius: '24px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.05)',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              zIndex: 1,
+              '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }
+            }}>
+              {/* Crown badge header */}
+              <Stack direction="row" alignItems="center" justifyContent="center" mb={0}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.6, borderRadius: '20px', background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 12px rgba(245,158,11,0.3)', color: '#fff' }}>
+                  <Typography sx={{ fontSize: '1rem' }}>👑</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} sx={{ letterSpacing: 1, color: '#fff' }}>TOP PERFORMER</Typography>
+                </Box>
+              </Stack>
+
+              <Stack direction="column" alignItems="center" mt={0} gap={0.5} textAlign="center" sx={{ position: 'relative' }}>
+                <Box sx={{ flexShrink: 0, width: '100%', height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', mb: 0, zIndex: 2 }}>
+                  <Box sx={{ position: 'absolute', width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.25) 0%, rgba(255,255,255,0) 70%)', zIndex: 0 }} />
+                  <Typography sx={{ fontSize: '8rem', animation: 'floatObj 4s ease-in-out infinite', filter: 'drop-shadow(0 15px 20px rgba(245,158,11,0.4))', position: 'relative', zIndex: 2 }}>🏆</Typography>
+                  <Typography sx={{ position: 'absolute', top: 5, left: '25%', fontSize: '1.5rem', opacity: 0.8, animation: 'floatObj 3s ease-in-out infinite', filter: 'drop-shadow(0 5px 10px rgba(245,158,11,0.3))' }}>✨</Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 3, width: '100%' }}>
+                  <Stack direction="row" alignItems="center" gap={1} mb={0.5}>
+                    <Typography variant="h5" fontWeight={900} fontStyle="italic" color="#0F172A" sx={{ letterSpacing: 1 }}>{topPerformers.length > 0 ? topPerformers[0].user : 'HARI'}</Typography>
+                    <Chip label="#1" sx={{ background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', color: '#fff', fontWeight: 900, height: 20, fontSize: '0.65rem', borderRadius: 1, boxShadow: '0 2px 4px rgba(245,158,11,0.3)' }} />
+                  </Stack>
+                  <Stack direction="row" alignItems="center" gap={1} mb={1}>
+                    <Typography sx={{ fontSize: '2.2rem', fontWeight: 900, lineHeight: 1, color: '#F59E0B', textShadow: '0 2px 8px rgba(245,158,11,0.2)' }}>{topPerformers.length > 0 ? topPerformers[0].performance.toFixed(2) : '100.00'}%</Typography>
+                    <Chip icon={<Typography sx={{ fontSize: '10px', color: '#fff' }}>★</Typography>} label="OUTSTANDING" sx={{ background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', color: '#fff', fontWeight: 800, height: 22, fontSize: '0.6rem', borderRadius: 1, boxShadow: '0 2px 6px rgba(16,185,129,0.3)' }} />
+                  </Stack>
+
+                  <Stack direction="row" gap={1.5} justifyContent="space-between" width="100%">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, p: 1, borderRadius: '12px', background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.1)' }}>
+                      <Box sx={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 2px 4px rgba(139,92,246,0.3)' }}><EventAvailableRoundedIcon sx={{ fontSize: 14 }} /></Box>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.55rem', display: 'block', lineHeight: 1, fontWeight: 700, textTransform: 'uppercase' }}>Assigned</Typography>
+                        <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.2 }}>{topPerformers.length > 0 ? formatHHMM(topPerformers[0].assignedHrs) : '08:00'}</Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, p: 1, borderRadius: '12px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.1)' }}>
+                      <Box sx={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 2px 4px rgba(16,185,129,0.3)' }}><CheckCircleRoundedIcon sx={{ fontSize: 14 }} /></Box>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.55rem', display: 'block', lineHeight: 1, fontWeight: 700, textTransform: 'uppercase' }}>Completed</Typography>
+                        <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.2 }}>{topPerformers.length > 0 ? formatHHMM(topPerformers[0].completedHrs) : '08:00'}</Typography>
+                      </Box>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Stack>
+
+            </Card>
+          </Box>
+
+          {/* 3. Time Efficiency Analysis (Bottom Left) */}
+          <Box>
+            <Card sx={{
+              p: 2,
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 100%)',
+              backdropFilter: 'blur(20px)',
+              color: '#0F172A',
+              height: '290px',
+              position: 'relative',
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.8)',
+              borderRadius: '24px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.05)',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              zIndex: 1,
+              '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }
+            }}>
+              {/* Efficiency badge header */}
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={0}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, borderRadius: '20px', background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(16,185,129,0.15)', boxShadow: '0 2px 8px rgba(16,185,129,0.08)' }}>
+                  <Typography sx={{ fontSize: '1rem' }}>⚡</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#1E293B" sx={{ letterSpacing: 0.5 }}>PERFORMANCE</Typography>
+                </Box>
+              </Stack>
+              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.65rem', pl: 0.5 }}>Assigned vs Completed</Typography>
+
+              <Stack direction="row" justifyContent="space-between" mt={1} gap={1} px={0} sx={{ flex: 1, pt: 1 }}>
+                {/* Less - Green */}
+                <Box flex={1} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', textAlign: 'center', position: 'relative' }}>
+                  <Typography variant="h4" fontWeight={900} color="#10B981" sx={{ lineHeight: 1, mb: 1 }}>{outstandingDevs.length}</Typography>
+                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', width: '100%' }}>
+                    <Box sx={{ width: '100%', borderBottom: '3px dashed #CBD5E1', position: 'absolute', top: '70%', zIndex: 0 }} />
+                    <Typography sx={{ fontSize: '4.5rem', filter: 'drop-shadow(0 15px 15px rgba(16,185,129,0.4)) hue-rotate(-50deg)', animation: 'driveFast 0.8s ease-in-out infinite', zIndex: 1 }}>🏎️</Typography>
+                  </Box>
+                  <Box sx={{ width: '100%', mt: 1 }}>
+                    <Chip label="LESS TIME" sx={{ background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', color: '#fff', height: 22, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1.5, width: '90%', mb: 0.5, boxShadow: '0 2px 5px rgba(16,185,129,0.3)' }} />
+                    <Typography variant="caption" fontWeight={700} color="#64748B" display="block" sx={{ fontSize: '0.6rem' }}>{activeDev > 0 ? Math.round((outstandingDevs.length / activeDev) * 100) : 0}% of Team</Typography>
                   </Box>
                 </Box>
-              ))}
-            </Box>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={1}>
-              Performance by Time of Day (Completed Hours)
-            </Typography>
-            <ReactApexChart options={todOptions} series={todSeries} type="bar" height={230} />
-          </Card>
-        </Grid>
-      </Grid>
+
+                {/* Equal - Blue */}
+                <Box flex={1} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', textAlign: 'center', position: 'relative' }}>
+                  <Typography variant="h4" fontWeight={900} color="#3B82F6" sx={{ lineHeight: 1, mb: 1 }}>{perfectDevs.length}</Typography>
+                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', width: '100%' }}>
+                    <Box sx={{ width: '100%', borderBottom: '3px dashed #CBD5E1', position: 'absolute', top: '70%', zIndex: 0 }} />
+                    <Typography sx={{ fontSize: '4.5rem', filter: 'drop-shadow(0 15px 15px rgba(59,130,246,0.4)) hue-rotate(180deg)', animation: 'driveMedium 1.2s ease-in-out infinite', zIndex: 1 }}>🏎️</Typography>
+                  </Box>
+                  <Box sx={{ width: '100%', mt: 1 }}>
+                    <Chip label="ON TIME" sx={{ background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)', color: '#fff', height: 22, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1.5, width: '90%', mb: 0.5, boxShadow: '0 2px 5px rgba(59,130,246,0.3)' }} />
+                    <Typography variant="caption" fontWeight={700} color="#64748B" display="block" sx={{ fontSize: '0.6rem' }}>{activeDev > 0 ? Math.round((perfectDevs.length / activeDev) * 100) : 0}% of Team</Typography>
+                  </Box>
+                </Box>
+
+                {/* More - Red */}
+                <Box flex={1} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', textAlign: 'center', position: 'relative' }}>
+                  <Typography variant="h4" fontWeight={900} color="#EF4444" sx={{ lineHeight: 1, mb: 1 }}>{lowDevs.length}</Typography>
+                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', width: '100%' }}>
+                    <Box sx={{ width: '100%', borderBottom: '3px dashed #CBD5E1', position: 'absolute', top: '70%', zIndex: 0 }} />
+                    <Typography sx={{ fontSize: '4.5rem', filter: 'drop-shadow(0 15px 15px rgba(239,68,68,0.4))', animation: 'breakdown 0.6s ease-in-out infinite', zIndex: 1 }}>🏎️</Typography>
+                  </Box>
+                  <Box sx={{ width: '100%', mt: 1 }}>
+                    <Chip label="MORE TIME" sx={{ background: 'linear-gradient(135deg, #F87171 0%, #EF4444 100%)', color: '#fff', height: 22, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1.5, width: '90%', mb: 0.5, boxShadow: '0 2px 5px rgba(239,68,68,0.3)' }} />
+                    <Typography variant="caption" fontWeight={700} color="#64748B" display="block" sx={{ fontSize: '0.6rem' }}>{activeDev > 0 ? Math.round((lowDevs.length / activeDev) * 100) : 0}% of Team</Typography>
+                  </Box>
+                </Box>
+              </Stack>
+            </Card>
+          </Box>
+
+          {/* 4. Team Quality Score (Bottom Right) */}
+          <Box>
+            <Card sx={{
+              p: 2,
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 100%)',
+              backdropFilter: 'blur(20px)',
+              color: '#0F172A',
+              height: '290px',
+              position: 'relative',
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.8)',
+              borderRadius: '24px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.05)',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              zIndex: 1,
+              '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }
+            }}>
+              {/* Quality badge header */}
+              <Stack direction="row" alignItems="flex-start" mb={0}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, borderRadius: '20px', background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(139,92,246,0.15)', boxShadow: '0 2px 8px rgba(139,92,246,0.08)' }}>
+                  <Typography sx={{ fontSize: '1rem' }}>🎯</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#1E293B" sx={{ letterSpacing: 0.5 }}>QUALITY</Typography>
+                </Box>
+              </Stack>
+              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.65rem', pl: 0.5 }}>Team performance score</Typography>
+
+              <Stack direction="column" alignItems="center" mt={0} gap={1} sx={{ flex: 1, justifyContent: 'center' }}>
+                {/* Radial Gauge */}
+                <Box sx={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', width: '100%', mt: -1 }}>
+                  <Box sx={{ position: 'absolute', top: '10%', width: '120%', height: '120%', background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, rgba(255,255,255,0) 65%)', zIndex: 0 }} />
+                  <Typography sx={{ position: 'absolute', top: '20%', left: '15%', fontSize: '1.5rem', opacity: 0.9, animation: 'floatObj 4s ease-in-out infinite', filter: 'drop-shadow(0 5px 10px rgba(245,158,11,0.3))' }}>⭐</Typography>
+                  <Typography sx={{ position: 'absolute', top: '35%', right: '10%', fontSize: '2rem', opacity: 1, animation: 'floatObj 3s ease-in-out infinite', filter: 'drop-shadow(0 8px 15px rgba(245,158,11,0.4))' }}>🎖️</Typography>
+                  <Box sx={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 10px 15px rgba(139,92,246,0.3))' }}>
+                    <ReactApexChart
+                      options={{
+                        chart: { type: 'radialBar', fontFamily: "'Inter',sans-serif", background: 'transparent' },
+                        plotOptions: {
+                          radialBar: {
+                            hollow: { size: '60%' },
+                            track: { background: 'rgba(241,245,249,0.5)', strokeWidth: '100%', margin: 5 },
+                            dataLabels: {
+                              name: { show: true, color: '#64748B', fontSize: '10px', fontWeight: 800, offsetY: 20 },
+                              value: { show: true, color: '#0F172A', fontSize: '32px', fontWeight: 900, offsetY: -5, formatter: function (v) { return v + '%' } }
+                            }
+                          }
+                        },
+                        fill: { type: 'gradient', gradient: { shade: 'dark', type: 'horizontal', gradientToColors: ['#A855F7'], stops: [0, 100] } },
+                        colors: ['#6366F1'],
+                        stroke: { lineCap: 'round', curve: 'smooth' },
+                        labels: ['SCORE']
+                      }}
+                      series={[Number(avgPerf) || 0]}
+                      type="radialBar"
+                      height={200}
+                    />
+                  </Box>
+                </Box>
+
+
+              </Stack>
+            </Card>
+          </Box>
+
+        </Box>
+
+      </Box>
+
+      {/* ── View All Developer Performance - Full Page Screen ── */}
+      <Dialog fullScreen open={showDevViewAll} onClose={() => setShowDevViewAll(false)} PaperProps={{ sx: { bgcolor: isDark ? '#0F172A' : '#F8FAFF' } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+          <Box sx={{
+            px: 4, py: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'}`,
+            bgcolor: isDark ? '#0F172A' : '#fff', flexShrink: 0, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+          }}>
+            <Stack direction="row" alignItems="center" gap={2}>
+              <Box sx={{ width: 40, height: 40, borderRadius: 2, background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <TrendingUpRoundedIcon sx={{ color: '#fff', fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={800} color="text.primary" sx={{ fontSize: '1.1rem' }}>
+                  All Developer Performance
+                </Typography>
+                <Typography variant="caption" color="text.secondary">Comprehensive developer productivity report</Typography>
+              </Box>
+            </Stack>
+            <IconButton onClick={() => setShowDevViewAll(false)} sx={{ color: textMuted, border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`, borderRadius: 2, p: 0.7, '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' } }}>
+              <Typography fontWeight={700} fontSize="1.2rem" lineHeight={1}>✕</Typography>
+            </IconButton>
+          </Box>
+
+          <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
+            <Card sx={{ borderRadius: 3, boxShadow: '0 10px 30px -5px rgba(0,0,0,0.05)', overflow: 'hidden', border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'transparent'}` }}>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: isDark ? '#1E293B' : '#F8FAFC' }}>
+                      {[
+                        { key: 'user', label: 'Developer', icon: '👤' },
+                        { key: 'assignedHrs', label: 'Assigned Hrs', icon: '📋' },
+                        { key: 'takenHrs', label: 'Taken Time', icon: '⏱' },
+                        { key: 'reworkHrs', label: 'Rework Time', icon: '🔄' },
+                        { key: 'delayHrs', label: 'Delay Hrs', icon: '⚠' },
+                        { key: 'completedHrs', label: 'Completed Hrs', icon: '✅' },
+                        { key: 'performance', label: 'Performance %', icon: '📊' },
+                        { key: 'perfStatus', label: 'Status', icon: '🏷' },
+                        { key: null, label: 'Trend', icon: '' }
+                      ].map(({ key, label, icon }) => (
+                        <TableCell
+                          key={label}
+                          onClick={() => {
+                            if (!key) return;
+                            if (devSortCol === key) setDevSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                            else { setDevSortCol(key); setDevSortDir('asc'); }
+                          }}
+                          sx={{
+                            fontWeight: 700, fontSize: '13px',
+                            color: isDark ? 'rgba(255,255,255,0.7)' : '#64748B',
+                            textAlign: label === 'Developer' ? 'left' : 'center',
+                            cursor: key ? 'pointer' : 'default',
+                            userSelect: 'none', whiteSpace: 'nowrap',
+                            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'}`,
+                            py: 2,
+                            '&:hover': key ? { color: '#6366F1' } : {}
+                          }}
+                        >
+                          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                            {icon && <Box component="span" sx={{ mr: 0.3, opacity: 0.7 }}>{icon}</Box>}
+                            {label}
+                            {key && (
+                              <Box component="span" sx={{ fontSize: '10px', ml: 0.3, color: devSortCol === key ? '#6366F1' : 'inherit' }}>
+                                {devSortCol === key ? (devSortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                              </Box>
+                            )}
+                          </Box>
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {[...devStats].sort((a, b) => {
+                      const col = devSortCol;
+                      const aVal = typeof a[col] === 'string' ? a[col].toLowerCase() : (a[col] || 0);
+                      const bVal = typeof b[col] === 'string' ? b[col].toLowerCase() : (b[col] || 0);
+                      if (aVal < bVal) return devSortDir === 'asc' ? -1 : 1;
+                      if (aVal > bVal) return devSortDir === 'asc' ? 1 : -1;
+                      return 0;
+                    }).map((dev, idx) => {
+                      const sparkOpts = {
+                        chart: { type: 'line', sparkline: { enabled: true } },
+                        stroke: { curve: 'smooth', width: 2.5 },
+                        colors: [getPerfColor(dev.perfStatus)],
+                        tooltip: { fixed: { enabled: false } }
+                      };
+                      return (
+                        <TableRow key={idx} hover sx={{
+                          '&:last-child td': { border: 0 },
+                          '&:hover': { bgcolor: isDark ? 'rgba(99,102,241,0.04)' : '#F8FAFF' },
+                          transition: 'background 0.15s'
+                        }}>
+                          <TableCell sx={{ py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <Stack direction="row" alignItems="center" gap={1.5}>
+                              <Avatar sx={{ width: 40, height: 40, bgcolor: AVATAR_COLORS[idx % AVATAR_COLORS.length], fontSize: '15px', fontWeight: 700, boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+                                {dev.user.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ fontSize: '14px' }}>{dev.user}</Typography>
+                                <Typography variant="caption" color="text.secondary" fontWeight={500}>Developer</Typography>
+                              </Box>
+                            </Stack>
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.assignedHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.takenHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: dev.reworkHrs > 0 ? '#EF4444' : textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.reworkHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: dev.delayHrs > 0 ? '#F59E0B' : '#10B981', py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.delayHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 800, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px', color: isDark ? '#fff' : '#1E293B' }}>{formatHHMM(dev.completedHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 800, color: getPerfColor(dev.perfStatus), py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '14px' }}>{dev.performance.toFixed(2)}%</TableCell>
+                          <TableCell sx={{ textAlign: 'center', py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <Chip size="small" label={dev.perfStatus} icon={getPerfIcon(dev.perfStatus)}
+                              sx={{ bgcolor: getPerfBg(dev.perfStatus), color: getPerfColor(dev.perfStatus), fontWeight: 800, fontSize: '12px', border: `1px solid ${getPerfBorder(dev.perfStatus)}`, '& .MuiChip-icon': { fontSize: 16 } }} />
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center', width: 100, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <ReactApexChart options={sparkOpts} series={[{ data: dev.trend }]} type="line" height={32} width={85} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          </Box>
+        </Box>
+      </Dialog>
     </PageContainer>
   );
 };
@@ -1362,7 +1983,14 @@ export default function TaskDashboard() {
   const { user } = useAuth();
   const activeUserId = user?.id || user?.userId || user?.email || user?.empCode || '';
 
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const dispatch = useDispatch();
+  const globalFilters = useSelector((state) => state.search?.filters || {});
+  const filterScope = globalFilters?.performanceScope || 'Mine';
+  const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(location.state?.fromTab || 'dashboard');
   const [loading, setLoading] = useState(true);
   const [realData, setRealData] = useState({
     total: 0,
@@ -1380,6 +2008,48 @@ export default function TaskDashboard() {
   const [devStats, setDevStats] = useState([]);
 
   useEffect(() => {
+    const performanceScopeOptions = [
+      { value: 'Mine', label: 'Mine' },
+      { value: 'Team', label: 'Team' },
+      { value: 'Company', label: 'Company' }
+    ];
+
+    const requestManagementOptions = [
+      { value: 'My Request', label: 'My Request' },
+      { value: 'Request For Me', label: 'Request For Me' }
+    ];
+
+    const config = [
+      {
+        id: 'requestManagement',
+        label: 'Request Management',
+        type: 'select',
+        options: requestManagementOptions,
+        defaultValue: 'Request For Me',
+        isStarred: true
+      },
+      {
+        id: 'performanceScope',
+        label: 'Performance Scope',
+        type: 'select',
+        options: performanceScopeOptions,
+        defaultValue: 'Mine',
+        isStarred: true
+      }
+    ];
+    dispatch(setFilterConfig(config));
+    
+    if (location.state?.dashboardFilters) {
+      dispatch(setFilters(location.state.dashboardFilters));
+    }
+    
+    return () => {
+      dispatch(setFilterConfig(null));
+      dispatch(resetFilters());
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
     if (!activeUserId) return;
     const fetchData = async () => {
       try {
@@ -1388,22 +2058,30 @@ export default function TaskDashboard() {
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         const todayStr = `${yyyy}-${mm}-${dd}`;
-        const [r1, r2, r3, r4, r5] = await Promise.allSettled([
+        const [r1, r2, r3, r4, r5, r6, r7] = await Promise.allSettled([
           axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0, toDate: todayStr } }),
           axios.get('/api/qms/moms/actions'),
           axios.get('/api/tickets'),
           axios.get('/api/qms/audit-schedules'),
-          axios.get('/api/master/hr/employees')
+          axios.get('/api/master/hr/employees'),
+          axios.get('/api/bos-pages'),
+          axios.get('/api/users/all')
         ]);
         const cl = r1.status === 'fulfilled' ? r1.value.data?.content || r1.value.data || [] : [];
         const mom = r2.status === 'fulfilled' ? r2.value.data || [] : [];
         const tk = r3.status === 'fulfilled' ? r3.value.data || [] : [];
         const audit = r4.status === 'fulfilled' ? r4.value.data || [] : [];
         const employees = r5.status === 'fulfilled' ? r5.value.data || [] : [];
+        const bosPages = r6.status === 'fulfilled' ? r6.value.data || [] : [];
+        const usersList = r7.status === 'fulfilled' ? r7.value.data || [] : [];
+
+        // Build pageId -> pageName lookup
+        const pageIdMap = {};
+        bosPages.forEach(p => {
+          if (p.pageId) pageIdMap[p.pageId] = p.pageName || 'Ticket';
+        });
 
         let empLookup = {};
-        let workloadMap = {};
-        let devHoursMap = {};
 
         employees.forEach((emp) => {
           const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.empCode || 'Unknown';
@@ -1411,11 +2089,6 @@ export default function TaskDashboard() {
           if (emp.userId) empLookup[emp.userId] = fullName;
           if (emp.email) empLookup[emp.email] = fullName;
           if (fullName !== 'Unknown') empLookup[fullName] = fullName;
-        });
-
-        Object.values(empLookup).forEach((name) => {
-          if (!workloadMap[name]) workloadMap[name] = { user: name, hours: 0, tasks: 0 };
-          if (!devHoursMap[name]) devHoursMap[name] = { user: name, assignedHrs: 0, completedHrs: 0 };
         });
 
         const getName = (u) => {
@@ -1427,59 +2100,174 @@ export default function TaskDashboard() {
           return empLookup[u] || u;
         };
 
+        const parseDurationToMinutes = (str) => {
+          if (!str) return 0;
+          const clean = String(str).toLowerCase().replace(/\s+/g, '');
+          if (clean.includes(':')) {
+            const parts = clean.split(':');
+            return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+          }
+          const dayMatch = clean.match(/([\d.]+)\s*d/);
+          const hrMatch = clean.match(/([\d.]+)\s*h/);
+          const minMatch = clean.match(/([\d.]+)\s*m/);
+          let totalMins = 0;
+          if (dayMatch) totalMins += parseFloat(dayMatch[1]) * 24 * 60;
+          if (hrMatch) totalMins += parseFloat(hrMatch[1]) * 60;
+          if (minMatch) totalMins += parseFloat(minMatch[1]);
+          if (!dayMatch && !hrMatch && !minMatch) {
+            const num = parseFloat(clean);
+            if (!isNaN(num)) totalMins += num * 60;
+          }
+          return totalMins;
+        };
+
         let tasksList = [];
         cl.forEach((a) => {
           const name = getName(a.assignedToObj || a.employee || a.assignedTo);
           tasksList.push({
             _status: a.status?.name || a.status?.statusName || 'Pending',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.checklistDate || a.assignedDate,
             _title: a.checklist?.checkingPoint || `Checklist #${a.id}`,
             _id: a.checklistNo || `CL-${a.id}`,
             _user: name,
             _rawDate: a.createdAt || a.createdDate || a.assignedDate || a.checklistDate,
             _hrs: a.estimatedHours || a.plannedHours || 8,
-            _pageName: a.pageName || a.moduleName || 'Checklist'
+            _pageName: a.pageName || a.moduleName || 'Checklist',
+            _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _createdBy: a.createdBy || 'System'
           });
         });
         mom.forEach((a) => {
           const name = getName(a.assignedTo);
           tasksList.push({
             _status: a.status || 'Open',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.targetDate,
             _title: a.discussedPoint || `MOM #${a.id}`,
             _id: a.momNo || a.actionId || `MOM-${a.id}`,
             _user: name,
             _rawDate: a.createdAt || a.createdDate || a.targetDate,
             _hrs: a.estimatedHours || 8,
-            _pageName: a.pageName || a.moduleName || 'MOM Actions'
+            _pageName: a.pageName || a.moduleName || 'MOM Actions',
+            _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _reopenCount: a.reopenedCount || 0,
+            _createdBy: a.createdBy || 'System'
           });
         });
         tk.forEach((t) => {
           const name = getName(t.assignedTo);
           tasksList.push({
             _status: t.ticketStatus || 'Open',
+            _priority: t.priorityLevel || t.priority || 'Medium',
             _dueDate: t.dueDate || t.targetDate,
             _title: t.title || `Ticket ${t.ticketId || t.rowId}`,
             _id: t.ticketId || `TK-${t.rowId}`,
             _user: name,
             _rawDate: t.createdAt || t.createdDate || t.targetDate,
-            _hrs: t.estimatedHours || 8,
-            _pageName: t.pageName || t.moduleName || t.pageCode || 'Ticket'
+            _hrs: t.estimatedHours || t.assignedHours || 8,
+            _pageName: t.pageName || t.moduleName || (t.pageId ? (pageIdMap[t.pageId] || 'Ticket') : null) || t.ticketType || 'Ticket',
+            _takenHrs: parseDurationToMinutes(t.takenTime || '') / 60,
+            _reworkHrs: parseDurationToMinutes(t.reworkTime || '') / 60,
+            _reopenCount: t.reopenCount || 0,
+            _createdBy: t.createdBy || 'System'
           });
         });
         audit.forEach((a) => {
           const name = getName(a.auditee || a.auditor);
           tasksList.push({
             _status: a.status || 'Pending',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.auditDate || a.scheduleDate,
             _title: `Audit ${a.scheduleNo || ''}`,
             _id: a.scheduleNo || `AUDIT-${a.id}`,
             _user: name,
             _rawDate: a.createdAt || a.createdDate || a.auditDate || a.scheduleDate,
             _hrs: a.estimatedHours || 8,
-            _pageName: a.pageName || a.moduleName || 'Audit Schedule'
+            _pageName: a.pageName || a.moduleName || 'Audit Schedule',
+            _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _createdBy: a.createdBy || 'System'
           });
         });
+
+        // Build Team User IDs & Names based on: Vertical Head -> EMP_ID
+        const myName = (user?.name || '').trim().toLowerCase();
+        const currentUserId = (user?.username || '').trim().toLowerCase();
+        const currentUserName = (user?.name || '').trim().toLowerCase();
+        let myEmpName = '';
+        if (user?.empId && employees) {
+          const emp = employees.find(e => e.id == user.empId || e.empCode == user.empId || e.employeeCode == user.empId);
+          if (emp && emp.employeeName) myEmpName = emp.employeeName.trim().toLowerCase();
+        }
+
+        const teamIdentifiers = [];
+        employees.forEach(b => {
+           const vHead = (b.verticalHead || '').trim().toLowerCase();
+           if (vHead && (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName)))) {
+              if (b.employeeName) teamIdentifiers.push(b.employeeName.trim().toLowerCase());
+              if (b.officeMail) {
+                 const mail = b.officeMail.trim().toLowerCase();
+                 teamIdentifiers.push(mail);
+                 if (mail.includes('@')) teamIdentifiers.push(mail.split('@')[0]);
+              }
+              const c = usersList.find(u => u.empId == b.id);
+              if (c && c.userId) {
+                 teamIdentifiers.push(c.userId.trim().toLowerCase());
+              }
+           }
+        });
+        const matchTeam = (field) => {
+           if (!field) return false;
+           const f = field.toLowerCase();
+           if (f === currentUserId || f === currentUserName || (myEmpName && f === myEmpName)) return true;
+           return teamIdentifiers.includes(f);
+        };
+
+        let workloadMap = {};
+        let devHoursMap = {};
+
+        const filterUserScope = (uName) => {
+           if (filterScope === 'Company') return true;
+           const targetField = uName.toLowerCase();
+           if (filterScope === 'Team') {
+              return matchTeam(targetField);
+           } else {
+              return targetField === currentUserId || targetField === currentUserName || targetField === myEmpName || (myEmpName && targetField.includes(myEmpName));
+           }
+        };
+
+        Object.values(empLookup).forEach((name) => {
+          if (filterUserScope(name)) {
+            if (!workloadMap[name]) workloadMap[name] = { user: name, hours: 0, tasks: 0 };
+            if (!devHoursMap[name]) devHoursMap[name] = { user: name, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
+          }
+        });
+
+        const filterTask = (t) => {
+          if (filterScope === 'Company') return true;
+          
+          const createdBy = (t._createdBy || '').toLowerCase();
+          const assignedTo = (t._user || '').toLowerCase();
+
+          if (filterRequestManagement === 'Request For Me') {
+             if (filterScope === 'Team') {
+                return matchTeam(createdBy);
+             } else {
+                return assignedTo === currentUserId || assignedTo === currentUserName || assignedTo === myEmpName || (myEmpName && assignedTo.includes(myEmpName));
+             }
+          } else { // My Request
+             if (filterScope === 'Team') {
+                return matchTeam(assignedTo);
+             } else {
+                return createdBy === currentUserId || createdBy === currentUserName || createdBy === myEmpName || (myEmpName && createdBy.includes(myEmpName));
+             }
+          }
+        };
+
+        tasksList = tasksList.filter(filterTask);
 
         let stats = { total: tasksList.length, completed: 0, open: 0, inProgress: 0, toBeTested: 0, overdue: 0, dueToday: 0, reopened: 0 };
         today.setHours(0, 0, 0, 0);
@@ -1489,62 +2277,103 @@ export default function TaskDashboard() {
         tasksList.forEach((t) => {
           const st = String(t._status).toLowerCase();
           const isDone = ['completed', 'verified', 'approved', 'closed', 'resolved'].includes(st);
-          const hrs = t._hrs || 8;
+          const isToBeTested = ['to be tested', 'testing', 'ready for testing'].includes(st);
+          const isDevDone = isDone || isToBeTested;
+          const hrs = t._hrs ? (parseDurationToMinutes(t._hrs) / 60) || 8 : 8;
           const uName = t._user || 'Unknown';
-          if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0 };
-          devHoursMap[uName].assignedHrs += hrs;
-          if (isDone) devHoursMap[uName].completedHrs += hrs;
-          if (!isDone) {
-            if (!workloadMap[uName]) workloadMap[uName] = { user: uName, hours: 0, tasks: 0 };
-            workloadMap[uName].tasks += 1;
-            workloadMap[uName].hours += hrs;
+          if (filterUserScope(uName)) {
+            if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
+            devHoursMap[uName].assignedHrs += hrs;
+            devHoursMap[uName].takenHrs += t._takenHrs || 0;
+            devHoursMap[uName].reworkHrs += t._reworkHrs || 0;
+            if (isDevDone) devHoursMap[uName].completedHrs += hrs;
+            
+            if (!isDevDone && t._dueDate) {
+              const dueDate = new Date(t._dueDate);
+              dueDate.setHours(18, 0, 0, 0); // Assuming EOD is 6 PM
+              const now = new Date();
+              if (now > dueDate) {
+                 const delayMs = calculateWorkingMs(dueDate, now);
+                 console.log("Delay calc:", { uName, id: t._id, dueDate: dueDate.toString(), now: now.toString(), delayMs });
+                 devHoursMap[uName].delayHrs += (delayMs / (1000 * 60 * 60));
+              }
+            }
+            if (!isDevDone) {
+              if (!workloadMap[uName]) workloadMap[uName] = { user: uName, hours: 0, tasks: 0 };
+              workloadMap[uName].tasks += 1;
+              workloadMap[uName].hours += hrs;
+            }
           }
           if (isDone) stats.completed++;
           if (['open', 'new', 'pending'].includes(st)) stats.open++;
           else if (['in progress', 'wip', 'assigned', 'rework'].includes(st)) stats.inProgress++;
-          else if (['to be tested', 'testing', 'ready for testing'].includes(st)) stats.toBeTested++;
+          else if (isToBeTested) stats.toBeTested++;
           else if (['reopened', 're-opened'].includes(st)) stats.reopened++;
           else if (!isDone) stats.open++;
           if (t._dueDate) {
             const d = new Date(t._dueDate);
             d.setHours(0, 0, 0, 0);
-            if (d < today && !isDone) {
+            if (d < today && !isDevDone) {
               stats.overdue++;
               const diff = Math.ceil(Math.abs(today - d) / 864e5);
               overdueList.push({ id: t._id, title: t._title, user: t._user, days: `${diff} Days` });
-            } else if (d.getTime() === today.getTime() && !isDone) stats.dueToday++;
+            } else if (d.getTime() === today.getTime() && !isDevDone) stats.dueToday++;
           }
         });
 
         const workloadArr = Object.values(workloadMap)
           .map((w) => {
-            const days = Math.round((w.hours / 8) * 10) / 10;
-            let percent = Math.min(100, Math.round((w.tasks / 8) * 100));
-            if (w.tasks === 0) percent = 0;
-            else if (percent === 0) percent = 10;
-            let color = '#10B981',
-              status = 'Healthy';
-            if (w.tasks === 0) {
+            const days = Math.round(w.hours / 8);
+            let percent = Math.min(100, Math.round((w.hours / 40) * 100));
+            if (w.hours === 0) percent = 0;
+            else if (percent === 0) percent = 1;
+            let color = '#10B981', status = 'Healthy';
+            if (days < 5) {
               color = '#EF4444';
               status = 'Critical';
-            } else if (w.tasks >= 3 && w.tasks <= 5) {
+            } else if (days === 5) {
               color = '#3B82F6';
               status = 'Normal';
+            } else {
+              color = '#10B981';
+              status = 'Healthy';
             }
             return { ...w, days, percent, color, status };
           })
-          .sort((a, b) => ({ Critical: 0, Normal: 1, Healthy: 2 })[a.status] - { Critical: 0, Normal: 1, Healthy: 2 }[b.status]);
+          .sort((a, b) => a.days - b.days);
 
         const devStatsArr = Object.values(devHoursMap)
           .filter((d) => d.assignedHrs > 0)
           .map((d) => {
-            const mv = Math.floor(Math.random() * 5) - 2;
-            const completedHrs = Math.max(0, d.completedHrs > 0 ? d.completedHrs + mv : Math.round(d.assignedHrs * 0.95));
-            const performance = d.assignedHrs > 0 ? parseFloat(((completedHrs / d.assignedHrs) * 100).toFixed(1)) : 100;
+            let assignedHrs = d.assignedHrs || 0;
+            let takenHrs = d.takenHrs || 0;
+            let reworkHrs = d.reworkHrs || 0;
+            let delayHrs = d.delayHrs || 0;
+            
+            const completedHrs = takenHrs + reworkHrs + delayHrs;
+
+            // Performance
+            const performance = completedHrs > 0 ? (assignedHrs / completedHrs) * 100 : 100;
+            
+            // Status
             let perfStatus = 'Outstanding';
-            if (performance >= 99.9 && performance <= 100.1) perfStatus = 'Perfect';
-            else if (performance > 100.1) perfStatus = 'Low';
-            return { user: d.user, assignedHrs: d.assignedHrs, completedHrs, performance, perfStatus, trend: genTrend(performance) };
+            if (completedHrs === assignedHrs) perfStatus = 'Perfect';
+            else if (completedHrs > assignedHrs) perfStatus = 'Low';
+            
+            // Trend (Last 7 Days)
+            const trend = genTrend(performance);
+
+            return { 
+              user: d.user, 
+              assignedHrs, 
+              takenHrs,
+              reworkHrs,
+              completedHrs, 
+              delayHrs,
+              performance,
+              perfStatus, 
+              trend 
+            };
           });
 
         setRealData(stats);
@@ -1559,7 +2388,7 @@ export default function TaskDashboard() {
       }
     };
     fetchData();
-  }, [activeUserId]);
+  }, [activeUserId, filterScope, filterRequestManagement]);
 
   // Workload Logic Based on Total Days
   const isRed = realWorkload.some((w) => w.days < 5);
@@ -1580,7 +2409,15 @@ export default function TaskDashboard() {
     workloadColor = '#3B82F6';
     workloadBg = '#EFF6FF';
     workloadHex = '1f30a'; // Wave (Blue)
+    workloadHex = '1f300'; // Wave (Blue)
   }
+
+  const isCurrentUser = (name) => {
+    const currentUserName = (user?.name || '').trim().toLowerCase();
+    const currentUsername = (user?.username || '').trim().toLowerCase();
+    const n = (name || '').trim().toLowerCase();
+    return n === currentUserName || n === currentUsername;
+  };
 
   const topStats = [
     { id: 'dashboard', title: 'Overview', value: realData.total, iconHex: '1f4ca', color: '#3B82F6', bg: '#EFF6FF' },
@@ -1597,21 +2434,29 @@ export default function TaskDashboard() {
   const renderActiveDashboard = () => {
     switch (activeTab) {
       case 'workload':
-        return <WorkloadView realWorkload={realWorkload} isDark={isDark} />;
+        return <WorkloadView 
+                 realWorkload={realWorkload} 
+                 isDark={isDark} 
+                 navigate={navigate}
+                 filterRequestManagement={filterRequestManagement}
+                 isCurrentUser={isCurrentUser}
+                 activeTab={activeTab}
+                 globalFilters={globalFilters}
+               />;
       case 'dueToday':
-        return <DueTodayDashboard realTasks={realTasks} isDark={isDark} />;
+        return <DueTodayDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'reopen':
-        return <ReopenDashboard realData={realData} realTasks={realTasks} isDark={isDark} />;
+        return <ReopenDashboard realData={realData} realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'toBeTested':
-        return <ToBeTestedDashboard realTasks={realTasks} isDark={isDark} />;
+        return <ToBeTestedDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'completed':
-        return <CompletedDashboard isDark={isDark} realTasks={realTasks} />;
+        return <CompletedDashboard isDark={isDark} realTasks={realTasks} activeTab={activeTab} />;
       case 'inProgress':
-        return <InProgressDashboard isDark={isDark} realTasks={realTasks} />;
+        return <InProgressDashboard isDark={isDark} realTasks={realTasks} activeTab={activeTab} />;
       case 'overdue':
-        return <OverdueDashboard realTasks={realTasks} isDark={isDark} />;
+        return <OverdueDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'open':
-        return <OpenDashboard realTasks={realTasks} isDark={isDark} />;
+        return <OpenDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'dashboard':
       default:
         return <PerformanceOverview devStats={devStats} isDark={isDark} textColor={textColor} textMuted={textMuted} />;
@@ -1619,7 +2464,14 @@ export default function TaskDashboard() {
   };
 
   return (
-    <PageContainer>
+    <PageContainer
+      sx={{
+        '@keyframes spin-border': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+        '@keyframes sweep': { '0%': { left: '-150%' }, '50%': { left: '150%' }, '100%': { left: '-150%' } },
+        '@keyframes float': { '0%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-10px)' }, '100%': { transform: 'translateY(0px)' } },
+        '@keyframes floatIcon': { '0%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-5px)' }, '100%': { transform: 'translateY(0px)' } },
+      }}
+    >
       {/* ── TOP STAT PILLS ── */}
       <Box
         sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(4,1fr)', lg: 'repeat(9,1fr)' }, gap: 1.5, mb: 2.5 }}

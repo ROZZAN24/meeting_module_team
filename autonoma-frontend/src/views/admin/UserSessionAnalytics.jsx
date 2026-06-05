@@ -1,20 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  Box,
-  Grid,
-  Typography,
-  Stack,
-  Avatar,
-  Paper,
-  useTheme,
-  LinearProgress,
-  Chip,
-  IconButton,
-  Tooltip,
-  Autocomplete,
-  TextField,
-  Button
-} from '@mui/material';
+import { Box, Grid, Typography, Stack, Avatar, Paper, useTheme, LinearProgress, Chip, IconButton, Tooltip, Autocomplete, Button } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -94,7 +80,7 @@ const UserSessionAnalytics = () => {
   const theme = useTheme();
   const { user } = useAuth();
   const perms = usePagePermissions(PAGE_CODES.AD_SESSION_ANALYTICS);
-  const isSuperUser = user?.isBosAdmin === 1;
+  const isSuperUser = user?.userLevel === 5;
 
   const [loading, setLoading] = useState(true);
   const [rawData, setRawData] = useState([]);

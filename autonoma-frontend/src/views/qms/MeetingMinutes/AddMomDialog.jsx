@@ -26,7 +26,8 @@ import {
   BOSTextField, BOSAutocomplete,
   BOSDatePicker,
   BOSFormSection,
-  BOSAnalogTimePicker
+  BOSAnalogTimePicker,
+  BOSDataTable
 } from 'ui-component/bos';
 import { IconPlus, IconTrash, IconSettings, IconUsers, IconMessageDots } from '@tabler/icons-react';
 import useBOSValidation from 'hooks/useBOSValidation';

@@ -24,14 +24,14 @@ public class UserCredential {
     @Column(name = "PASSWORD", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
 
-    @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "UPDATED_DATE")
@@ -41,11 +41,15 @@ public class UserCredential {
     @Column(name = "STATUS")
     private Integer status;
 
+    @Column(name = "TENANT_ID", length = 50)
+    private String tenantId;
+
+    @Column(name = "USER_LEVEL")
+    private Integer userLevel = 0;
+
     @Column(name = "IMG_NAME", columnDefinition = "NVARCHAR(255)")
     private String imgName;
 
-    @Column(name = "USER_LEVEL")
-    private Integer isBosAdmin;
 
     @Column(name = "FACE_IMAGE", columnDefinition = "NVARCHAR(MAX)")
     private String faceImage;
@@ -64,16 +68,27 @@ public class UserCredential {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = null;
+
         createdDate = new Date();
         if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
         if (isActive == null) isActive = true;
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdBy == null || this.createdBy.trim().isEmpty()) {
+            this.createdBy = "System";
+        }
         updatedDate = new Date();
         if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
-    }
+        }
 
     public String getUserId() {
         return userId;
@@ -147,12 +162,12 @@ public class UserCredential {
         this.imgName = imgName;
     }
 
-    public Integer getIsBosAdmin() {
-        return isBosAdmin;
+    public Integer getUserLevel() {
+        return userLevel;
     }
 
-    public void setIsBosAdmin(Integer isBosAdmin) {
-        this.isBosAdmin = isBosAdmin;
+    public void setUserLevel(Integer userLevel) {
+        this.userLevel = userLevel;
     }
 
     public String getFaceImage() {

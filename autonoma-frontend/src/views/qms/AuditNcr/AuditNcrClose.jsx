@@ -10,8 +10,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import {
-  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, BOSActionSection, useBOSForm, btnExport, btnNew, btnSave, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
+  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, BOSActionSection, useBOSForm, btnExport, btnNew, btnSave, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, errorStyle } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import useAuth from 'hooks/useAuth';
 
 // ==============================|| AUDIT NCR / OFI CLOSURE (REFACTORED WITH PATTERNS) ||============================== //
 
@@ -38,6 +39,7 @@ const R = ({ children, lg = 6 }) => <Grid item xs={12} md={lg}>{children}</Grid>
 export default function AuditNcrClose() {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_NCR_CLOSE);
@@ -105,11 +107,9 @@ export default function AuditNcrClose() {
   }, [selectedFinding]);
 
   // Use the new useBOSForm hook to handle state and eliminate uncontrolled input warnings
-  const { formData, handleFormChange, updateForm, resetForm } = useBOSForm({
+  const { formData, handleFormChange, updateForm, resetForm, errors, setErrors } = useBOSForm({
     rootCause: '', correctiveAction: '', preventiveAction: '', targetDate: ''
   });
-
-  const [errors, setErrors] = useState({});
 
   const handleOpenNew = () => {
     setIsNewMode(true);
@@ -190,13 +190,43 @@ export default function AuditNcrClose() {
     };
   };
 
+  const filteredRows = useMemo(() => {
+    const activeType = globalFilters.type || 'mine';
+    return rows.filter((row) => {
+      if (activeType === 'mine') {
+        if (!user) return false;
+        const username = String(user.id || '').toLowerCase().trim();
+        const empCode = String(user.empCode || user.employeeCode || '').toLowerCase().trim();
+        const fullName = String(user.name || '').toLowerCase().trim();
+        const auditee = String(row.auditee || '').toLowerCase();
+        return (
+          (username && auditee.includes(username)) ||
+          (empCode && auditee.includes(empCode)) ||
+          (fullName && auditee.includes(fullName))
+        );
+      }
+      if (activeType === 'team') {
+        if (!user || !user.departmentName) return false;
+        const userDept = String(user.departmentName).toLowerCase().trim();
+        const rowDept = String(row.departmentName || '').toLowerCase().trim();
+        return userDept && rowDept && (userDept === rowDept || rowDept.includes(userDept) || userDept.includes(rowDept));
+      }
+      return true; // company
+    });
+  }, [rows, globalFilters.type, user]);
+
   useEffect(() => {
-    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
-      { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
-      { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
-      { id: 'observationStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
+    setPage(0);
+  }, [globalFilters.type]);
+
+  useEffect(() => {
+    dispatch(setFilterConfig([
+      { id: 'type', label: 'Type', type: 'select', options: [{ value: 'mine', label: 'Mine' }, { value: 'team', label: 'Team' }, { value: 'company', label: 'Company' }], defaultValue: 'mine', isStarred: true },
+      { id: 'observationStatus', label: 'Obr Type', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
+      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'OPEN', label: 'PENDING' }, { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' }, { value: 'UNRESOLVED', label: 'UNRESOLVED' }, { value: 'CLOSED', label: 'APPROVED' }], defaultValue: 'All', isStarred: true },
       { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NC No' }], defaultValue: 'observationNo' },
-      ...getCommonDateFilters('createdDate', 'updatedAt')]));
+      ...getCommonDateFilters('createdDate', 'updatedAt')
+    ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -204,8 +234,20 @@ export default function AuditNcrClose() {
     setLoading(true);
     setSelectedRecord(null);
     try {
+      const fromDate = globalFilters.createdDateStart || undefined;
+      const toDate = globalFilters.createdDateEnd || undefined;
+      const considerDate = globalFilters.createdDateConsider || 'No';
+
       const [fRes, eRes, cRes] = await Promise.all([
-        axios.get('/api/qms/audit/observation/ncr/findings', { params: { ...globalFilters, query: globalQuery } }),
+        axios.get('/api/qms/audit/observation/ncr/findings', {
+          params: {
+            ...globalFilters,
+            fromDate,
+            toDate,
+            considerDate,
+            query: globalQuery
+          }
+        }),
         axios.get('/api/master/hr/employees'),
         axios.get('/api/master/qms/audit-criteria')
       ]);
@@ -217,6 +259,44 @@ export default function AuditNcrClose() {
   }, [globalFilters, globalQuery]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const isViewOnly = selectedFinding?.ncrStatus === 'CLOSED' || selectedFinding?.ncrStatus === 'WAITING_APPROVAL';
+
+  useEffect(() => {
+    const channel = new BroadcastChannel('ncr_status_channel');
+    channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'NCR_STATUS_UPDATED') {
+        const { id, ncrStatus } = event.data;
+        if (ncrStatus === 'CLOSED' || ncrStatus === 'APPROVED') {
+          setRows(prevRows => prevRows.filter(row => row.id !== id));
+          setSelectedRecord(prevRecord => prevRecord && prevRecord.id === id ? null : prevRecord);
+          setSelectedFinding(prevFinding => prevFinding && prevFinding.id === id ? null : prevFinding);
+        } else {
+          setRows(prevRows => prevRows.map(row => {
+            if (row.id === id) {
+              return { ...row, ncrStatus };
+            }
+            return row;
+          }));
+          setSelectedRecord(prevRecord => {
+            if (prevRecord && prevRecord.id === id) {
+              return { ...prevRecord, ncrStatus };
+            }
+            return prevRecord;
+          });
+          setSelectedFinding(prevFinding => {
+            if (prevFinding && prevFinding.id === id) {
+              return { ...prevFinding, ncrStatus };
+            }
+            return prevFinding;
+          });
+        }
+      }
+    };
+    return () => {
+      channel.close();
+    };
+  }, []);
 
   const handleOpenClose = async (row) => {
     setIsNewMode(false);
@@ -254,17 +334,26 @@ export default function AuditNcrClose() {
   const handleSaveClose = async () => {
     const newErrors = {};
     if (isNewMode && !selectedFinding) {
-      newErrors.observationNo = 'Observation is required';
-      setErrors(newErrors);
-      return;
+      newErrors.observationNo = 'Observation No is required *';
     }
-    if (!formData.rootCause) newErrors.rootCause = 'Root Cause is required';
-    if (!formData.correctiveAction) newErrors.correctiveAction = 'Corrective Action is required';
-    if (!formData.preventiveAction) newErrors.preventiveAction = 'Preventive Action is required';
-    if (!formData.targetDate) newErrors.targetDate = 'Target Date is required';
+    if (!formData.rootCause) newErrors.rootCause = 'Root Cause is required *';
+    if (!formData.correctiveAction) newErrors.correctiveAction = 'Corrective Action is required *';
+    if (!formData.preventiveAction) newErrors.preventiveAction = 'Preventive Action is required *';
+    if (!formData.targetDate) newErrors.targetDate = 'Target Date is required *';
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstError = Object.values(newErrors)[0];
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: firstError,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'error',
+          close: false
+        })
+      );
       return;
     }
 
@@ -307,7 +396,14 @@ export default function AuditNcrClose() {
     if (col.id === 'observationStatus') return <Chip label={row.observationStatus} size="small" color={row.observationStatus === 'NC' || row.observationStatus === 'NCR' ? 'error' : 'warning'} />;
     if (col.id === 'ncrStatus') {
         const status = row.ncrStatus || 'OPEN';
-        return <Chip label={status.replace('_', ' ')} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' ? 'INACTIVE' : 'PENDING'))} />;
+        let displayLabel = status === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : status.replace('_', ' ');
+        if (status === 'CLOSED') {
+            displayLabel = 'APPROVED';
+        }
+        if (status === 'OPEN') {
+            displayLabel = 'PENDING';
+        }
+        return <Chip label={displayLabel} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' || status === 'WAITING_APPROVAL' ? 'PENDING' : 'INACTIVE'))} />;
     }
     if (col.id === 'delayDays') {
         if (!row.targetDate) return '0';
@@ -319,7 +415,8 @@ export default function AuditNcrClose() {
         );
     }
     const val = row[col.id];
-    if (['observationDate', 'targetDate', 'createdDate'].includes(col.id)) return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (['observationDate', 'targetDate'].includes(col.id)) return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'createdDate') return val ? format(new Date(val), 'dd/MM/yyyy HH:mm') : '-';
     return String(val || '-');
   };
 
@@ -329,19 +426,27 @@ export default function AuditNcrClose() {
       secondary={
         <BOSTableToolbar
           onRefresh={fetchData}
-          exportData={rows}
+          exportData={filteredRows}
           
           exportFilename="NC_Closure_List"
           hasExportPermission={perms.export}
           onCloseNcr={perms.write ? () => selectedRecord && handleOpenClose(selectedRecord) : null}
           closeNcrDisabled={!selectedRecord}
-          closeNcrTooltip={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}
+          closeNcrTooltip={selectedRecord ? "Close Selected NC / OFI" : "Select a record first to close"}
          columns={columns} />
       }
     >
-      <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} selectedRowId={selectedRecord?.id} onClickRow={(row) => setSelectedRecord(row)} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />
+      <BOSDataTable columns={columns} rows={filteredRows.slice(page * size, page * size + size)} page={page} size={size} totalCount={filteredRows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} selectedRowId={selectedRecord?.id} onClickRow={(row) => setSelectedRecord(row)} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="NCR / OFI Details" maxWidth="lg" hideFooter={true}>
+      <BOSFormDialog 
+        open={dialogOpen} 
+        onClose={() => setDialogOpen(false)} 
+        title="NC / OFI Details" 
+        maxWidth="lg" 
+        onSave={handleSaveClose}
+        onClear={handleReset}
+        isViewOnly={isViewOnly}
+      >
         <Stack spacing={3} sx={{ width: '100%' }}>
           {/* Custom Premium Metadata Header Bar */}
           <Box sx={{ 
@@ -351,7 +456,6 @@ export default function AuditNcrClose() {
             display: 'flex', 
             flexWrap: 'wrap', 
             alignItems: 'center', 
-            justifyContent: 'space-between',
             gap: 2,
             border: '1px solid',
             borderColor: 'primary.light',
@@ -360,7 +464,7 @@ export default function AuditNcrClose() {
           }}>
             <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap" alignItems="center">
               <Typography variant="subtitle1" sx={{ color: '#0A2540', fontWeight: 600 }}>
-                NCR No : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.ncrNo || nextNcrNo || '-'}</Box>
+                NC No : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.ncrNo || nextNcrNo || '-'}</Box>
               </Typography>
               <Typography variant="subtitle1" sx={{ color: '#0A2540', fontWeight: 600 }}>
                 Date : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.observationDate ? format(new Date(selectedFinding.observationDate), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy')}</Box>
@@ -372,22 +476,11 @@ export default function AuditNcrClose() {
                 Schedule No : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.auditScheduleNo || '-'}</Box>
               </Typography>
               <Typography variant="subtitle1" sx={{ color: '#0A2540', fontWeight: 600 }}>
-                Status : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.ncrStatus || 'PENDING'}</Box>
+                 Status : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.ncrStatus === 'CLOSED' ? 'APPROVED' : (selectedFinding?.ncrStatus === 'OPEN' ? 'PENDING' : (selectedFinding?.ncrStatus || 'PENDING'))}</Box>
               </Typography>
               <Typography variant="subtitle1" sx={{ color: '#0A2540', fontWeight: 600 }}>
                 Delay Days : <Box component="span" sx={{ color: 'error.main', fontWeight: 800 }}>{selectedFinding?.targetDate ? Math.max(0, differenceInDays(new Date(), new Date(selectedFinding.targetDate))) : '0'}</Box>
               </Typography>
-            </Stack>
-
-            <Stack direction="row" spacing={1.5}>
-              <Button 
-                variant="contained" 
-                startIcon={<IconDeviceFloppy size={18} />} 
-                onClick={handleSaveClose}
-                sx={btnSave}
-              >
-                Save
-              </Button>
             </Stack>
           </Box>
 
@@ -406,10 +499,11 @@ export default function AuditNcrClose() {
                   error={!!errors.observationNo}
                   helperText={errors.observationNo}
                   InputLabelProps={{ shrink: true }}
+                  sx={errorStyle(!!errors.observationNo)}
                 >
                   <MenuItem value=""><em>— Select Observation —</em></MenuItem>
                   {rows
-                    .filter(r => r.ncrStatus !== 'CLOSED' && r.ncrStatus !== 'WAITING_APPROVAL')
+                    .filter(r => r.ncrStatus !== 'CLOSED' && r.observationStatus !== 'COMPLIANCE')
                     .map(r => (
                       <MenuItem key={r.id} value={r.id}>
                         {`${r.observationNo} (${r.observationStatus}) - ${r.criteriaDetails || ''}`.substring(0, 100)}
@@ -439,12 +533,14 @@ export default function AuditNcrClose() {
                   error={errors[a.id]}
                   helperText={errors[a.id]}
                   rows={2}
+                  sx={errorStyle(!!errors[a.id])}
+                  readOnly={isViewOnly}
                 />
               ))}
 
               <BOSTextField label="Observation" value={selectedFinding?.clause || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
               <BOSTextField label="Audit Criteria Details" value={selectedFinding?.criteriaDetails || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
-              <BOSTextField label="Observation Comment" value={selectedFinding?.remarks || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
+              <BOSTextField label="Comments" value={selectedFinding?.remarks || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -452,7 +548,7 @@ export default function AuditNcrClose() {
                 <Stack spacing={3}>
                   <BOSPersonnelCard 
                       title="Auditor" 
-                      name={selectedFinding?.auditor} 
+                      name={selectedFinding?.auditor && selectedFinding.auditor.includes(' - ') ? selectedFinding.auditor.split(' - ')[0].trim() : selectedFinding?.auditor} 
                       empCode={getEmployeeDetails(selectedFinding?.auditor).empCode}
                       department={getEmployeeDetails(selectedFinding?.auditor).departmentName}
                       photo={getEmployeeDetails(selectedFinding?.auditor).employeePhotoUpload}
@@ -461,7 +557,7 @@ export default function AuditNcrClose() {
                   />
                   <BOSPersonnelCard 
                       title="NCR Approved By" 
-                      name={selectedFinding?.ncrApprovedBy} 
+                      name={selectedFinding?.ncrApprovedBy && selectedFinding.ncrApprovedBy.includes(' - ') ? selectedFinding.ncrApprovedBy.split(' - ')[0].trim() : selectedFinding?.ncrApprovedBy} 
                       empCode={getEmployeeDetails(selectedFinding?.ncrApprovedBy).empCode}
                       department={getEmployeeDetails(selectedFinding?.ncrApprovedBy).departmentName}
                       photo={getEmployeeDetails(selectedFinding?.ncrApprovedBy).employeePhotoUpload}

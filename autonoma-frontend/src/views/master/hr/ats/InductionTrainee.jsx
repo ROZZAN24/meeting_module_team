@@ -1,3 +1,4 @@
+import TextField from 'ui-component/CustomTextField';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'utils/axios';
@@ -5,25 +6,7 @@ import { useTheme } from '@mui/material/styles';
 import useAuth from 'hooks/useAuth';
 
 // MUI & Icons
-import {
-  Box,
-  Typography,
-  Stack,
-  Tooltip,
-  IconButton,
-  MenuItem,
-  Button,
-  Chip,
-  Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  TextField
-} from '@mui/material';
+import { Box, Typography, Stack, Tooltip, IconButton, MenuItem, Button, Chip, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import {
   IconRefresh,
   IconCheck,
@@ -188,6 +171,27 @@ export default function InductionTrainee() {
     }
   };
 
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const parts = dateStr.split('T')[0].split('-');
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return `${parts[0]}/${parts[1]}/${parts[2]}`;
+      }
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   // Filter rows
   const resolvedRows = useMemo(() => {
     let filtered = rows;
@@ -202,7 +206,7 @@ export default function InductionTrainee() {
     return filtered.map((r, i) => ({
       ...r,
       index: i + 1,
-      inductionDate: r.inductionDate ? new Date(r.inductionDate).toLocaleDateString('en-GB') : '-'
+      inductionDate: r.inductionDate ? formatDateDDMMYYYY(r.inductionDate) : '-'
     }));
   }, [rows, globalQuery]);
 

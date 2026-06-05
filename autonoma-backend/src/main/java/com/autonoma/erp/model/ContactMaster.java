@@ -59,13 +59,13 @@ public class ContactMaster {
     @Builder.Default
     private String status = "Active";
 
-    @Column(name = "created_by", updatable = false)
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "created_at", updatable = false)
     private java.time.LocalDateTime createdAt;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "updated_at")
@@ -73,11 +73,21 @@ public class ContactMaster {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = null;
+
         createdAt = java.time.LocalDateTime.now();
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+
         updatedAt = java.time.LocalDateTime.now();
-    }
+        }
 }

@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.List;
 
 @Entity
-@Table(name = "ticket_Tracability_center")
+@Table(name = "TICKET_TRACEABILITY_CENTER")
 @Data
 @Builder
 @NoArgsConstructor
@@ -121,17 +121,20 @@ public class TicketTraceabilityCenter {
     @Column(name = "attachment_path", length = 500)
     private String attachmentPath;
 
-    @Column(name = "created_by", nullable = false, length = 100, updatable = false)
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "verified_by", length = 100)
     private String verifiedBy;
 
+    @Column(name = "tested_by", length = 100)
+    private String testedBy;
+
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "updated_at")
@@ -155,6 +158,11 @@ public class TicketTraceabilityCenter {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = null;
+
         this.createdAt = new Date();
         if (this.ticketStatus == null || this.ticketStatus.trim().isEmpty()) {
             this.ticketStatus = "Open";
@@ -165,14 +173,18 @@ public class TicketTraceabilityCenter {
                 this.createdBy = "System";
             }
         }
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+
         this.updatedAt = new Date();
-        this.updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         if (this.updatedBy == null || this.updatedBy.trim().isEmpty()) {
             this.updatedBy = "System";
         }
-    }
+        }
 }

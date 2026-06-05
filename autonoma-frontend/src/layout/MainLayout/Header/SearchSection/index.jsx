@@ -1,3 +1,4 @@
+import TextField from 'ui-component/CustomTextField';
 import PropTypes from 'prop-types';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -15,7 +16,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Popper from '@mui/material/Popper';
 import Box from '@mui/material/Box';
 import Autocomplete from '@mui/material/Autocomplete';
-import TextField from '@mui/material/TextField';
+
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel, Tooltip } from '@mui/material';
@@ -28,6 +29,9 @@ import Transitions from 'ui-component/extended/Transitions';
 import { useDispatch, useSelector } from 'react-redux';
 import { setQuery, setFilters, resetFilters, setFilterPreferences } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
+import { BOSDatePicker } from 'ui-component/bos';
+import useAuth from 'hooks/useAuth';
+import { filterMenuByPermissions } from '../../MenuList';
 
 // assets
 import { IconSearch, IconX, IconAdjustmentsHorizontal, IconFilter, IconCheck, IconPlus, IconRefresh, IconMicrophone } from '@tabler/icons-react';
@@ -125,7 +129,17 @@ const getAllPages = (items) => {
 export default function SearchSection() {
 
   const navigate = useNavigate();
-  const pages = useMemo(() => getAllPages(menuItems.items || []), []);
+  const { user } = useAuth();
+  const permMap = useSelector((state) => state.permissions.map);
+  const permStatus = useSelector((state) => state.permissions.status);
+
+  const pages = useMemo(() => {
+    if (permStatus !== 'loaded') return [];
+    
+    let currentItems = [...(menuItems.items || [])];
+    currentItems = filterMenuByPermissions(currentItems, permMap, user?.userLevel || 0);
+    return getAllPages(currentItems);
+  }, [permStatus, permMap, user?.userLevel]);
 
   const filterOptions = (options, { inputValue }) => {
     // ONLY show page-navigation dropdown when input starts with '#'
@@ -309,7 +323,40 @@ export default function SearchSection() {
   }, [searchConfig, tableConfig]);
 
   const handleAdvancedClick = () => {
+    const isOpening = !advancedAnchorEl;
     setAdvancedAnchorEl(advancedAnchorEl ? null : anchorRef.current);
+
+    if (isOpening) {
+      // Auto-populate today's date into all empty "From" date fields when the filter opens
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+
+      const updates = {};
+
+      // Standalone fromDate field
+      if (!filters['fromDate']) {
+        updates['fromDate'] = todayStr;
+      }
+
+      // dateRange fields (e.g. createdDate → createdDateStart)
+      if (Array.isArray(combinedConfig)) {
+        combinedConfig.forEach((field) => {
+          if (field && field.type === 'dateRange' && visibleFilterIds.includes(field.id)) {
+            const startKey = `${field.id}Start`;
+            if (!filters[startKey]) {
+              updates[startKey] = todayStr;
+            }
+          }
+        });
+      }
+
+      if (Object.keys(updates).length > 0) {
+        dispatch(setFilters(updates));
+      }
+    }
   };
 
   const handleAdvancedClose = () => {
@@ -325,7 +372,7 @@ export default function SearchSection() {
   useEffect(() => {
     if (combinedConfig && combinedConfig.length > 0) {
       // Always start from the starred defaults for this filterConfig
-      const starredDefaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
+      const starredDefaults = combinedConfig.filter(f => (f.isStarred || f.isRequired) && f.id !== 'updatedAt' && f.id !== 'updatedDate').map(f => f.id);
 
       // If user has saved prefs, merge them: starred always show + user's extras
       if (currentPrefs !== undefined) {
@@ -336,7 +383,7 @@ export default function SearchSection() {
         if (starredDefaults.length > 0) {
           setVisibleFilterIds(starredDefaults);
         } else {
-          const firstTwo = combinedConfig.slice(0, 2).map(f => f.id);
+          const firstTwo = combinedConfig.filter(f => f.id !== 'updatedAt' && f.id !== 'updatedDate').slice(0, 2).map(f => f.id);
           setVisibleFilterIds(firstTwo);
         }
       }
@@ -643,69 +690,110 @@ export default function SearchSection() {
                                       }}
                                     />
                                   ) : field.type === 'select' ? (
-                                    <Select
-                                      fullWidth size="small"
-                                      variant="outlined"
-                                      value={filters[field.id] || field.defaultValue || 'All'}
-                                      onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                      sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
-                                    >
-                                      {field.options.map((opt) => (
-                                        <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>
-                                          {opt.label}
-                                        </MenuItem>
-                                      ))}
-                                    </Select>
+                                    <>
+                                      <Select
+                                        fullWidth size="small"
+                                        variant="outlined"
+                                        value={filters[field.id] || field.defaultValue || 'All'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          handleFilterChange(field.id, val);
+                                          if (field.id === 'considerDate' && val === 'Yes') {
+                                            const today = new Date();
+                                            const yyyy = today.getFullYear();
+                                            const mm = String(today.getMonth() + 1).padStart(2, '0');
+                                            const dd = String(today.getDate()).padStart(2, '0');
+                                            const todayStr = `${yyyy}-${mm}-${dd}`;
+                                            handleFilterChange('considerDateValue', todayStr);
+                                            handleFilterChange('fromDate', todayStr);
+                                          }
+                                        }}
+                                        sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
+                                      >
+                                        {field.options.map((opt) => (
+                                          <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>
+                                            {opt.label}
+                                          </MenuItem>
+                                        ))}
+                                      </Select>
+                                      {field.id === 'considerDate' && !field.hideDatePicker && (() => {
+                                        const currentVal = filters[field.id] !== undefined ? filters[field.id] : field.defaultValue;
+                                        const str = currentVal !== undefined && currentVal !== null ? String(currentVal).trim().toUpperCase() : '';
+                                        return str === 'YES' || str === 'YES?' || str === 'Y' || str === 'TRUE';
+                                      })() && (
+                                        <Stack spacing={1.2} sx={{ mt: 1.5 }}>
+                                          <BOSDatePicker
+                                            label="Consider Date"
+                                            name="considerDateValue"
+                                            value={filters['considerDateValue'] || ''}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              handleFilterChange('considerDateValue', val);
+                                              if (val) {
+                                                handleFilterChange('fromDate', val);
+                                              }
+                                            }}
+                                          />
+                                          {filters['considerDateValue'] && (() => {
+                                            const considerVal = new Date(filters['considerDateValue']);
+                                            const fromVal = filters['fromDate'] ? new Date(filters['fromDate']) : null;
+                                            const toVal = filters['toDate'] ? new Date(filters['toDate']) : null;
+                                            let isInvalid = false;
+                                            if (fromVal && !isNaN(fromVal.getTime()) && considerVal < fromVal) isInvalid = true;
+                                            if (toVal && !isNaN(toVal.getTime()) && considerVal > toVal) isInvalid = true;
+                                            if (isInvalid) {
+                                              return (
+                                                <Typography variant="caption" color="error" sx={{ fontWeight: 600, pl: 0.5 }}>
+                                                  Consider Date must fall within Created Date From and Created Date To range
+                                                </Typography>
+                                              );
+                                            }
+                                            return null;
+                                          })()}
+                                        </Stack>
+                                      )}
+                                    </>
                                   ) : field.type === 'dateRange' ? (
                                     <Stack spacing={1.2}>
                                       <Stack direction="row" spacing={1} alignItems="center">
-                                        <TextField
-                                          type="date"
+                                        <BOSDatePicker
                                           label="From"
-                                          fullWidth size="small"
-                                          variant="outlined"
+                                          name={`${field.id}Start`}
                                           value={filters[`${field.id}Start`] || ''}
                                           onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
-                                          slotProps={{ inputLabel: { shrink: true } }}
-                                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                         />
                                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
-                                        <TextField
-                                          type="date"
+                                        <BOSDatePicker
                                           label="To"
-                                          fullWidth size="small"
-                                          variant="outlined"
+                                          name={`${field.id}End`}
                                           value={filters[`${field.id}End`] || ''}
                                           onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
-                                          slotProps={{ inputLabel: { shrink: true } }}
-                                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                         />
                                       </Stack>
-                                      <Stack direction="row" spacing={1.5} alignItems="center">
-                                        <Typography variant="caption" color="text.primary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.5px', opacity: 0.85, minWidth: 100 }}>
-                                          Consider Date?
-                                        </Typography>
-                                        <Select
-                                          fullWidth size="small"
-                                          variant="outlined"
-                                          value={filters[`${field.id}Consider`] || 'Yes'}
-                                          onChange={(e) => handleFilterChange(`${field.id}Consider`, e.target.value)}
-                                          sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
-                                        >
-                                          <MenuItem value="Yes" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>Yes</MenuItem>
-                                          <MenuItem value="No" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>No</MenuItem>
-                                        </Select>
-                                      </Stack>
+                                      {field.id !== 'updatedAt' && field.id !== 'updatedDate' && (
+                                        <Stack direction="row" spacing={1.5} alignItems="center">
+                                          <Typography variant="caption" color="text.primary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.5px', opacity: 0.85, minWidth: 100 }}>
+                                            Consider Date?
+                                          </Typography>
+                                          <Select
+                                            fullWidth size="small"
+                                            variant="outlined"
+                                            value={filters[`${field.id}Consider`] || 'No'}
+                                            onChange={(e) => handleFilterChange(`${field.id}Consider`, e.target.value)}
+                                            sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
+                                          >
+                                            <MenuItem value="Yes" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>Yes</MenuItem>
+                                            <MenuItem value="No" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>No</MenuItem>
+                                          </Select>
+                                        </Stack>
+                                      )}
                                     </Stack>
                                   ) : field.type === 'date' ? (
-                                    <TextField
-                                      type="date"
-                                      fullWidth size="small"
-                                      variant="outlined"
+                                    <BOSDatePicker
+                                      label={field.label}
+                                      name={field.id}
                                       value={filters[field.id] || ''}
                                       onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                      slotProps={{ inputLabel: { shrink: true } }}
-                                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                     />
                                   ) : (
                                     <TextField
@@ -814,8 +902,8 @@ export default function SearchSection() {
                                       startIcon={<IconRefresh size={14} />}
                                       onClick={() => {
                                         // Reset to Rule 2 Defaults (Required fields)
-                                        const defaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
-                                        setTempSelectedIds(defaults.length > 0 ? defaults : combinedConfig.slice(0, 2).map(f => f.id));
+                                        const defaults = combinedConfig.filter(f => (f.isStarred || f.isRequired) && f.id !== 'updatedAt' && f.id !== 'updatedDate').map(f => f.id);
+                                        setTempSelectedIds(defaults.length > 0 ? defaults : combinedConfig.filter(f => f.id !== 'updatedAt' && f.id !== 'updatedDate').slice(0, 2).map(f => f.id));
                                       }}
                                       sx={{ borderRadius: '8px', fontWeight: 600, fontSize: '0.75rem', px: 1.5, py: 0.4, border: '1px solid', borderColor: 'text.disabled' }}
                                     >
@@ -844,8 +932,8 @@ export default function SearchSection() {
                                 onClick={() => {
                                   dispatch(resetFilters());
                                   if (combinedConfig && combinedConfig.length > 0) {
-                                    const starredDefaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
-                                    const defaultIds = starredDefaults.length > 0 ? starredDefaults : combinedConfig.slice(0, 2).map(f => f.id);
+                                    const starredDefaults = combinedConfig.filter(f => (f.isStarred || f.isRequired) && f.id !== 'updatedAt' && f.id !== 'updatedDate').map(f => f.id);
+                                    const defaultIds = starredDefaults.length > 0 ? starredDefaults : combinedConfig.filter(f => f.id !== 'updatedAt' && f.id !== 'updatedDate').slice(0, 2).map(f => f.id);
                                     updateVisibleFilters(defaultIds);
                                   }
                                 }}

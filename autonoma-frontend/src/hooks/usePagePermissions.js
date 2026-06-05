@@ -21,7 +21,7 @@ import { fetcher } from 'utils/axios';
  */
 export default function usePagePermissions(pageCode) {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userId = user?.userId || user?.id;
 
   const { data: auths, isLoading } = useSWR(
     userId ? `/api/user-page-auth/${userId}` : null,
@@ -35,8 +35,13 @@ export default function usePagePermissions(pageCode) {
   );
 
   return useMemo(() => {
+    // Find the permission record for this specific pageCode
+    const pageAuth = Array.isArray(auths)
+      ? auths.find((a) => a?.page?.pageCode === pageCode)
+      : null;
+
     // If the user is a BOS admin (SuperUser), grant all permissions unconditionally
-    if (user?.isBosAdmin === 1) {
+    if (user?.userLevel === 5) {
       return {
         loading: false,
         enabled: true,
@@ -45,8 +50,51 @@ export default function usePagePermissions(pageCode) {
         delete: true,
         export: true,
         approval: true,
-        manager: true
+        manager: true,
+        additional1: true,
+        additional2: true
       };
+    }
+
+    // Admin (1) override: grant all EXCEPT for Super BOS(S) pages
+    if (user?.userLevel === 1) {
+      if (['AD1210', 'AD1220', 'AD1230', 'AD1240'].includes(pageCode)) {
+        // Fall back to actual permissions for Super BOS(S) pages
+      } else {
+        return {
+          loading: false,
+          enabled: true,
+          read: true,
+          write: true,
+          delete: true,
+          export: true,
+          approval: true,
+          manager: true,
+          additional1: true,
+          additional2: true
+        };
+      }
+    }
+
+    // Rule: For Normal Users (Level 0), disabled pages must not be accessible.
+    // If the backend didn't send the record (or it's explicitly enable=0), it's disabled.
+    if (auths && (!pageAuth || pageAuth.enable === 0)) {
+      return {
+        loading: false,
+        enabled: false,
+        read: false,
+        write: false,
+        delete: false,
+        export: false,
+        approval: false,
+        manager: false,
+        additional1: false,
+        additional2: false
+      };
+    }
+
+    if (!pageAuth) {
+      return { loading: false, enabled: false, read: false, write: false, delete: false, export: false, approval: false, manager: false, additional1: false, additional2: false };
     }
 
     // While loading, default to read-only (graceful degradation — don't block users)
@@ -59,26 +107,9 @@ export default function usePagePermissions(pageCode) {
         delete: false,
         export: false,
         approval: false,
-        manager: false
-      };
-    }
-
-    // Find the permission record for this specific pageCode
-    const pageAuth = Array.isArray(auths)
-      ? auths.find((a) => a?.page?.pageCode === pageCode)
-      : null;
-
-    // If no record found (page not registered or not assigned), default to disabled
-    if (!pageAuth) {
-      return {
-        loading: false,
-        enabled: false,
-        read: false,
-        write: false,
-        delete: false,
-        export: false,
-        approval: false,
-        manager: false
+        manager: false,
+        additional1: false,
+        additional2: false
       };
     }
 
@@ -92,7 +123,9 @@ export default function usePagePermissions(pageCode) {
         delete: false,
         export: false,
         approval: false,
-        manager: false
+        manager: false,
+        additional1: false,
+        additional2: false
       };
     }
 
@@ -105,7 +138,9 @@ export default function usePagePermissions(pageCode) {
       delete: pageAuth.deleteAcs === 1,
       export: pageAuth.export === 1,
       approval: pageAuth.approval === 1,
-      manager: pageAuth.manager === 1
+      manager: pageAuth.manager === 1,
+      additional1: pageAuth.additional1 === 1,
+      additional2: pageAuth.additional2 === 1
     };
   }, [auths, pageCode, isLoading]);
 }
@@ -113,7 +148,8 @@ export default function usePagePermissions(pageCode) {
 /**
  * Canonical mapping of all BOS page codes.
  * Import this in view files: import { PAGE_CODES } from 'hooks/usePagePermissions';
- * Usage: const perms = usePagePermissions(PAGE_CODES.NPD_ITEM_GROUP);
+ * Usage: const pu
+ * erms = usePagePermissions(PAGE_CODES.NPD_ITEM_GROUP);
  */
 export const PAGE_CODES = {
   // ── HRA ──
@@ -149,8 +185,8 @@ export const PAGE_CODES = {
 
   // ── Masters > QMS ──
   QMS_CHECKLIST: 'M1210',
-  QMS_AUDIT_TYPE: 'M1110',
-  QMS_AUDIT_AREA: 'M1120',
+  QMS_AUDIT_TYPE: 'M1120',
+  QMS_AUDIT_AREA: 'M1110',
   QMS_AUDIT_CRITERIA: 'M1130',
   QMS_MEETING: 'M1310',
 
@@ -224,12 +260,21 @@ export const PAGE_CODES = {
   AD_AUDIT_TRAIL: 'AD1150',
   AD_SESSION_ANALYTICS: 'AD1160',
   AD_FILE_TRACEABILITY: 'AD1170',
+  AD_DATA_MIGRATION: 'AD1180',
+  AD_ORGANIZATION_CHART: 'AD1190',
 
   // ── BOS Admin ──
   AD_BUSINESS_AUTH: 'AD1210',
   AD_APP_PREFERENCE: 'AD1220',
   AD_PREFIX_CREDENTIALS: 'AD1230',
   AD_SESSION_MONITORING: 'AD1240',
+
+  // ── Support ──
+  SUPPORT_RAISED_BY_ME: 'S1110',
+  SUPPORT_RAISED_FOR_ME: 'S1120',
+
+  // ── Missing Page Codes ──
+  QMS_MEETING_UNNAMED: 'M1320',
 
   // ── Dashboard ──
   DASHBOARD_DEFAULT: 'DB1110',

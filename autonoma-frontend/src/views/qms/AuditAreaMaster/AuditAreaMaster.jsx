@@ -107,7 +107,9 @@ export default function AuditAreaMaster() {
     } catch (error) {
       console.error('Failed to delete audit area:', error);
       let errorMsg = 'Failed to delete audit area.';
-      if (error.response?.data) {
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
         if (typeof error.response.data === 'string') {
           errorMsg = error.response.data;
         } else if (error.response.data.message) {
@@ -159,6 +161,9 @@ export default function AuditAreaMaster() {
   const renderCell = useCallback((col, row) => {
     if (col.id === 'createdUser') {
       return row.createdUser || row.createdBy || '-';
+    }
+    if (col.id === 'createdDate') {
+      return row.createdDate ? format(new Date(row.createdDate), 'dd/MM/yyyy HH:mm') : '-';
     }
     if (col.id === 'updatedUser') {
       return row.updatedUser || row.updatedBy || '-';

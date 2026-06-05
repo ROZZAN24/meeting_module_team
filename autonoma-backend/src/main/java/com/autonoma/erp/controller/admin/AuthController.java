@@ -62,20 +62,24 @@ public class AuthController {
         com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
         java.util.List<UserCredential> users = userRepository.findAll();
         java.util.List<com.autonoma.erp.model.admin.CompanyCredential> comps = companyCredentialRepository.findAll();
-        if (comps.isEmpty()) return "No companies found";
-        
+        if (comps.isEmpty())
+            return "No companies found";
+
         for (UserCredential u : users) {
             for (com.autonoma.erp.model.admin.CompanyCredential c : comps) {
-                if (userCompanyMappingRepository.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getCompanyId().equals(c.getId()))) {
+                if (userCompanyMappingRepository.findByUserId(u.getUserId()).stream()
+                        .noneMatch(m -> m.getCompanyId().equals(c.getId()))) {
                     com.autonoma.erp.model.admin.UserCompanyMapping m = new com.autonoma.erp.model.admin.UserCompanyMapping();
                     m.setUserId(u.getUserId());
                     m.setCompanyId(c.getId());
                     userCompanyMappingRepository.save(m);
                 }
-                
-                java.util.List<com.autonoma.erp.model.Division> divs = divisionService.getActiveDivisionsByCompany(c.getId());
+
+                java.util.List<com.autonoma.erp.model.Division> divs = divisionService
+                        .getActiveDivisionsByCompany(c.getId());
                 for (com.autonoma.erp.model.Division d : divs) {
-                    if (userDivisionMappingRepository.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getDivisionId().equals(d.getId()))) {
+                    if (userDivisionMappingRepository.findByUserId(u.getUserId()).stream()
+                            .noneMatch(m -> m.getDivisionId().equals(d.getId()))) {
                         com.autonoma.erp.model.admin.UserDivisionMapping m = new com.autonoma.erp.model.admin.UserDivisionMapping();
                         m.setUserId(u.getUserId());
                         m.setDivisionId(d.getId());
@@ -90,7 +94,8 @@ public class AuthController {
     @GetMapping("/check-credentials")
     public ResponseEntity<?> checkCredentialsGet() {
         return ResponseEntity.status(org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED)
-                .body(Map.of("message", "Request method 'GET' is not supported for check-credentials. Use 'POST' with a JSON request body containing 'username' and 'password' instead."));
+                .body(Map.of("message",
+                        "Request method 'GET' is not supported for check-credentials. Use 'POST' with a JSON request body containing 'username' and 'password' instead."));
     }
 
     @PostMapping("/check-credentials")
@@ -113,7 +118,8 @@ public class AuthController {
 
             // Validate Preferred Auth Method
             if (user.getAuthMethod() != null && "FACE".equalsIgnoreCase(user.getAuthMethod())) {
-                return ResponseEntity.status(403).body(Map.of("message", "Password login is disabled for this account. Please use Face ID."));
+                return ResponseEntity.status(403)
+                        .body(Map.of("message", "Password login is disabled for this account. Please use Face ID."));
             }
 
             // Step 2: Fetch mapped companies and divisions
@@ -125,7 +131,8 @@ public class AuthController {
             java.util.List<com.autonoma.erp.model.admin.UserDivisionMapping> divMappings = userDivisionMappingRepository
                     .findByUserId(user.getUserId());
 
-            boolean isSuperUser = (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1);
+            boolean isSuperUser = "admin".equalsIgnoreCase(user.getUserId()) || (user.getUserLevel() != null
+                    && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN);
 
             if (isSuperUser) {
                 // Super Users get everything regardless of mappings
@@ -161,12 +168,15 @@ public class AuthController {
             }
 
             if (matches.isEmpty() && !isSuperUser) {
-                // Self-healing fallback: If no mappings exist, auto-map to the default company and its active divisions
-                java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository.findAll();
+                // Self-healing fallback: If no mappings exist, auto-map to the default company
+                // and its active divisions
+                java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository
+                        .findAll();
                 if (!allCompanies.isEmpty()) {
                     com.autonoma.erp.model.admin.CompanyCredential defaultComp = allCompanies.get(0);
-                    java.util.List<com.autonoma.erp.model.Division> divisions = divisionService.getActiveDivisionsByCompany(defaultComp.getId());
-                    
+                    java.util.List<com.autonoma.erp.model.Division> divisions = divisionService
+                            .getActiveDivisionsByCompany(defaultComp.getId());
+
                     try {
                         com.autonoma.erp.model.admin.UserCompanyMapping compMapping = new com.autonoma.erp.model.admin.UserCompanyMapping();
                         compMapping.setUserId(user.getUserId());
@@ -227,7 +237,8 @@ public class AuthController {
                 .findByUserId(userId);
 
         com.autonoma.erp.model.admin.UserCredential user = userRepository.findByUserId(userId).orElse(null);
-        boolean isSuperUser = (user != null && user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1);
+        boolean isSuperUser = (user != null && ("admin".equalsIgnoreCase(user.getUserId())
+                || (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)));
 
         if (isSuperUser) {
             // Super Users get everything regardless of mappings
@@ -309,7 +320,8 @@ public class AuthController {
                         java.util.Date now = new java.util.Date();
                         if (now.after(config.getLicExpiryDate())) {
                             // Expired - only allow IS_BOS_ADMIN=1
-                            if (user.getIsBosAdmin() == null || user.getIsBosAdmin() != 1) {
+                            if (user.getUserLevel() == null
+                                    || user.getUserLevel() < AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
                                 Map<String, String> error = new HashMap<>();
                                 error.put("message", "System License Expired. Please contact support.");
                                 return ResponseEntity.status(403).body(error);
@@ -350,25 +362,31 @@ public class AuthController {
 
                 String empName = "Employee " + user.getEmpId();
                 if (user.getEmpId() != null) {
-                    java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
+                    java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = employeeMasterRepository
+                            .findById(user.getEmpId());
                     if (empOpt.isPresent()) {
                         com.autonoma.erp.model.EmployeeMaster emp = empOpt.get();
                         empName = emp.getEmployeeName();
                         userMap.put("empCode", emp.getEmpCode());
-                        userMap.put("departmentName", emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
-                        userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
+                        userMap.put("departmentName",
+                                emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
+                        userMap.put("designationName",
+                                emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                         userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
                         userMap.put("employeeCode", emp.getEmpCode());
+                        if (emp.getOfficeMail() != null && !emp.getOfficeMail().isEmpty()) {
+                            userMap.put("email", emp.getOfficeMail());
+                        }
                     }
                 }
                 userMap.put("name", empName);
                 userMap.put("role", "ADMIN");
                 userMap.put("imgName", user.getImgName());
-                userMap.put("isBosAdmin", user.getIsBosAdmin());
+                userMap.put("userLevel", user.getUserLevel());
                 userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
                 userMap.put("faceDescriptor", user.getFaceDescriptor());
 
-                enrichUserMapWithTenantInfo(userMap);
+                enrichUserMapWithTenantInfo(userMap, loginRequest.getTenantId(), loginRequest.getDivisionId());
 
                 response.put("user", userMap);
 
@@ -386,7 +404,10 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> me(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(value = "X-Tenant-ID", required = false) String xTenantId,
+            @RequestHeader(value = "X-Division-ID", required = false) Long xDivisionId) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body("Missing or invalid Authorization header");
         }
@@ -403,25 +424,31 @@ public class AuthController {
 
                         String empName = "Employee " + user.getEmpId();
                         if (user.getEmpId() != null) {
-                            java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
+                            java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = employeeMasterRepository
+                                    .findById(user.getEmpId());
                             if (empOpt.isPresent()) {
                                 com.autonoma.erp.model.EmployeeMaster emp = empOpt.get();
                                 empName = emp.getEmployeeName();
                                 userMap.put("empCode", emp.getEmpCode());
-                                userMap.put("departmentName", emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
-                                userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
+                                userMap.put("departmentName",
+                                        emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
+                                userMap.put("designationName",
+                                        emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                                 userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
                                 userMap.put("employeeCode", emp.getEmpCode());
+                                if (emp.getOfficeMail() != null && !emp.getOfficeMail().isEmpty()) {
+                                    userMap.put("email", emp.getOfficeMail());
+                                }
                             }
                         }
                         userMap.put("name", empName);
                         userMap.put("role", "ADMIN");
                         userMap.put("imgName", user.getImgName());
-                        userMap.put("isBosAdmin", user.getIsBosAdmin());
+                        userMap.put("userLevel", user.getUserLevel());
                         userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
                         userMap.put("faceDescriptor", user.getFaceDescriptor());
 
-                        enrichUserMapWithTenantInfo(userMap);
+                        enrichUserMapWithTenantInfo(userMap, xTenantId, xDivisionId);
 
                         Map<String, Object> resp = new HashMap<>();
                         resp.put("user", userMap);
@@ -475,29 +502,49 @@ public class AuthController {
         return ResponseEntity.notFound().build();
     }
 
-    private void enrichUserMapWithTenantInfo(Map<String, Object> userMap) {
-        String tenantId = com.autonoma.erp.config.TenantContextHolder.getTenantId();
-        Long divisionId = com.autonoma.erp.config.DivisionContextHolder.getDivisionId();
+    private void enrichUserMapWithTenantInfo(Map<String, Object> userMap, String tenantId, Long divisionId) {
+        final String resolvedTenantId;
+        if (tenantId == null || tenantId.trim().isEmpty() || "AUTONOMA".equalsIgnoreCase(tenantId)) {
+            resolvedTenantId = com.autonoma.erp.config.TenantContextHolder.getTenantId();
+        } else {
+            resolvedTenantId = tenantId;
+        }
 
-        if (tenantId != null) {
-            userMap.put("tenantId", tenantId);
+        final Long resolvedDivisionId;
+        if (divisionId == null) {
+            resolvedDivisionId = com.autonoma.erp.config.DivisionContextHolder.getDivisionId();
+        } else {
+            resolvedDivisionId = divisionId;
+        }
+
+        if (resolvedTenantId != null && !resolvedTenantId.trim().isEmpty()) {
+            userMap.put("tenantId", resolvedTenantId);
             // Switch to Master context to fetch company list safely
+            String currentTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
             com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
             companyService.findAll().stream()
-                    .filter(c -> tenantId.equals(c.getDbSourceName()))
+                    .filter(c -> resolvedTenantId.equalsIgnoreCase(c.getDbSourceName()))
                     .findFirst()
                     .ifPresent(c -> userMap.put("companyName", c.getCompanyName()));
             // Restore current tenant
-            com.autonoma.erp.config.TenantContextHolder.setTenantId(tenantId);
+            if (currentTenant != null) {
+                com.autonoma.erp.config.TenantContextHolder.setTenantId(currentTenant);
+            } else {
+                com.autonoma.erp.config.TenantContextHolder.clear();
+            }
         }
 
-        if (divisionId != null) {
-            userMap.put("divisionId", divisionId);
+        if (resolvedDivisionId != null) {
+            userMap.put("divisionId", resolvedDivisionId);
             String currentTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
             com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
-            divisionService.findById(divisionId)
+            divisionService.findById(resolvedDivisionId)
                     .ifPresent(d -> userMap.put("divisionName", d.getDivisionName()));
-            com.autonoma.erp.config.TenantContextHolder.setTenantId(currentTenant);
+            if (currentTenant != null) {
+                com.autonoma.erp.config.TenantContextHolder.setTenantId(currentTenant);
+            } else {
+                com.autonoma.erp.config.TenantContextHolder.clear();
+            }
         }
     }
 
@@ -538,12 +585,12 @@ public class AuthController {
 
     @PostMapping("/check-face")
     public ResponseEntity<?> checkFace(@RequestBody FaceLoginRequest loginRequest) {
-        String usernameInput   = loginRequest.getUsername();
+        String usernameInput = loginRequest.getUsername();
         String incomingDescriptor = loginRequest.getFaceDescriptor();
         String faceImageBase64 = loginRequest.getFaceImage();
 
         boolean hasDescriptor = incomingDescriptor != null && !incomingDescriptor.isBlank();
-        boolean hasImage      = faceImageBase64 != null && !faceImageBase64.isBlank();
+        boolean hasImage = faceImageBase64 != null && !faceImageBase64.isBlank();
 
         if (!hasDescriptor && !hasImage) {
             Map<String, String> error = new HashMap<>();
@@ -591,32 +638,41 @@ public class AuthController {
                 // 2. Fallback: legacy image comparison
                 if (!matched && finalWebcamBytes != null) {
                     String storedFace = user.getFaceImage();
-                    if (storedFace == null || storedFace.isEmpty()) storedFace = user.getImgName();
+                    if (storedFace == null || storedFace.isEmpty())
+                        storedFace = user.getImgName();
                     if (storedFace != null && !storedFace.isEmpty()) {
                         byte[] stored = getFaceImageBytes(storedFace);
-                        if (stored != null) matched = compareFaces(finalWebcamBytes, stored);
+                        if (stored != null)
+                            matched = compareFaces(finalWebcamBytes, stored);
                     }
                 }
-                if (matched) matchedUser = user;
+                if (matched)
+                    matchedUser = user;
             }
         } else {
             // No username — scan all active users
             java.util.List<UserCredential> allUsers = userRepository.findAll();
             for (UserCredential user : allUsers) {
-                if (user.getStatus() == null || user.getStatus() != 1) continue;
+                if (user.getStatus() == null || user.getStatus() != 1)
+                    continue;
                 boolean matched = false;
                 if (hasDescriptor && user.getFaceDescriptor() != null && !user.getFaceDescriptor().isBlank()) {
                     matched = compareDescriptors(incomingDescriptor, user.getFaceDescriptor());
                 }
                 if (!matched && finalWebcamBytes != null) {
                     String storedFace = user.getFaceImage();
-                    if (storedFace == null || storedFace.isEmpty()) storedFace = user.getImgName();
+                    if (storedFace == null || storedFace.isEmpty())
+                        storedFace = user.getImgName();
                     if (storedFace != null && !storedFace.isEmpty()) {
                         byte[] stored = getFaceImageBytes(storedFace);
-                        if (stored != null) matched = compareFaces(finalWebcamBytes, stored);
+                        if (stored != null)
+                            matched = compareFaces(finalWebcamBytes, stored);
                     }
                 }
-                if (matched) { matchedUser = user; break; }
+                if (matched) {
+                    matchedUser = user;
+                    break;
+                }
             }
         }
 
@@ -636,7 +692,9 @@ public class AuthController {
             java.util.List<com.autonoma.erp.model.admin.UserDivisionMapping> divMappings = userDivisionMappingRepository
                     .findByUserId(matchedUser.getUserId());
 
-            boolean isSuperUser = (matchedUser.getIsBosAdmin() != null && matchedUser.getIsBosAdmin() == 1);
+            boolean isSuperUser = "admin".equalsIgnoreCase(matchedUser.getUserId())
+                    || (matchedUser.getUserLevel() != null
+                            && matchedUser.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN);
 
             if (isSuperUser) {
                 java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository
@@ -671,12 +729,15 @@ public class AuthController {
             }
 
             if (matches.isEmpty() && !isSuperUser) {
-                // Self-healing fallback: If no mappings exist, auto-map to the default company and its active divisions
-                java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository.findAll();
+                // Self-healing fallback: If no mappings exist, auto-map to the default company
+                // and its active divisions
+                java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository
+                        .findAll();
                 if (!allCompanies.isEmpty()) {
                     com.autonoma.erp.model.admin.CompanyCredential defaultComp = allCompanies.get(0);
-                    java.util.List<com.autonoma.erp.model.Division> divisions = divisionService.getActiveDivisionsByCompany(defaultComp.getId());
-                    
+                    java.util.List<com.autonoma.erp.model.Division> divisions = divisionService
+                            .getActiveDivisionsByCompany(defaultComp.getId());
+
                     try {
                         com.autonoma.erp.model.admin.UserCompanyMapping compMapping = new com.autonoma.erp.model.admin.UserCompanyMapping();
                         compMapping.setUserId(matchedUser.getUserId());
@@ -725,7 +786,7 @@ public class AuthController {
         String faceImageBase64 = loginRequest.getFaceImage();
 
         boolean hasDescriptor = incomingDescriptor != null && !incomingDescriptor.isBlank();
-        boolean hasImage      = faceImageBase64 != null && !faceImageBase64.isBlank();
+        boolean hasImage = faceImageBase64 != null && !faceImageBase64.isBlank();
 
         if (!hasDescriptor && !hasImage) {
             Map<String, String> error = new HashMap<>();
@@ -765,31 +826,40 @@ public class AuthController {
                 }
                 if (!matched && finalWebcamBytes != null) {
                     String storedFace = user.getFaceImage();
-                    if (storedFace == null || storedFace.isEmpty()) storedFace = user.getImgName();
+                    if (storedFace == null || storedFace.isEmpty())
+                        storedFace = user.getImgName();
                     if (storedFace != null && !storedFace.isEmpty()) {
                         byte[] stored = getFaceImageBytes(storedFace);
-                        if (stored != null) matched = compareFaces(finalWebcamBytes, stored);
+                        if (stored != null)
+                            matched = compareFaces(finalWebcamBytes, stored);
                     }
                 }
-                if (matched) matchedUser = user;
+                if (matched)
+                    matchedUser = user;
             }
         } else {
             java.util.List<UserCredential> allUsers = userRepository.findAll();
             for (UserCredential user : allUsers) {
-                if (user.getStatus() == null || user.getStatus() != 1) continue;
+                if (user.getStatus() == null || user.getStatus() != 1)
+                    continue;
                 boolean matched = false;
                 if (hasDescriptor && user.getFaceDescriptor() != null && !user.getFaceDescriptor().isBlank()) {
                     matched = compareDescriptors(incomingDescriptor, user.getFaceDescriptor());
                 }
                 if (!matched && finalWebcamBytes != null) {
                     String storedFace = user.getFaceImage();
-                    if (storedFace == null || storedFace.isEmpty()) storedFace = user.getImgName();
+                    if (storedFace == null || storedFace.isEmpty())
+                        storedFace = user.getImgName();
                     if (storedFace != null && !storedFace.isEmpty()) {
                         byte[] stored = getFaceImageBytes(storedFace);
-                        if (stored != null) matched = compareFaces(finalWebcamBytes, stored);
+                        if (stored != null)
+                            matched = compareFaces(finalWebcamBytes, stored);
                     }
                 }
-                if (matched) { matchedUser = user; break; }
+                if (matched) {
+                    matchedUser = user;
+                    break;
+                }
             }
         }
 
@@ -808,13 +878,15 @@ public class AuthController {
                 return ResponseEntity.status(403).body(error);
             }
 
-            java.util.List<com.autonoma.erp.model.admin.CompanyCredential> configs = companyCredentialRepository.findAll();
+            java.util.List<com.autonoma.erp.model.admin.CompanyCredential> configs = companyCredentialRepository
+                    .findAll();
             if (!configs.isEmpty()) {
                 com.autonoma.erp.model.admin.CompanyCredential config = configs.get(0);
                 if (config.getLicExpiryDate() != null) {
                     java.util.Date now = new java.util.Date();
                     if (now.after(config.getLicExpiryDate())) {
-                        if (user.getIsBosAdmin() == null || user.getIsBosAdmin() != 1) {
+                        if (user.getUserLevel() == null
+                                || user.getUserLevel() < AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
                             Map<String, String> error = new HashMap<>();
                             error.put("message", "System License Expired. Please contact support.");
                             return ResponseEntity.status(403).body(error);
@@ -852,24 +924,30 @@ public class AuthController {
 
             String empName = "Employee " + user.getEmpId();
             if (user.getEmpId() != null) {
-                java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
+                java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = employeeMasterRepository
+                        .findById(user.getEmpId());
                 if (empOpt.isPresent()) {
                     com.autonoma.erp.model.EmployeeMaster emp = empOpt.get();
                     empName = emp.getEmployeeName();
-                    userMap.put("departmentName", emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
-                    userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
+                    userMap.put("departmentName",
+                            emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
+                    userMap.put("designationName",
+                            emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                     userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
                     userMap.put("employeeCode", emp.getEmpCode());
+                    if (emp.getOfficeMail() != null && !emp.getOfficeMail().isEmpty()) {
+                        userMap.put("email", emp.getOfficeMail());
+                    }
                 }
             }
             userMap.put("name", empName);
             userMap.put("role", "ADMIN");
             userMap.put("imgName", user.getImgName());
-            userMap.put("isBosAdmin", user.getIsBosAdmin());
+            userMap.put("userLevel", user.getUserLevel());
             userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
             userMap.put("faceDescriptor", user.getFaceDescriptor());
 
-            enrichUserMapWithTenantInfo(userMap);
+            enrichUserMapWithTenantInfo(userMap, loginRequest.getTenantId(), loginRequest.getDivisionId());
             response.put("user", userMap);
 
             return ResponseEntity.ok(response);
@@ -886,10 +964,12 @@ public class AuthController {
      * Parse a JSON descriptor string "[0.1, 0.2, ...]" into a double array.
      */
     private double[] parseDescriptor(String json) {
-        if (json == null || json.isBlank()) return null;
+        if (json == null || json.isBlank())
+            return null;
         try {
             String trimmed = json.trim();
-            if (!trimmed.startsWith("[")) return null;
+            if (!trimmed.startsWith("["))
+                return null;
             trimmed = trimmed.substring(1, trimmed.length() - 1);
             String[] parts = trimmed.split(",");
             double[] result = new double[parts.length];
@@ -908,7 +988,8 @@ public class AuthController {
      * Distance ≤ 0.6 → same person (face-api.js industry standard).
      */
     private double euclideanDistance(double[] d1, double[] d2) {
-        if (d1 == null || d2 == null || d1.length != d2.length) return Double.MAX_VALUE;
+        if (d1 == null || d2 == null || d1.length != d2.length)
+            return Double.MAX_VALUE;
         double sum = 0;
         for (int i = 0; i < d1.length; i++) {
             double diff = d1[i] - d2[i];
@@ -917,7 +998,7 @@ public class AuthController {
         return Math.sqrt(sum);
     }
 
-    private static final double FACE_MATCH_THRESHOLD = 0.6;
+    private static final double FACE_MATCH_THRESHOLD = 0.45;
 
     /**
      * Compare an incoming descriptor against a user's stored descriptor.
@@ -925,8 +1006,9 @@ public class AuthController {
      */
     private boolean compareDescriptors(String incomingJson, String storedJson) {
         double[] incoming = parseDescriptor(incomingJson);
-        double[] stored   = parseDescriptor(storedJson);
-        if (incoming == null || stored == null) return false;
+        double[] stored = parseDescriptor(storedJson);
+        if (incoming == null || stored == null)
+            return false;
         double dist = euclideanDistance(incoming, stored);
         System.out.println("[FaceAuth] Descriptor distance: " + dist + " (threshold: " + FACE_MATCH_THRESHOLD + ")");
         return dist <= FACE_MATCH_THRESHOLD;
@@ -938,28 +1020,35 @@ public class AuthController {
      */
     private boolean compareFaces(byte[] webcamImageBytes, byte[] storedImageBytes) {
         try {
-            java.awt.image.BufferedImage webcamImg = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(webcamImageBytes));
-            java.awt.image.BufferedImage storedImg = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(storedImageBytes));
-            if (webcamImg == null || storedImg == null) return false;
+            java.awt.image.BufferedImage webcamImg = javax.imageio.ImageIO
+                    .read(new java.io.ByteArrayInputStream(webcamImageBytes));
+            java.awt.image.BufferedImage storedImg = javax.imageio.ImageIO
+                    .read(new java.io.ByteArrayInputStream(storedImageBytes));
+            if (webcamImg == null || storedImg == null)
+                return false;
             java.awt.image.BufferedImage webcamResized = resizeImage(webcamImg, 64, 64);
             java.awt.image.BufferedImage storedResized = resizeImage(storedImg, 64, 64);
             long diffSum = 0;
             for (int y = 0; y < 64; y++) {
                 for (int x = 0; x < 64; x++) {
                     int rw = webcamResized.getRGB(x, y), rs = storedResized.getRGB(x, y);
-                    int gw = (int)(0.299*((rw>>16)&0xff) + 0.587*((rw>>8)&0xff) + 0.114*(rw&0xff));
-                    int gs = (int)(0.299*((rs>>16)&0xff) + 0.587*((rs>>8)&0xff) + 0.114*(rs&0xff));
+                    int gw = (int) (0.299 * ((rw >> 16) & 0xff) + 0.587 * ((rw >> 8) & 0xff) + 0.114 * (rw & 0xff));
+                    int gs = (int) (0.299 * ((rs >> 16) & 0xff) + 0.587 * ((rs >> 8) & 0xff) + 0.114 * (rs & 0xff));
                     diffSum += Math.abs(gw - gs);
                 }
             }
             double avgDiff = (double) diffSum / (64 * 64);
             System.out.println("[FaceAuth][Legacy] Pixel diff: " + avgDiff);
             return avgDiff <= 70.0;
-        } catch (Exception e) { e.printStackTrace(); return false; }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     private java.awt.image.BufferedImage resizeImage(java.awt.image.BufferedImage src, int w, int h) {
-        java.awt.image.BufferedImage dst = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_BYTE_GRAY);
+        java.awt.image.BufferedImage dst = new java.awt.image.BufferedImage(w, h,
+                java.awt.image.BufferedImage.TYPE_BYTE_GRAY);
         java.awt.Graphics2D g = dst.createGraphics();
         g.drawImage(src, 0, 0, w, h, null);
         g.dispose();
@@ -1019,20 +1108,47 @@ class FaceLoginRequest {
     /** 128-D descriptor array serialized as JSON string from face-api.js */
     private String faceDescriptor;
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public String getUsername() {
+        return username;
+    }
 
-    public String getFaceImage() { return faceImage; }
-    public void setFaceImage(String faceImage) { this.faceImage = faceImage; }
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-    public String getTenantId() { return tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+    public String getFaceImage() {
+        return faceImage;
+    }
 
-    public Long getDivisionId() { return divisionId; }
-    public void setDivisionId(Long divisionId) { this.divisionId = divisionId; }
+    public void setFaceImage(String faceImage) {
+        this.faceImage = faceImage;
+    }
 
-    public String getFaceDescriptor() { return faceDescriptor; }
-    public void setFaceDescriptor(String faceDescriptor) { this.faceDescriptor = faceDescriptor; }
+    public String getTenantId() {
+        return tenantId;
+    }
 
-    public void setEmail(String email) { this.username = email; }
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public Long getDivisionId() {
+        return divisionId;
+    }
+
+    public void setDivisionId(Long divisionId) {
+        this.divisionId = divisionId;
+    }
+
+    public String getFaceDescriptor() {
+        return faceDescriptor;
+    }
+
+    public void setFaceDescriptor(String faceDescriptor) {
+        this.faceDescriptor = faceDescriptor;
+    }
+
+    public void setEmail(String email) {
+        this.username = email;
+    }
 }

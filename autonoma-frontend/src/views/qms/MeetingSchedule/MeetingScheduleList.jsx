@@ -10,7 +10,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnNew, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, btnNew, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { isMobile } from 'react-device-detect';
@@ -79,7 +79,7 @@ export default function MeetingScheduleList() {
         hostByName: row.hostBy?.employeeName || '-',
         participantsBy: (row.participants || []).map(pr => {
           const e = pr.employee;
-          return e ? `${e.employeeName} - ${e.empCode}` : '';
+          return e ? e.employeeName : '';
         }).filter(Boolean).join(', '),
         createdUser: row.createdUser || row.createdBy || '-',
         updatedUser: row.updatedUser || row.updatedBy || '-',
@@ -460,21 +460,24 @@ export default function MeetingScheduleList() {
       />
 
       {/* Amendment Confirmation Dialog */}
-      <Dialog open={amendDialogOpen} onClose={() => setAmendDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Amendment Confirmation</DialogTitle>
-        <DialogContent>
-          <Typography>Are you sure want to Amendment this Record?</Typography>
-          {selectedForAmend && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Schedule: <strong>{selectedForAmend.scheduleNo}</strong>
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAmendDialogOpen(false)}>No</Button>
+      <BOSFormDialog
+        open={amendDialogOpen}
+        onClose={() => setAmendDialogOpen(false)}
+        title="Amendment Confirmation"
+        maxWidth="xs"
+        hideFooter={true}
+      >
+        <Typography>Are you sure want to Amendment this Record?</Typography>
+        {selectedForAmend && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Schedule: <strong>{selectedForAmend.scheduleNo}</strong>
+          </Typography>
+        )}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+          <Button onClick={() => setAmendDialogOpen(false)} variant="outlined" color="secondary">No</Button>
           <Button variant="contained" color="warning" onClick={handleAmendConfirm}>Yes</Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </BOSFormDialog>
     </MainCard>
   );
 }

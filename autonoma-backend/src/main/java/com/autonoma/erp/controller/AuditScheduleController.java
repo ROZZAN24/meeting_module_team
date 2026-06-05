@@ -38,35 +38,42 @@ public class AuditScheduleController {
     @PostMapping
     @RequirePagePermission(pageCode = "QM1210", action = "write")
     @Operation(summary = "Create Audit Schedule", description = "Saves a new audit schedule with criteria and personnel")
-    public AuditSchedule createAuditSchedule(@RequestBody AuditSchedule auditSchedule) {
+    public ResponseEntity<?> createAuditSchedule(@RequestBody AuditSchedule auditSchedule) {
         logger.info("Attempting to create Audit Schedule: {}", auditSchedule.getScheduleNo());
         try {
             AuditSchedule created = service.createAuditSchedule(auditSchedule);
             logger.info("Successfully created Audit Schedule: {}", created.getScheduleNo());
-            return created;
+            return ResponseEntity.ok(created);
+        } catch (RuntimeException e) {
+            logger.error("Failed to create Audit Schedule {}: {}", auditSchedule.getScheduleNo(), e.getMessage(), e);
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             logger.error("Failed to create Audit Schedule {}: {}", auditSchedule.getScheduleNo(), e.getMessage(), e);
-            throw e;
+            return ResponseEntity.badRequest().body("An unexpected error occurred while saving the schedule.");
         }
     }
 
     @PutMapping("/{id}")
     @RequirePagePermission(pageCode = "QM1210", action = "write")
-    public ResponseEntity<AuditSchedule> updateAuditSchedule(
+    public ResponseEntity<?> updateAuditSchedule(
             @PathVariable Long id, @RequestBody AuditSchedule auditSchedule) {
         try {
             AuditSchedule updated = service.updateAuditSchedule(id, auditSchedule);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @DeleteMapping("/{id}")
     @RequirePagePermission(pageCode = "QM1210", action = "delete")
-    public ResponseEntity<Void> deleteAuditSchedule(@PathVariable Long id) {
-        service.deleteAuditSchedule(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> deleteAuditSchedule(@PathVariable Long id) {
+        try {
+            service.deleteAuditSchedule(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/next-no")

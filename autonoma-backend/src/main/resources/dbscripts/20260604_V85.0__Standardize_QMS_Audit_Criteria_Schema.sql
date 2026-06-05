@@ -1,0 +1,91 @@
+-- ============================================================
+-- Migration: Standardize QMS_AUDIT_CRITERIA table and columns
+-- Purpose: Rename audit_criteria to QMS_AUDIT_CRITERIA, standardize columns to match JPA mapping, and add IS_ACTIVE
+-- Date: 2026-06-04
+-- ============================================================
+
+-- Rename table audit_criteria to QMS_AUDIT_CRITERIA if it exists
+IF OBJECT_ID('audit_criteria', 'U') IS NOT NULL AND OBJECT_ID('QMS_AUDIT_CRITERIA', 'U') IS NULL
+BEGIN
+    EXEC sp_rename 'audit_criteria', 'QMS_AUDIT_CRITERIA';
+    PRINT 'Renamed audit_criteria to QMS_AUDIT_CRITERIA';
+END
+GO
+
+-- Rename table audit_criterion to QMS_AUDIT_CRITERIA if it exists
+IF OBJECT_ID('audit_criterion', 'U') IS NOT NULL AND OBJECT_ID('QMS_AUDIT_CRITERIA', 'U') IS NULL
+BEGIN
+    EXEC sp_rename 'audit_criterion', 'QMS_AUDIT_CRITERIA';
+    PRINT 'Renamed audit_criterion to QMS_AUDIT_CRITERIA';
+END
+GO
+
+-- Standardize columns in QMS_AUDIT_CRITERIA
+IF OBJECT_ID('QMS_AUDIT_CRITERIA', 'U') IS NOT NULL
+BEGIN
+    -- seqNo / seq_no -> SEQ_NO
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'seqNo') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'SEQ_NO') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.seqNo', 'SEQ_NO', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'seq_no') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'SEQ_NO') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.seq_no', 'SEQ_NO', 'COLUMN';
+
+    -- auditType / audit_type -> AUDIT_TYPE
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'auditType') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'AUDIT_TYPE') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.auditType', 'AUDIT_TYPE', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'audit_type') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'AUDIT_TYPE') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.audit_type', 'AUDIT_TYPE', 'COLUMN';
+
+    -- criteriaText / criteria_text -> CRITERIA_TEXT
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'criteriaText') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'CRITERIA_TEXT') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.criteriaText', 'CRITERIA_TEXT', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'criteria_text') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'CRITERIA_TEXT') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.criteria_text', 'CRITERIA_TEXT', 'COLUMN';
+
+    -- attachmentRequired / attachment_required -> ATTACHMENT_REQUIRED
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'attachmentRequired') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'ATTACHMENT_REQUIRED') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.attachmentRequired', 'ATTACHMENT_REQUIRED', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'attachment_required') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'ATTACHMENT_REQUIRED') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.attachment_required', 'ATTACHMENT_REQUIRED', 'COLUMN';
+
+    -- attachmentInfo / attachment_info -> ATTACHMENT_INFO
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'attachmentInfo') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'ATTACHMENT_INFO') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.attachmentInfo', 'ATTACHMENT_INFO', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'attachment_info') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'ATTACHMENT_INFO') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.attachment_info', 'ATTACHMENT_INFO', 'COLUMN';
+
+    -- createdBy / created_by -> CREATED_USER
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'createdBy') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'CREATED_USER') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.createdBy', 'CREATED_USER', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'created_by') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'CREATED_USER') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.created_by', 'CREATED_USER', 'COLUMN';
+
+    -- updatedBy / updated_by -> UPDATED_USER
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'updatedBy') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'UPDATED_USER') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.updatedBy', 'UPDATED_USER', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'updated_by') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'UPDATED_USER') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.updated_by', 'UPDATED_USER', 'COLUMN';
+
+    -- createdDate / created_date -> CREATED_DATE
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'createdDate') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'CREATED_DATE') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.createdDate', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'created_date') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'CREATED_DATE') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.created_date', 'CREATED_DATE', 'COLUMN';
+
+    -- updatedDate / updated_date -> UPDATED_DATE
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'updatedDate') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'UPDATED_DATE') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.updatedDate', 'UPDATED_DATE', 'COLUMN';
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'updated_date') IS NOT NULL AND COL_LENGTH('QMS_AUDIT_CRITERIA', 'UPDATED_DATE') IS NULL
+        EXEC sp_rename 'QMS_AUDIT_CRITERIA.updated_date', 'UPDATED_DATE', 'COLUMN';
+
+    -- Add IS_ACTIVE column if missing
+    IF COL_LENGTH('QMS_AUDIT_CRITERIA', 'IS_ACTIVE') IS NULL
+    BEGIN
+        ALTER TABLE QMS_AUDIT_CRITERIA ADD IS_ACTIVE BIT NOT NULL DEFAULT 1;
+    END
+
+    -- Ensure correct data types (NVARCHAR(MAX) for mapped types)
+    ALTER TABLE QMS_AUDIT_CRITERIA ALTER COLUMN AUDIT_TYPE NVARCHAR(MAX);
+    ALTER TABLE QMS_AUDIT_CRITERIA ALTER COLUMN DEPARTMENT NVARCHAR(MAX);
+    ALTER TABLE QMS_AUDIT_CRITERIA ALTER COLUMN CRITERIA_TEXT NVARCHAR(MAX);
+END
+GO

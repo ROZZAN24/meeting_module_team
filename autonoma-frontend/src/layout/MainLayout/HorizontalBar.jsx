@@ -20,66 +20,64 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 
-import MenuList from './MenuList';
+import MenuList, { filterMenuByPermissions } from './MenuList';
 import NavCollapse from './MenuList/NavCollapse';
 import NavItem from './MenuList/NavItem';
 import menuItem from 'menu-items';
 import useConfig from 'hooks/useConfig';
 import { useRibbon } from 'contexts/RibbonContext';
 import SpeedDialConfigModal from './SpeedDialConfigModal';
+import { useSelector } from 'store';
+import useAuth from 'hooks/useAuth';
 
 import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight, IconSettings } from '@tabler/icons-react';
 
 const getGroupColors = (title) => {
   const t = (title || '').toUpperCase();
   if (t.includes('MASTER')) {
-    return {
-      main: '#1e88e5',    // Professional Blue
-      light: '#6ab7ff',
-      lighter: 'rgba(30, 136, 229, 0.08)'
-    };
+    return { main: '#1e88e5', light: '#6ab7ff', lighter: 'rgba(30, 136, 229, 0.08)' }; // Professional Blue
   }
   if (t.includes('HRA') || t.includes('HR')) {
-    return {
-      main: '#e65100',    // Warm Amber/Orange
-      light: '#ffb74d',
-      lighter: 'rgba(230, 81, 0, 0.08)'
-    };
+    return { main: '#e65100', light: '#ffb74d', lighter: 'rgba(230, 81, 0, 0.08)' }; // Warm Amber/Orange
   }
   if (t.includes('SALES') || t.includes('MARKETING')) {
-    return {
-      main: '#2e7d32',    // Forest Green
-      light: '#81c784',
-      lighter: 'rgba(46, 125, 50, 0.08)'
-    };
+    return { main: '#2e7d32', light: '#81c784', lighter: 'rgba(46, 125, 50, 0.08)' }; // Forest Green
+  }
+  if (t.includes('PLANNING') || t.includes('PURCHASE')) {
+    return { main: '#3949ab', light: '#7986cb', lighter: 'rgba(57, 73, 171, 0.08)' }; // Indigo
+  }
+  if (t.includes('PRODUCTION')) {
+    return { main: '#d32f2f', light: '#e57373', lighter: 'rgba(211, 47, 47, 0.08)' }; // Red
+  }
+  if (t.includes('STORES') || t.includes('LOGISTICS')) {
+    return { main: '#8d6e63', light: '#bcaaa4', lighter: 'rgba(141, 110, 99, 0.08)' }; // Brown/Bronze
+  }
+  if (t.includes('FINANCE') || t.includes('ACCOUNTS')) {
+    return { main: '#00897b', light: '#4db6ac', lighter: 'rgba(0, 137, 123, 0.08)' }; // Emerald/Teal
+  }
+  if (t.includes('DESIGN') || t.includes('DEVELOPMENT')) {
+    return { main: '#fbc02d', light: '#fff176', lighter: 'rgba(251, 192, 45, 0.08)' }; // Yellow/Gold
+  }
+  if (t.includes('MAINTENANCE') || t.includes('SERVICES')) {
+    return { main: '#5d4037', light: '#8d6e63', lighter: 'rgba(93, 64, 55, 0.08)' }; // Deep Brown
   }
   if (t.includes('QUALITY') || t.includes('QMS')) {
-    return {
-      main: '#673ab7',    // Deep Violet/Indigo
-      light: '#b39ddb',
-      lighter: 'rgba(103, 58, 183, 0.08)'
-    };
+    return { main: '#673ab7', light: '#b39ddb', lighter: 'rgba(103, 58, 183, 0.08)' }; // Deep Violet/Indigo
   }
   if (t.includes('REPORTS') || t.includes('ANALYTICS')) {
-    return {
-      main: '#c2185b',    // Premium Rose/Magenta
-      light: '#f48fb1',
-      lighter: 'rgba(194, 24, 91, 0.08)'
-    };
+    return { main: '#c2185b', light: '#f48fb1', lighter: 'rgba(194, 24, 91, 0.08)' }; // Premium Rose/Magenta
   }
   if (t.includes('ADMIN')) {
-    return {
-      main: '#0097a7',    // Clean Cyan/Teal
-      light: '#80deea',
-      lighter: 'rgba(0, 151, 167, 0.08)'
-    };
+    return { main: '#00acc1', light: '#4dd0e1', lighter: 'rgba(0, 172, 193, 0.08)' }; // Cyan
   }
-  // Default (e.g., Dashboard, others)
-  return {
-    main: '#455a64',      // Sleek Slate Blue/Grey
-    light: '#90a4ae',
-    lighter: 'rgba(69, 90, 100, 0.08)'
-  };
+  if (t.includes('DASHBOARD')) {
+    return { main: '#1565c0', light: '#64b5f6', lighter: 'rgba(21, 101, 192, 0.08)' }; // Deep Blue
+  }
+  if (t.includes('SUPPORT') || t.includes('TICKET')) {
+    return { main: '#7b1fa2', light: '#ce93d8', lighter: 'rgba(123, 31, 162, 0.08)' }; // Purple
+  }
+  // Default (e.g., others)
+  return { main: '#455a64', light: '#90a4ae', lighter: 'rgba(69, 90, 100, 0.08)' }; // Sleek Slate Blue/Grey
 };
 
 // ==============================|| RIBBON CHILD ITEM ||============================== //
@@ -153,10 +151,10 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors, onClick
             {keyTip}
           </Box>
         )}
-        <Box 
+        <Box
           className="child-icon"
-          sx={{ 
-            mb: !isGroup ? 0.5 : 0, 
+          sx={{
+            mb: !isGroup ? 0.5 : 0,
             lineHeight: 0,
             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             color: open || (isGroup && isExpanded) || (isGroup && !isExpanded && open) ? colors.main : 'text.secondary'
@@ -204,17 +202,17 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors, onClick
         height: isGroup ? 48 : '100%',
         borderRadius: isGroup ? '12px' : '8px',
         color: open || (isGroup && isExpanded)
-          ? colors.main 
-          : isGroup 
-            ? colors.main 
+          ? colors.main
+          : isGroup
+            ? colors.main
             : 'text.secondary',
         background: open || (isGroup && isExpanded)
-          ? `linear-gradient(135deg, ${alpha(colors.main, 0.18)} 0%, ${alpha(colors.main, 0.06)} 100%)` 
-          : isGroup 
-            ? `linear-gradient(135deg, ${alpha(colors.main, 0.08)} 0%, ${alpha(colors.main, 0.02)} 100%)` 
+          ? `linear-gradient(135deg, ${alpha(colors.main, 0.18)} 0%, ${alpha(colors.main, 0.06)} 100%)`
+          : isGroup
+            ? `linear-gradient(135deg, ${alpha(colors.main, 0.08)} 0%, ${alpha(colors.main, 0.02)} 100%)`
             : `linear-gradient(135deg, ${alpha(colors.main, 0.06)} 0%, ${alpha(colors.main, 0.01)} 100%)`,
-        border: isGroup 
-          ? `1px solid ${alpha(colors.main, isExpanded ? 0.4 : 0.2)}` 
+        border: isGroup
+          ? `1px solid ${alpha(colors.main, isExpanded ? 0.4 : 0.2)}`
           : `1px solid ${alpha(colors.main, 0.2)}`,
         boxShadow: isGroup && isExpanded ? `0 4px 10px -2px ${alpha(colors.main, 0.25)}` : 'none',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -229,15 +227,15 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors, onClick
           transition: 'opacity 0.3s ease',
           pointerEvents: 'none'
         } : {},
-        '&:hover': { 
-          background: isGroup 
-            ? `linear-gradient(135deg, ${alpha(colors.main, 0.2)} 0%, ${alpha(colors.main, 0.08)} 100%)` 
+        '&:hover': {
+          background: isGroup
+            ? `linear-gradient(135deg, ${alpha(colors.main, 0.2)} 0%, ${alpha(colors.main, 0.08)} 100%)`
             : alpha(colors.main, 0.04),
           borderColor: isGroup ? alpha(colors.main, 0.6) : alpha(colors.main, 0.15),
           color: colors.main,
           transform: 'translateY(-2px)',
-          boxShadow: isGroup 
-            ? `0 6px 16px -4px ${alpha(colors.main, 0.35)}` 
+          boxShadow: isGroup
+            ? `0 6px 16px -4px ${alpha(colors.main, 0.35)}`
             : `0 4px 12px -4px ${alpha(colors.main, 0.2)}`,
           '&::after': !isGroup ? {
             opacity: 1
@@ -257,9 +255,9 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors, onClick
   return (
     <Box onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} sx={{ height: '100%' }}>
       {item.pageCode ? (
-        <Tooltip 
-          title={item.pageCode} 
-          placement="top" 
+        <Tooltip
+          title={<span>{item.title} ({item.pageCode})</span>}
+          placement="top"
           disableInteractive
           arrow
           slotProps={{
@@ -299,11 +297,11 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors, onClick
           ]}
         >
           <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
-            <Paper 
-              sx={{ 
-                boxShadow: theme.shadows[8], 
-                py: 0.5, 
-                minWidth: 190, 
+            <Paper
+              sx={{
+                boxShadow: theme.shadows[8],
+                py: 0.5,
+                minWidth: 190,
                 backgroundImage: 'none',
                 position: 'relative',
                 overflow: 'visible',
@@ -411,9 +409,13 @@ function RibbonGroupSection({ group, onClose, speedDialIds, onEditClick, altMode
     }
   };
 
-  const displayedChildren = speedDialIds && speedDialIds.length > 0
+  let displayedChildren = speedDialIds && speedDialIds.length > 0
     ? speedDialIds.map(id => allLeafItems.find(c => c.id === id)).filter(Boolean)
-    : allLeafItems.slice(0, 5);
+    : [];
+
+  if (displayedChildren.length === 0) {
+    displayedChildren = allLeafItems.slice(0, 5);
+  }
 
   const displayedChildrenWithKeyTips = useMemo(() => {
     if (!isKeyTipActive) return displayedChildren;
@@ -533,12 +535,12 @@ function RibbonGroupSection({ group, onClose, speedDialIds, onEditClick, altMode
       {/* Top part: Main module icon + Children icons */}
       <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', gap: 0.5, width: '100%' }}>
         {/* Always show the main module icon as a functional button */}
-        <RibbonChildItem 
-          item={group} 
-          onClose={onClose} 
-          isGroup={true} 
-          colors={colors} 
-          onClick={handleGroupClick} 
+        <RibbonChildItem
+          item={group}
+          onClose={onClose}
+          isGroup={true}
+          colors={colors}
+          onClick={handleGroupClick}
           isExpanded={isExpanded}
         />
 
@@ -566,13 +568,13 @@ function RibbonGroupSection({ group, onClose, speedDialIds, onEditClick, altMode
       </Box>
 
       {/* Bottom part: Clean, centered Outlook-style category title */}
-      <Box 
+      <Box
         onClick={handleGroupClick}
-        sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          mt: 0.5, 
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          mt: 0.5,
           gap: 0.5,
           width: '100%',
           px: 0.5,
@@ -625,8 +627,16 @@ export default function HorizontalBar() {
   } = useConfig();
   const { pathname } = useLocation();
   const { ribbonOpen, setRibbonOpen } = useRibbon();
+  const { user } = useAuth();
+  const userId = user?.id || user?.userId;
 
-  const groups = menuItem.items;
+  const permStatus = useSelector((state) => state.permissions.status);
+  const permMap = useSelector((state) => state.permissions.map);
+
+  const groups = useMemo(() => {
+    if (permStatus !== 'loaded') return [];
+    return filterMenuByPermissions([...menuItem.items], permMap, user?.userLevel || 0);
+  }, [permStatus, permMap, user?.userLevel]);
 
   // Speed Dial Customization State
   const [speedDialPreferences, setSpeedDialPreferences] = useState({});
@@ -634,15 +644,19 @@ export default function HorizontalBar() {
   const [configModuleGroup, setConfigModuleGroup] = useState(null);
 
   useEffect(() => {
-    const savedPrefs = localStorage.getItem('speedDialPreferences');
-    if (savedPrefs) {
-      try {
-        setSpeedDialPreferences(JSON.parse(savedPrefs));
-      } catch (e) {
-        console.error('Failed to parse speedDialPreferences', e);
+    if (userId) {
+      const savedPrefs = localStorage.getItem(`speedDialPreferences_${userId}`);
+      if (savedPrefs) {
+        try {
+          setSpeedDialPreferences(JSON.parse(savedPrefs));
+        } catch (e) {
+          console.error('Failed to parse speedDialPreferences', e);
+        }
+      } else {
+        setSpeedDialPreferences({});
       }
     }
-  }, []);
+  }, [userId]);
 
   const handleEditClick = (group) => {
     setConfigModuleGroup(group);
@@ -650,9 +664,10 @@ export default function HorizontalBar() {
   };
 
   const handleSaveSpeedDial = (groupId, selectedIds) => {
+    if (!userId) return;
     const newPrefs = { ...speedDialPreferences, [groupId]: selectedIds };
     setSpeedDialPreferences(newPrefs);
-    localStorage.setItem('speedDialPreferences', JSON.stringify(newPrefs));
+    localStorage.setItem(`speedDialPreferences_${userId}`, JSON.stringify(newPrefs));
   };
 
   // Close ribbon on route change (removed as per user request to keep it expanded)
@@ -752,7 +767,7 @@ export default function HorizontalBar() {
       if (!altMode) return;
       if (e.key === 'Alt' || e.key === 'Escape') return;
       // Skip if typing in an input
-      if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
 
       const pressed = e.key.toUpperCase();
 
@@ -890,269 +905,269 @@ export default function HorizontalBar() {
             justifyContent: 'flex-start'
           })}
         >
-        {/* ── Compact icon row — hidden when ribbon is open ── */}
-        {!ribbonOpen && (
-          <Box sx={{ width: '100%', px: 2, display: 'flex', flex: 'none', position: 'relative' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              {compactOverflow.canLeft && (
-              <IconButton
-                onClick={() => handleScroll(compactScrollRef, -300)}
-                size="small"
-                sx={{ mr: 1, '&:hover': { bgcolor: 'action.hover' } }}
-              >
-                <IconChevronLeft size="16px" />
-              </IconButton>
-              )}
+          {/* ── Compact icon row — hidden when ribbon is open ── */}
+          {!ribbonOpen && (
+            <Box sx={{ width: '100%', px: 2, display: 'flex', flex: 'none', position: 'relative' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                {compactOverflow.canLeft && (
+                  <IconButton
+                    onClick={() => handleScroll(compactScrollRef, -300)}
+                    size="small"
+                    sx={{ mr: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                  >
+                    <IconChevronLeft size="16px" />
+                  </IconButton>
+                )}
 
-              <Box
-                ref={compactScrollRef}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  height: COMPACT_H,
-                  overflowX: 'auto',
-                  flex: 1,
-                  '&::-webkit-scrollbar': { display: 'none' },
-                  msOverflowStyle: 'none',
-                  scrollbarWidth: 'none'
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <MenuList />
-                </Box>
-              </Box>
-
-              {compactOverflow.canRight && (
-              <IconButton
-                onClick={() => handleScroll(compactScrollRef, 300)}
-                size="small"
-                sx={{ mx: 1, '&:hover': { bgcolor: 'action.hover' } }}
-              >
-                <IconChevronRight size="16px" />
-              </IconButton>
-              )}
-
-              {/* Toggle — expand */}
-              <Tooltip title="Expand Menu" placement="bottom" arrow>
-                <IconButton
-                  onClick={() => setRibbonOpen(true)}
-                  size="small"
+                <Box
+                  ref={compactScrollRef}
                   sx={{
-                    flexShrink: 0,
-                    width: 28,
-                    height: 28,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    color: 'text.secondary',
-                    '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'primary.lighter' }
+                    display: 'flex',
+                    alignItems: 'center',
+                    height: COMPACT_H,
+                    overflowX: 'auto',
+                    flex: 1,
+                    '&::-webkit-scrollbar': { display: 'none' },
+                    msOverflowStyle: 'none',
+                    scrollbarWidth: 'none'
                   }}
                 >
-                  <IconChevronDown size="16px" stroke={2} />
-                </IconButton>
-              </Tooltip>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <MenuList />
+                  </Box>
+                </Box>
+
+                {compactOverflow.canRight && (
+                  <IconButton
+                    onClick={() => handleScroll(compactScrollRef, 300)}
+                    size="small"
+                    sx={{ mx: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                  >
+                    <IconChevronRight size="16px" />
+                  </IconButton>
+                )}
+
+                {/* Toggle — expand */}
+                <Tooltip title="Expand Menu" placement="bottom" arrow>
+                  <IconButton
+                    onClick={() => setRibbonOpen(true)}
+                    size="small"
+                    sx={{
+                      flexShrink: 0,
+                      width: 28,
+                      height: 28,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      color: 'text.secondary',
+                      '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'primary.lighter' }
+                    }}
+                  >
+                    <IconChevronDown size="16px" stroke={2} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
-          </Box>
-        )}
+          )}
 
-        {/* ── Ribbon row — shown when expanded, replaces icon bar ── */}
-        {ribbonOpen && (
-          <Box sx={{ width: '100%', px: 2, display: 'flex', flex: 1, position: 'relative' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', height: RIBBON_H, width: '100%' }}>
-              {ribbonOverflow.canLeft && (
-              <IconButton
-                onClick={() => handleScroll(ribbonScrollRef, -400)}
-                size="small"
-                sx={{
-                  mr: 0.5,
-                  width: 24,
-                  height: 24,
-                  borderRadius: '6px',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'background.paper',
-                  color: 'text.secondary',
-                  transition: 'all 0.2s',
-                  '&:hover': { 
-                    bgcolor: 'primary.lighter',
-                    color: 'primary.main',
-                    borderColor: 'primary.main'
-                  }
-                }}
-              >
-                <IconChevronLeft size="14px" />
-              </IconButton>
-              )}
+          {/* ── Ribbon row — shown when expanded, replaces icon bar ── */}
+          {ribbonOpen && (
+            <Box sx={{ width: '100%', px: 2, display: 'flex', flex: 1, position: 'relative' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', height: RIBBON_H, width: '100%' }}>
+                {ribbonOverflow.canLeft && (
+                  <IconButton
+                    onClick={() => handleScroll(ribbonScrollRef, -400)}
+                    size="small"
+                    sx={{
+                      mr: 0.5,
+                      width: 24,
+                      height: 24,
+                      borderRadius: '6px',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
+                      color: 'text.secondary',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: 'primary.lighter',
+                        color: 'primary.main',
+                        borderColor: 'primary.main'
+                      }
+                    }}
+                  >
+                    <IconChevronLeft size="14px" />
+                  </IconButton>
+                )}
 
-              <Box
-                ref={ribbonScrollRef}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  height: '100%',
-                  overflowX: 'auto',
-                  overflowY: 'hidden',
-                  flex: 1,
-                  scrollBehavior: 'smooth',
-                  '&::-webkit-scrollbar': { display: 'none' },
-                  msOverflowStyle: 'none',
-                  scrollbarWidth: 'none'
-                }}
-              >
-                {/* All groups as sections with micro-margins */}
-                <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1.25, height: '100%' }}>
-                  {groupsWithKeyTips.map((group) => (
-                    <Box key={group.id} ref={el => { groupRefs.current[group.id] = el; }} sx={{ display: 'contents' }}>
-                      <RibbonGroupSection 
-                        group={group}
-                        onClose={() => setRibbonOpen(false)}
-                        speedDialIds={speedDialPreferences[group.id]}
-                        onEditClick={handleEditClick}
-                        altMode={altMode}
-                        keyTip={group._keyTip}
-                        isKeyTipActive={altActiveGroupId === group.id}
-                      />
-                    </Box>
-                  ))}
+                <Box
+                  ref={ribbonScrollRef}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    height: '100%',
+                    overflowX: 'auto',
+                    overflowY: 'hidden',
+                    flex: 1,
+                    scrollBehavior: 'smooth',
+                    '&::-webkit-scrollbar': { display: 'none' },
+                    msOverflowStyle: 'none',
+                    scrollbarWidth: 'none'
+                  }}
+                >
+                  {/* All groups as sections with micro-margins */}
+                  <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1.25, height: '100%' }}>
+                    {groupsWithKeyTips.map((group) => (
+                      <Box key={group.id} ref={el => { groupRefs.current[group.id] = el; }} sx={{ display: 'contents' }}>
+                        <RibbonGroupSection
+                          group={group}
+                          onClose={() => setRibbonOpen(false)}
+                          speedDialIds={speedDialPreferences[group.id]}
+                          onEditClick={handleEditClick}
+                          altMode={altMode}
+                          keyTip={group._keyTip}
+                          isKeyTipActive={altActiveGroupId === group.id}
+                        />
+                      </Box>
+                    ))}
 
-                  {/* KeyTip submenu panel */}
-                  {altActiveGroupId && altChildItems.length > 0 && (
-                    <Box
-                      sx={{
-                        position: 'fixed',
-                        top: 130,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        zIndex: 3000,
-                        bgcolor: '#1a1a2e',
-                        border: '1.5px solid #3a3a6e',
-                        borderRadius: '10px',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                        p: 1.5,
-                        minWidth: 320,
-                        maxWidth: '80vw',
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 0.75
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ width: '100%', color: '#aaa', mb: 0.5, fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        {groups.find(g => g.id === altActiveGroupId)?.title} — Press key to navigate | Esc to dismiss
-                      </Typography>
-                      {altChildItems.map(child => (
-                        <Box
-                          key={child.id}
-                          onClick={() => {
-                            if (child.type === 'item' && child.url) {
-                              navigate(child.url);
-                              dismissAlt();
-                            } else if (child.children) {
-                              setAltChildItems(assignKeyTips(child.children));
-                            }
-                          }}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.75,
-                            px: 1,
-                            py: 0.5,
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            bgcolor: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            transition: 'all 0.15s',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.25)' }
-                          }}
-                        >
-                          <Box sx={{
-                            minWidth: 22, height: 22,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            bgcolor: '#1565c0',
-                            borderRadius: '4px',
-                            fontSize: '11px', fontWeight: 900, color: '#fff',
-                            flexShrink: 0
-                          }}>
-                            {child._keyTip || '?'}
+                    {/* KeyTip submenu panel */}
+                    {altActiveGroupId && altChildItems.length > 0 && (
+                      <Box
+                        sx={{
+                          position: 'fixed',
+                          top: 130,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          zIndex: 3000,
+                          bgcolor: '#1a1a2e',
+                          border: '1.5px solid #3a3a6e',
+                          borderRadius: '10px',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                          p: 1.5,
+                          minWidth: 320,
+                          maxWidth: '80vw',
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 0.75
+                        }}
+                      >
+                        <Typography variant="caption" sx={{ width: '100%', color: '#aaa', mb: 0.5, fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                          {groups.find(g => g.id === altActiveGroupId)?.title} — Press key to navigate | Esc to dismiss
+                        </Typography>
+                        {altChildItems.map(child => (
+                          <Box
+                            key={child.id}
+                            onClick={() => {
+                              if (child.type === 'item' && child.url) {
+                                navigate(child.url);
+                                dismissAlt();
+                              } else if (child.children) {
+                                setAltChildItems(assignKeyTips(child.children));
+                              }
+                            }}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.75,
+                              px: 1,
+                              py: 0.5,
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              bgcolor: 'rgba(255,255,255,0.05)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              transition: 'all 0.15s',
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.25)' }
+                            }}
+                          >
+                            <Box sx={{
+                              minWidth: 22, height: 22,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              bgcolor: '#1565c0',
+                              borderRadius: '4px',
+                              fontSize: '11px', fontWeight: 900, color: '#fff',
+                              flexShrink: 0
+                            }}>
+                              {child._keyTip || '?'}
+                            </Box>
+                            <Typography sx={{ color: '#e0e0e0', fontSize: '0.78rem', fontWeight: 500 }}>
+                              {child.title}
+                            </Typography>
+                            {child.children && (
+                              <Typography sx={{ color: '#888', fontSize: '0.65rem', ml: 'auto' }}>▶</Typography>
+                            )}
                           </Box>
-                          <Typography sx={{ color: '#e0e0e0', fontSize: '0.78rem', fontWeight: 500 }}>
-                            {child.title}
-                          </Typography>
-                          {child.children && (
-                            <Typography sx={{ color: '#888', fontSize: '0.65rem', ml: 'auto' }}>▶</Typography>
-                          )}
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
                 </Box>
+
+                {ribbonOverflow.canRight && (
+                  <IconButton
+                    onClick={() => handleScroll(ribbonScrollRef, 400)}
+                    size="small"
+                    sx={{
+                      ml: 0.5,
+                      width: 24,
+                      height: 24,
+                      borderRadius: '6px',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.paper',
+                      color: 'text.secondary',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: 'primary.lighter',
+                        color: 'primary.main',
+                        borderColor: 'primary.main'
+                      }
+                    }}
+                  >
+                    <IconChevronRight size="14px" />
+                  </IconButton>
+                )}
+
+                {/* Collapse toggle at far right */}
+                <Tooltip title="Collapse Menu" placement="bottom" arrow>
+                  <IconButton
+                    onClick={() => setRibbonOpen(false)}
+                    size="small"
+                    sx={{
+                      flexShrink: 0,
+                      ml: 0.5,
+                      width: 24,
+                      height: 24,
+                      borderRadius: '6px',
+                      border: '1px solid',
+                      borderColor: alpha(theme.palette.primary.main, 0.4),
+                      color: 'primary.main',
+                      bgcolor: alpha(theme.palette.primary.main, 0.06),
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: 'primary.main',
+                        color: '#fff',
+                        borderColor: 'primary.main'
+                      }
+                    }}
+                  >
+                    <IconChevronUp size="14px" stroke={2.5} />
+                  </IconButton>
+                </Tooltip>
               </Box>
-
-              {ribbonOverflow.canRight && (
-              <IconButton
-                onClick={() => handleScroll(ribbonScrollRef, 400)}
-                size="small"
-                sx={{
-                  ml: 0.5,
-                  width: 24,
-                  height: 24,
-                  borderRadius: '6px',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'background.paper',
-                  color: 'text.secondary',
-                  transition: 'all 0.2s',
-                  '&:hover': { 
-                    bgcolor: 'primary.lighter',
-                    color: 'primary.main',
-                    borderColor: 'primary.main'
-                  }
-                }}
-              >
-                <IconChevronRight size="14px" />
-              </IconButton>
-              )}
-
-              {/* Collapse toggle at far right */}
-              <Tooltip title="Collapse Menu" placement="bottom" arrow>
-                <IconButton
-                  onClick={() => setRibbonOpen(false)}
-                  size="small"
-                  sx={{
-                    flexShrink: 0,
-                    ml: 0.5,
-                    width: 24,
-                    height: 24,
-                    borderRadius: '6px',
-                    border: '1px solid',
-                    borderColor: alpha(theme.palette.primary.main, 0.4),
-                    color: 'primary.main',
-                    bgcolor: alpha(theme.palette.primary.main, 0.06),
-                    transition: 'all 0.2s',
-                    '&:hover': { 
-                      bgcolor: 'primary.main',
-                      color: '#fff',
-                      borderColor: 'primary.main'
-                    }
-                  }}
-                >
-                  <IconChevronUp size="14px" stroke={2.5} />
-                </IconButton>
-              </Tooltip>
             </Box>
-          </Box>
-        )}
-      </AppBar>
-    </ElevationScroll>
+          )}
+        </AppBar>
+      </ElevationScroll>
 
-    {/* Speed Dial Config Modal — outside ElevationScroll so cloneElement isn't broken */}
-    <SpeedDialConfigModal
-      open={configModalOpen}
-      onClose={() => setConfigModalOpen(false)}
-      moduleGroup={configModuleGroup}
-      currentSpeedDialIds={configModuleGroup ? (speedDialPreferences[configModuleGroup.id] || configModuleGroup.children?.map(c => c.id) || []) : []}
-      onSave={handleSaveSpeedDial}
-    />
-  </>
+      {/* Speed Dial Config Modal — outside ElevationScroll so cloneElement isn't broken */}
+      <SpeedDialConfigModal
+        open={configModalOpen}
+        onClose={() => setConfigModalOpen(false)}
+        moduleGroup={configModuleGroup}
+        currentSpeedDialIds={configModuleGroup ? (speedDialPreferences[configModuleGroup.id] || configModuleGroup.children?.map(c => c.id) || []) : []}
+        onSave={handleSaveSpeedDial}
+      />
+    </>
   );
 }
 

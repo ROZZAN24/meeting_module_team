@@ -5,6 +5,8 @@ DELETE FROM bos_pages;
 DELETE FROM bos_sub_modules;
 DELETE FROM bos_modules;
 
+SET IDENTITY_INSERT BOS_MODULES ON;
+
 INSERT INTO bos_modules (module_id, mod_code, mod_name) VALUES (1, 'M0000', 'Masters');
 INSERT INTO bos_modules (module_id, mod_code, mod_name) VALUES (2, 'HA0000', 'HR & Admin');
 INSERT INTO bos_modules (module_id, mod_code, mod_name) VALUES (3, 'DD0000', 'Design & Development');
@@ -25,6 +27,10 @@ INSERT INTO bos_modules (module_id, mod_code, mod_name) VALUES (40, 'SM', 'Sales
 INSERT INTO bos_modules (module_id, mod_code, mod_name) VALUES (50, 'QMS_TRANS', 'Quality Management Systems');
 INSERT INTO bos_modules (module_id, mod_code, mod_name) VALUES (60, 'SUPPORT', 'Support');
 INSERT INTO bos_modules (module_id, mod_code, mod_name) VALUES (70, 'ADMIN', 'Admin');
+
+SET IDENTITY_INSERT BOS_MODULES OFF;
+
+SET IDENTITY_INSERT BOS_SUB_MODULES ON;
 
 INSERT INTO bos_sub_modules (sub_mod_id, mod_id, parent_sub_mod_id, sub_mod_code, sub_mod_name) VALUES (1, 1, NULL, 'NULL', 'HR');
 INSERT INTO bos_sub_modules (sub_mod_id, mod_id, parent_sub_mod_id, sub_mod_code, sub_mod_name) VALUES (2, 1, NULL, 'NULL', 'QMS');
@@ -70,6 +76,10 @@ INSERT INTO bos_sub_modules (sub_mod_id, mod_id, parent_sub_mod_id, sub_mod_code
 INSERT INTO bos_sub_modules (sub_mod_id, mod_id, parent_sub_mod_id, sub_mod_code, sub_mod_name) VALUES (503, 50, NULL, 'NULL', 'QMS_MT');
 INSERT INTO bos_sub_modules (sub_mod_id, mod_id, parent_sub_mod_id, sub_mod_code, sub_mod_name) VALUES (701, 70, NULL, 'NULL', 'AD_HUB');
 INSERT INTO bos_sub_modules (sub_mod_id, mod_id, parent_sub_mod_id, sub_mod_code, sub_mod_name) VALUES (702, 70, NULL, 'NULL', 'AD_BOS');
+
+SET IDENTITY_INSERT BOS_SUB_MODULES OFF;
+
+SET IDENTITY_INSERT BOS_PAGES ON;
 
 INSERT INTO bos_pages (page_id, mod_id, sub_mod_id, page_code, page_name, enabled) VALUES (1, 1, 4, '1', '1', 12);
 INSERT INTO bos_pages (page_id, mod_id, sub_mod_id, page_code, page_name, enabled) VALUES (2, 1, 4, '2', '1', 13);
@@ -181,6 +191,8 @@ INSERT INTO bos_pages (page_id, mod_id, sub_mod_id, page_code, page_name, enable
 INSERT INTO bos_pages (page_id, mod_id, sub_mod_id, page_code, page_name, enabled) VALUES (108, 60, NULL, 'SUP_01', 'Support Ticket', 1);
 INSERT INTO bos_pages (page_id, mod_id, sub_mod_id, page_code, page_name, enabled) VALUES (109, 4, 12, 'S_CRM_01', 'Customer Master', 1);
 INSERT INTO bos_pages (page_id, mod_id, sub_mod_id, page_code, page_name, enabled) VALUES (110, 4, 12, 'S_CRM_02', 'Contact Master', 1);
+
+SET IDENTITY_INSERT BOS_PAGES OFF;
 
 
 -- Grant default full access to all existing users for all pages

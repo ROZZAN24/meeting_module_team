@@ -16,10 +16,13 @@ import {
   TableRow,
   LinearProgress,
   Link,
-  IconButton
+  IconButton,
+  useTheme
 } from '@mui/material';
-import { styled, alpha } from '@mui/system';
+import { styled, alpha, keyframes } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
@@ -35,6 +38,8 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import DateRangeRoundedIcon from '@mui/icons-material/DateRangeRounded';
+
+const glowPulse = keyframes`0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}`;
 
 const StyledCard = styled(Paper)(({ theme }) => ({
   borderRadius: '16px',
@@ -58,7 +63,111 @@ const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   background: bg
 }));
 
-export default function OverdueDashboard({ isDark, realTasks = [] }) {
+const NeonCard = styled(Paper)(({ theme, statcolor }) => ({
+  borderRadius: '24px',
+  position: 'relative',
+  overflow: 'hidden',
+  background: `linear-gradient(180deg, ${alpha(statcolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
+  backgroundColor: '#060B14',
+  backdropFilter: 'blur(16px)',
+  border: `1px solid ${alpha(statcolor, 0.2)}`,
+  boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(statcolor, 0.3)}`,
+  height: '138px',
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '16px',
+  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+  cursor: 'pointer',
+
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: '-50%', left: '-50%', width: '200%', height: '200%',
+    background: `radial-gradient(circle at 50% 50%, ${alpha(statcolor, 0.15)} 0%, transparent 60%)`,
+    transition: 'all 0.5s ease',
+    zIndex: 0,
+    pointerEvents: 'none'
+  },
+
+  '& .hud-corner': {
+    position: 'absolute',
+    width: '12px', height: '12px',
+    borderColor: alpha(statcolor, 0.4),
+    borderStyle: 'solid',
+    borderWidth: 0,
+    zIndex: 1,
+    transition: 'all 0.4s ease',
+  },
+  '& .hud-tl': { top: '12px', left: '12px', borderTopWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-tr': { top: '12px', right: '12px', borderTopWidth: '2px', borderRightWidth: '2px' },
+  '& .hud-bl': { bottom: '12px', left: '12px', borderBottomWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-br': { bottom: '12px', right: '12px', borderBottomWidth: '2px', borderRightWidth: '2px' },
+
+  '& .rotating-border': {
+    position: 'absolute', inset: 0, borderRadius: '24px', padding: '2px',
+    background: `conic-gradient(from 0deg, transparent 70%, ${statcolor} 100%)`,
+    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+    WebkitMaskComposite: 'xor',
+    maskComposite: 'exclude',
+    opacity: 0, zIndex: 1, pointerEvents: 'none',
+    transition: 'opacity 0.5s',
+  },
+
+  '& .shimmer': {
+    position: 'absolute', top: 0, left: '-150%', width: '100%', height: '100%',
+    background: `linear-gradient(90deg, transparent, ${alpha('#ffffff', 0.15)}, transparent)`,
+    transform: 'skewX(-20deg)', transition: 'none', zIndex: 3, pointerEvents: 'none'
+  },
+
+  '& .hover-emoji': {
+    position: 'absolute', right: 24, top: 24, fontSize: '2rem',
+    opacity: 0, transform: 'translateY(15px) scale(0.8)',
+    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 4, pointerEvents: 'none',
+    filter: `drop-shadow(0px 0px 15px ${statcolor})`
+  },
+
+  '& .particles': {
+    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.6, pointerEvents: 'none',
+    backgroundImage: `radial-gradient(${alpha(statcolor, 0.4)} 1px, transparent 1px)`,
+    backgroundSize: '24px 24px',
+  },
+
+  '&:hover': {
+    transform: 'translateY(-8px) scale(1.03)',
+    boxShadow: `0 25px 50px -12px ${alpha(statcolor, 0.7)}, inset 0 1px 3px 0 ${alpha(statcolor, 0.9)}`,
+    border: `1px solid transparent`,
+
+    '&::before': {
+      background: `radial-gradient(circle at 50% 50%, ${alpha(statcolor, 0.35)} 0%, transparent 70%)`,
+    },
+
+    '& .rotating-border': {
+      opacity: 1,
+      animation: 'spin-border 3s linear infinite',
+    },
+
+    '& .shimmer': {
+      animation: 'sweep 2s ease-in-out',
+    },
+
+    '& .hover-emoji': {
+      opacity: 1, transform: 'translateY(-5px) scale(1.2)',
+      animation: 'float 3s ease-in-out infinite'
+    },
+
+    '& .hud-corner': {
+      borderColor: statcolor,
+      width: '18px', height: '18px',
+      filter: `drop-shadow(0 0 8px ${statcolor})`
+    },
+  },
+}));
+
+export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) {
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search?.filters || {});
+
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
 
@@ -81,6 +190,21 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     today.setHours(0, 0, 0, 0);
     const overdue = [];
 
+    const getWorkingDays = (start, end) => {
+      let days = 0;
+      let cur = new Date(start);
+      cur.setHours(0, 0, 0, 0);
+      const e = new Date(end);
+      e.setHours(0, 0, 0, 0);
+      while (cur < e) {
+        if (cur.getDay() !== 0) { // skip Sunday
+          days++;
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+      return days;
+    };
+
     realTasks.forEach((t) => {
       const st = String(t._status).toLowerCase();
       const isDone = ['completed', 'verified', 'approved', 'closed', 'resolved'].includes(st);
@@ -90,8 +214,10 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       dDate.setHours(0, 0, 0, 0);
 
       if (dDate.getTime() < today.getTime()) {
-        const diffDays = Math.ceil(Math.abs(today - dDate) / (1000 * 60 * 60 * 24));
-        overdue.push({ ...t, diffDays });
+        const diffDays = getWorkingDays(dDate, today);
+        if (diffDays > 0) {
+          overdue.push({ ...t, diffDays });
+        }
       }
     });
 
@@ -170,7 +296,8 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       icon: <AssignmentRoundedIcon fontSize="small" />,
       color: '#EF4444',
       bg: '#FEF2F2',
-      line: '#EF4444'
+      line: '#EF4444',
+      hoverEmoji: '⚠️'
     },
     {
       title: 'Critical Overdue',
@@ -179,7 +306,8 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       icon: <ReportProblemRoundedIcon fontSize="small" />,
       color: '#991B1B',
       bg: '#FEF2F2',
-      line: '#991B1B'
+      line: '#991B1B',
+      hoverEmoji: '🚨'
     },
     {
       title: 'Overdue (1 - 3 Days)',
@@ -188,7 +316,8 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       icon: <AccessTimeRoundedIcon fontSize="small" />,
       color: '#F59E0B',
       bg: '#FFFBEB',
-      line: '#F59E0B'
+      line: '#F59E0B',
+      hoverEmoji: '⏳'
     },
     {
       title: 'Overdue (4 - 7 Days)',
@@ -197,7 +326,8 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       icon: <DateRangeRoundedIcon fontSize="small" />,
       color: '#8B5CF6',
       bg: '#F5F3FF',
-      line: '#8B5CF6'
+      line: '#8B5CF6',
+      hoverEmoji: '📅'
     },
     {
       title: 'Overdue (> 7 Days)',
@@ -206,7 +336,8 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       icon: <WarningRoundedIcon fontSize="small" />,
       color: '#EF4444',
       bg: '#FEF2F2',
-      line: '#EF4444'
+      line: '#EF4444',
+      hoverEmoji: '🔥'
     },
     {
       title: 'Employees with Overdue',
@@ -215,7 +346,8 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       icon: <GroupRoundedIcon fontSize="small" />,
       color: '#3B82F6',
       bg: '#EFF6FF',
-      line: '#3B82F6'
+      line: '#3B82F6',
+      hoverEmoji: '👨‍💻'
     }
   ];
 
@@ -272,17 +404,7 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
   const pagesData = useMemo(() => {
     const counts = {};
     overdueTasks.forEach((t) => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const name =
-        prefix === 'CL'
-          ? 'Checklist'
-          : prefix === 'MOM'
-            ? 'MOM Actions'
-            : prefix === 'TK'
-              ? 'Ticket'
-              : prefix === 'AUDIT'
-                ? 'Audit Schedule'
-                : prefix;
+      const name = t._pageName || 'Other';
       if (!counts[name]) counts[name] = 0;
       counts[name]++;
     });
@@ -693,28 +815,110 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
         }}
       >
         {topStats.map((stat, idx) => (
-          <StyledCard
-            key={idx}
-            sx={{
-              p: 2,
-              borderBottom: stat.line !== 'transparent' ? `3px solid ${stat.line}` : undefined
+          <NeonCard 
+            key={idx} 
+            statcolor={stat.color}
+            onClick={() => {
+              const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+              const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+              
+              const initialFilters = {
+                taskScope: globalFilters?.performanceScope || 'Mine',
+              };
+              
+              navigate(routePath, { 
+                state: { 
+                  fromDashboard: true, 
+                  fromTab: activeTab,
+                  dashboardFilters: globalFilters,
+                  initialFilters 
+                } 
+              });
             }}
+            sx={{ cursor: 'pointer' }}
           >
-            <Stack direction="row" alignItems="center" gap={1.5} mb={1.5}>
-              <IconBox color={stat.color} bg={isDark ? alpha(stat.color, 0.2) : stat.bg} size={32}>
-                {stat.icon}
-              </IconBox>
-              <Typography variant="body2" color="text.primary" fontWeight={700} sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
+            <Box className="hud-corner hud-tl" />
+            <Box className="hud-corner hud-tr" />
+            <Box className="hud-corner hud-bl" />
+            <Box className="hud-corner hud-br" />
+            <Box className="particles" />
+            <Box className="rotating-border" />
+            <Box className="shimmer" />
+
+            <Typography className="hover-emoji">{stat.hoverEmoji}</Typography>
+
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              flex={1}
+              zIndex={2}
+              position="relative"
+              sx={{ textAlign: 'center' }}
+            >
+              {/* Icon */}
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `radial-gradient(circle, ${alpha(stat.color, 0.4)} 0%, ${alpha(stat.color, 0.05)} 70%)`,
+                  boxShadow: `0 0 20px ${alpha(stat.color, 0.6)}, inset 0 0 15px ${alpha(stat.color, 0.5)}`,
+                  border: `1px solid ${alpha(stat.color, 0.6)}`,
+                  color: '#fff',
+                  backdropFilter: 'blur(8px)',
+                  animation: 'floatIcon 4s ease-in-out infinite',
+                  '@keyframes floatIcon': {
+                    '0%': { transform: 'translateY(0px)' },
+                    '50%': { transform: 'translateY(-5px)' },
+                    '100%': { transform: 'translateY(0px)' }
+                  }
+                }}
+              >
+                {React.cloneElement(stat.icon, { sx: { fontSize: '1.5rem' } })}
+              </Box>
+
+              {/* Title */}
+              <Typography
+                variant="body2"
+                fontWeight={800}
+                sx={{ fontSize: '0.8rem', color: '#E2E8F0', mb: 0.5, letterSpacing: '0.5px', textAlign: 'center', lineHeight: 1.2 }}
+              >
                 {stat.title}
               </Typography>
-            </Stack>
-            <Typography variant="h4" fontWeight={900} color="text.primary" mb={0.25} textAlign="center">
-              {stat.value}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.65rem' }} textAlign="center">
-              {stat.subtitle}
-            </Typography>
-          </StyledCard>
+
+              {/* Value */}
+              <Typography
+                variant="h3"
+                fontWeight={900}
+                sx={{
+                  color: '#FFFFFF',
+                  mb: 0.25,
+                  textShadow: `0 0 20px ${alpha(stat.color, 0.8)}`,
+                  fontSize: '2rem',
+                  fontFamily: 'monospace',
+                  textAlign: 'center',
+                  lineHeight: 1.1
+                }}
+              >
+                {stat.value}
+              </Typography>
+
+              {/* Subtitle */}
+              <Typography
+                variant="caption"
+                fontWeight={600}
+                sx={{ fontSize: '0.65rem', color: alpha('#fff', 0.6), textAlign: 'center', lineHeight: 1.1 }}
+              >
+                {stat.subtitle}
+              </Typography>
+            </Box>
+          </NeonCard>
         ))}
       </Box>
 
@@ -731,14 +935,14 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
         {/* Overdue by Employee */}
         <Box sx={{ gridColumn: { lg: 'span 1' } }}>
           <StyledCard sx={{ p: 2, position: 'relative' }}>
-            <Stack direction="row" alignItems="center" gap={1.5} mb={2}>
+            <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
               <GroupRoundedIcon fontSize="small" sx={{ color: '#EF4444' }} />
               <Typography variant="subtitle2" fontWeight={800} color="text.primary">
                 Overdue by Employee
               </Typography>
             </Stack>
             <TableContainer
-              sx={{ flex: 1, mb: 4, '& .MuiTableCell-root': { py: 1.5, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}
+              sx={{ flex: 1, mb: 2, '& .MuiTableCell-root': { py: 1.5, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}
             >
               <Table size="small">
                 <TableHead>
@@ -848,7 +1052,7 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
         {/* Overdue by Priority */}
         <Box sx={{ gridColumn: { lg: 'span 1' } }}>
           <StyledCard sx={{ p: 2 }}>
-            <Stack direction="row" alignItems="center" gap={1.5} mb={2}>
+            <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
               <ShowChartRoundedIcon fontSize="small" sx={{ color: '#8B5CF6' }} />
               <Typography variant="subtitle2" fontWeight={800} color="text.primary">
                 Overdue by Priority
@@ -857,7 +1061,7 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
             <Box flex={1} display="flex" alignItems="center" justifyContent="center">
               <Box width="100%" display="flex" alignItems="center">
                 <Box width="60%">
-                  <ReactApexChart options={pieOptions} series={pieSeries} type="donut" height={220} />
+                  <ReactApexChart options={pieOptions} series={pieSeries} type="donut" height={160} />
                 </Box>
                 <Box width="40%" pl={2}>
                   <Stack spacing={2}>
@@ -887,14 +1091,14 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
         {/* Overdue by Aging (Days) */}
         <Box sx={{ gridColumn: { lg: 'span 1' } }}>
           <StyledCard sx={{ p: 2, position: 'relative' }}>
-            <Stack direction="row" alignItems="center" gap={1.5} mb={3}>
+            <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
               <DateRangeRoundedIcon fontSize="small" sx={{ color: '#EF4444' }} />
               <Typography variant="subtitle2" fontWeight={800} color="text.primary">
                 Overdue by Aging (Days)
               </Typography>
             </Stack>
             {agingData.length > 0 ? (
-              <Stack spacing={3.5} flex={1} mb={4}>
+              <Stack spacing={1.5} flex={1} mb={2}>
                 {agingData.map((row, idx) => (
                   <Stack key={idx} direction="row" alignItems="center" gap={1.5}>
                     <Typography variant="body2" fontWeight={700} fontSize="0.75rem" sx={{ flex: 1, minWidth: 80, color: textColor }} noWrap>
@@ -1004,7 +1208,7 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
               </Stack>
             </Stack>
             <Box flex={1} sx={{ ml: -2, mt: 1 }}>
-              <ReactApexChart key={trendPeriod} options={trendOptions} series={trendSeries} type="area" height={220} />
+              <ReactApexChart key={trendPeriod} options={trendOptions} series={trendSeries} type="area" height={160} />
             </Box>
             {overdueTasks.length > 0 && (
               <Box
@@ -1037,7 +1241,7 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
               </Typography>
             </Stack>
             <TableContainer
-              sx={{ flex: 1, mb: 4, '& .MuiTableCell-root': { py: 1.5, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}
+              sx={{ flex: 1, mb: 2, '& .MuiTableCell-root': { py: 1.5, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}
             >
               <Table size="small">
                 <TableHead>
@@ -1148,14 +1352,14 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
         {/* Overdue by Pages */}
         <Box>
           <StyledCard sx={{ p: 2, position: 'relative' }}>
-            <Stack direction="row" alignItems="center" gap={1.5} mb={3}>
+            <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
               <DashboardRoundedIcon fontSize="small" sx={{ color: '#10B981' }} />
               <Typography variant="subtitle2" fontWeight={800}>
                 Overdue by Pages
               </Typography>
             </Stack>
             {pagesData.length > 0 ? (
-              <Stack spacing={3} flex={1} mb={4}>
+              <Stack spacing={1.5} flex={1} mb={2}>
                 {pagesData.slice(0, 5).map((row, idx) => (
                   <Stack key={idx} direction="row" alignItems="center" gap={1.5}>
                     <Typography

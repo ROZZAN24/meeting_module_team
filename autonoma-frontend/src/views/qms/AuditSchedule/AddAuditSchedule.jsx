@@ -14,7 +14,8 @@ import {
   Chip,
   Avatar,
   Tooltip,
-  Paper
+  Paper,
+  TextField
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import {
@@ -36,9 +37,11 @@ import {
   BOSFormSection,
   BOSTextField,
   BOSDatePicker,
+  BOSTimePicker,
   BOSDataTable,
   BOSFileUpload,
   btnSave,
+  btnCancel,
   btnClear,
   getStatusChipSx,
   getPhotoUrl
@@ -55,6 +58,33 @@ const formatTime12 = (hour, minute) => {
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 || 12;
   return `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`;
+};
+
+const parseTimeToMinutes = (timeStr) => {
+  if (!timeStr) return null;
+  const clean = timeStr.trim().toUpperCase();
+  const match = clean.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/);
+  if (!match) return null;
+  let h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const ampm = match[3] || 'AM';
+  if (h < 1 || h > 12 || m < 0 || m > 59) return null;
+  if (ampm === 'PM' && h !== 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  return h * 60 + m;
+};
+
+const minutesToTimeParts = (totalMins) => {
+  let h24 = Math.floor(totalMins / 60) % 24;
+  let m = totalMins % 60;
+  const ampm = h24 >= 12 ? 'PM' : 'AM';
+  let h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+  return {
+    hour: h12,
+    minute: String(m).padStart(2, '0'),
+    ampm
+  };
 };
 
 const isPastTime = (timeOption, selectedDateStr) => {
@@ -148,7 +178,7 @@ export default function AddAuditSchedule() {
   const isDark = colorScheme === 'dark';
   const isEditing = Boolean(id);
   const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_SCHEDULE);
-  const { errors, validate, clearErrors } = useBOSValidation();
+  const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const getLocalDateString = () => {
     const d = new Date();
@@ -158,6 +188,62 @@ export default function AddAuditSchedule() {
     return `${year}-${month}-${date}`;
   };
 
+  const getSystemTimeClamped = () => {
+    const now = new Date();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+    const totalMinutes = hours * 60 + minutes;
+    const minLimit = 9 * 60; // 9:00 AM
+    const maxLimit = 21 * 60; // 9:00 PM
+
+    if (totalMinutes < minLimit) {
+      hours = 9;
+      minutes = 0;
+    } else if (totalMinutes > maxLimit) {
+      hours = 21;
+      minutes = 0;
+    }
+
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours % 12 || 12;
+    return `${displayHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  };
+
+  const getEndTimeDefault = (startTime12h) => {
+    try {
+      const parts = startTime12h.split(':');
+      let h = parseInt(parts[0], 10);
+      const mAndAmpm = parts[1].split(' ');
+      const m = parseInt(mAndAmpm[0], 10);
+      const ampm = mAndAmpm[1];
+      if (ampm === 'PM' && h !== 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+
+      let endH = h + 1;
+      let endM = m;
+
+      const endMinutes = endH * 60 + endM;
+      const minEnd = 9 * 60 + 30;
+      const maxEnd = 21 * 60;
+
+      if (endMinutes < minEnd) {
+        endH = 9;
+        endM = 30;
+      } else if (endMinutes > maxEnd) {
+        endH = 21;
+        endM = 0;
+      }
+
+      const endAmpm = endH >= 12 ? 'PM' : 'AM';
+      const displayEndHour = endH % 12 || 12;
+      return `${displayEndHour.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')} ${endAmpm}`;
+    } catch (e) {
+      return '05:00 PM';
+    }
+  };
+
+  const defaultStartTime = getSystemTimeClamped();
+
   const [formData, setFormData] = useState({
     scheduleNo: '',
     scheduleDate: getLocalDateString(),
@@ -166,8 +252,12 @@ export default function AddAuditSchedule() {
     auditArea: '',
     auditDate: getLocalDateString(),
     auditMonth: MONTHS[new Date().getMonth()],
-    startTime: '09:00 AM',
+    startTime: defaultStartTime,
     endTime: '05:00 PM',
+    frequency: 'NONE',
+    weekDays: '',
+    repeatEveryValue: '',
+    repeatEveryUnit: 'DAYS',
     department: '',
     auditee: '',
     auditeeType: '',
@@ -190,9 +280,51 @@ export default function AddAuditSchedule() {
     auditAreaDetail: ''
   });
 
+  const [scheduleHasAttendance, setScheduleHasAttendance] = useState(false);
+
   const canWrite = perms.write && (!id || formData.status === 'OPEN');
 
+  const getDynamicMinStartTime = () => {
+    const todayStr = getLocalDateString();
+    if (formData.auditDate === todayStr) {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHour = hours % 12 || 12;
+      const currentSystemTime12h = `${displayHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+
+      const totalMinSystem = hours * 60 + minutes;
+      const totalMin9AM = 9 * 60;
+      if (totalMinSystem > totalMin9AM) {
+        return currentSystemTime12h;
+      }
+    }
+    return "09:00 AM";
+  };
+
+  const getDynamicMinEndTime = () => {
+    let minTimeMins = 9 * 60 + 30; // 09:30 AM
+
+    const todayStr = getLocalDateString();
+    if (formData.auditDate === todayStr) {
+      const now = new Date();
+      const totalMinSystem = now.getHours() * 60 + now.getMinutes();
+      minTimeMins = Math.max(minTimeMins, totalMinSystem);
+    }
+
+    const startMins = parseTimeToMinutes(formData.startTime);
+    if (startMins !== null) {
+      minTimeMins = Math.max(minTimeMins, startMins);
+    }
+
+    const parts = minutesToTimeParts(minTimeMins);
+    return `${String(parts.hour).padStart(2, '0')}:${parts.minute} ${parts.ampm}`;
+  };
+
   const [criteriaList, setCriteriaList] = useState([]);
+  const [statusEditable, setStatusEditable] = useState(false);
   const category = getAuditCategory(formData.auditType);
   const { 
     auditTypes = [], 
@@ -272,6 +404,10 @@ export default function AddAuditSchedule() {
         ncrApprovedBy: data.ncrApprovedBy || '',
         ncrApprovedByType: data.ncrApprovedByType || '',
         criteriaMinCount: data.criteriaMinCount || 0,
+        frequency: data.frequency || 'NONE',
+        weekDays: data.weekDays || '',
+        repeatEveryValue: data.repeatEveryValue !== null && data.repeatEveryValue !== undefined ? data.repeatEveryValue : '',
+        repeatEveryUnit: data.repeatEveryUnit || 'DAYS',
         itemCode: data.itemCode || '',
         customerName: extras.customerName || '',
         contactName: extras.contactName || '',
@@ -286,6 +422,7 @@ export default function AddAuditSchedule() {
         auditAreaDetail: extras.auditAreaDetail || ''
       });
       setCriteriaList(data.criteriaList || []);
+      setScheduleHasAttendance(Boolean(data.hasAttendance));
     } catch (error) {
       console.error('Failed to fetch schedule:', error);
     }
@@ -299,7 +436,10 @@ export default function AddAuditSchedule() {
           if (!val) return '';
           const valStr = String(val);
           const code = valStr.includes(' - ') ? valStr.split(' - ')[1] : valStr;
-          const match = employees.find(emp => String(emp?.empCode || emp?.employeeCode || emp?.id || '') === String(code));
+          const match = employees.find(emp => 
+            String(emp?.empCode || emp?.employeeCode || emp?.id || '').toLowerCase() === String(code).toLowerCase() ||
+            String(emp?.employeeName || '').toLowerCase() === String(code).toLowerCase()
+          );
           if (match) {
             const fName = match.firstName || '';
             const lName = match.lastName || '';
@@ -341,11 +481,21 @@ export default function AddAuditSchedule() {
         return prev;
       });
     }
-  }, [employees]);
+  }, [employees, formData.auditor, formData.auditee, formData.ncrApprovedBy, formData.coOrdinator]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'frequency') {
+      setFormData((prev) => ({
+        ...prev,
+        frequency: value,
+        weekDays: value === 'WEEKLY' ? '' : prev.weekDays,
+        repeatEveryValue: value === 'CUSTOM' ? '' : prev.repeatEveryValue,
+        repeatEveryUnit: value === 'CUSTOM' ? 'DAYS' : prev.repeatEveryUnit
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSave = async () => {
@@ -355,9 +505,20 @@ export default function AddAuditSchedule() {
       { field: 'auditDate', label: 'Audit Date', required: true },
       { field: 'department', label: 'Department', required: true },
       { field: 'auditee', label: 'Auditee', required: true },
-      { field: 'ncrApprovedBy', label: 'NCR Approved By', required: true },
-      { field: 'auditArea', label: 'Audit Area', required: true }
+      { field: 'ncrApprovedBy', label: 'NC Approved By', required: true },
+      { field: 'auditArea', label: 'Audit Area', required: true },
+      { field: 'startTime', label: 'Start Time', required: true },
+      { field: 'endTime', label: 'End Time', required: true },
+      { field: 'frequency', label: 'Frequency', required: true }
     ];
+
+    if (formData.frequency === 'WEEKLY') {
+      rules.push({ field: 'weekDays', label: 'Week Days', required: true });
+    }
+    if (formData.frequency === 'CUSTOM') {
+      rules.push({ field: 'repeatEveryValue', label: 'Repeat Every', required: true, type: 'number' });
+      rules.push({ field: 'repeatEveryUnit', label: 'Schedule Unit', required: true });
+    }
 
     if (category === 'CUSTOMER_AUDIT') {
       rules.push({ field: 'customerName', label: 'Customer Name', required: true });
@@ -390,6 +551,14 @@ export default function AddAuditSchedule() {
 
     if (!validate(formData, rules)) return;
 
+    if (isEditing && scheduleHasAttendance) {
+      setErrors(prev => ({
+        ...prev,
+        auditDate: 'Cannot reschedule or edit this audit schedule because employee attendance has already been recorded.'
+      }));
+      return;
+    }
+
     if (isPastTime(formData.startTime, formData.auditDate)) {
       dispatch(openSnackbar({
         open: true,
@@ -421,6 +590,27 @@ export default function AddAuditSchedule() {
 
     const startNum = convertTo24h(formData.startTime);
     const endNum = convertTo24h(formData.endTime);
+
+    if (startNum < 900 || startNum > 2100) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Start Time must be between 09:00 AM and 09:00 PM.',
+        severity: 'error',
+        variant: 'alert'
+      }));
+      return;
+    }
+
+    if (endNum < 930 || endNum > 2100) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'End Time must be between 09:30 AM and 09:00 PM.',
+        severity: 'error',
+        variant: 'alert'
+      }));
+      return;
+    }
+
     if (endNum <= startNum) {
       dispatch(openSnackbar({ open: true, message: 'End Time must be greater than Start Time.', severity: 'error', variant: 'alert' }));
       return;
@@ -459,6 +649,9 @@ export default function AddAuditSchedule() {
       
       const payload = { 
         ...formData, 
+        repeatEveryValue: formData.frequency === 'CUSTOM' && formData.repeatEveryValue ? parseInt(formData.repeatEveryValue, 10) : null,
+        repeatEveryUnit: formData.frequency === 'CUSTOM' ? formData.repeatEveryUnit : null,
+        weekDays: formData.frequency === 'WEEKLY' ? formData.weekDays : null,
         auditeeDetails: JSON.stringify(extraDetails),
         criteriaList 
       };
@@ -472,7 +665,14 @@ export default function AddAuditSchedule() {
       }
       navigate('/qms/audit/schedule');
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.response?.data?.details || error.message || 'Error saving Audit Schedule.';
+      let errorMsg = 'Error saving Audit Schedule.';
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
+        errorMsg = error.response.data.message || error.response.data.details || (typeof error.response.data === 'string' ? error.response.data : errorMsg);
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
       dispatch(openSnackbar({ open: true, message: errorMsg, severity: 'error', variant: 'alert' }));
     }
   };
@@ -489,8 +689,12 @@ export default function AddAuditSchedule() {
         auditArea: '',
         auditDate: getLocalDateString(),
         auditMonth: MONTHS[new Date().getMonth()],
-        startTime: '09:00 AM',
+        startTime: defaultStartTime,
         endTime: '05:00 PM',
+        frequency: 'NONE',
+        weekDays: '',
+        repeatEveryValue: '',
+        repeatEveryUnit: 'DAYS',
         department: '',
         auditee: '',
         auditeeType: '',
@@ -511,6 +715,7 @@ export default function AddAuditSchedule() {
         processName: '',
         auditAreaDetail: ''
       });
+      generateScheduleNo();
       setCriteriaList([]);
       generateScheduleNo();
     }
@@ -617,11 +822,18 @@ export default function AddAuditSchedule() {
   }, [masterCriteria, formData.auditType, formData.department, criteriaList]);
 
   const mappedAuditAreas = useMemo(() => {
-    if (!formData.auditType) return [];
+    const getActiveGlobalAreas = () => 
+      auditAreas.filter(a => a && a.status?.toUpperCase() === 'ACTIVE').map(a => a.description).filter(Boolean);
+
+    if (!formData.auditType || !auditTypes.length) {
+      return getActiveGlobalAreas();
+    }
     const selectedTypeObj = auditTypes.find(t => t.auditType === formData.auditType);
-    if (!selectedTypeObj || !selectedTypeObj.auditArea) return [];
+    if (!selectedTypeObj || !selectedTypeObj.auditArea) {
+      return getActiveGlobalAreas();
+    }
     return selectedTypeObj.auditArea.split(',').map(s => s.trim()).filter(Boolean);
-  }, [formData.auditType, auditTypes]);
+  }, [formData.auditType, auditTypes, auditAreas]);
 
   const totalRequiredCount = useMemo(() => {
     const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
@@ -651,26 +863,26 @@ export default function AddAuditSchedule() {
             {canWrite ? (
               <>
                 <Button
-                  variant="outlined"
-                  color="secondary"
+                  variant="contained"
+                  sx={btnCancel}
                   onClick={() => navigate('/qms/audit/schedule')}
                   startIcon={<IconArrowLeft size={20} />}
                 >
                   Back
                 </Button>
-                <Tooltip title="Clear all fields">
-                  <Button variant="contained" sx={btnClear} onClick={handleClear} startIcon={<IconEraser size={20} />}>
-                    Clear
-                  </Button>
-                </Tooltip>
                 <Tooltip title={shortcutTooltip('Save Schedule', 'Ctrl + S')}>
-                  <Button variant="contained" sx={btnSave} onClick={handleSave} startIcon={<IconCheck size={20} />}>
+                  <Button variant="contained" sx={btnSave} onClick={handleSave} startIcon={<IconCheck size={20} />} >
                     Save
                   </Button>
                 </Tooltip>
               </>
             ) : (
-              <Button variant="outlined" color="primary" onClick={() => navigate('/qms/audit/schedule')}>
+              <Button
+                variant="contained"
+                sx={btnCancel}
+                onClick={() => navigate('/qms/audit/schedule')}
+                startIcon={<IconArrowLeft size={20} />}
+              >
                 Back
               </Button>
             )}
@@ -692,11 +904,32 @@ export default function AddAuditSchedule() {
                 disabled={true}
               />
 
-              <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange} disabled={!canWrite}>
-                <MenuItem value="OPEN">OPEN</MenuItem>
-                <MenuItem value="CLOSED">CLOSED</MenuItem>
-                <MenuItem value="CANCELLED">CANCELLED</MenuItem>
-              </BOSTextField>
+              <Box>
+                {isEditing ? (
+                  <BOSTextField
+                    select
+                    label="Status"
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    disabled={!canWrite}
+                    fullWidth
+                  >
+                    <MenuItem value="OPEN">OPEN</MenuItem>
+                    <MenuItem value="WAITING_APPROVAL">PENDING FOR APPROVAL</MenuItem>
+                    <MenuItem value="CLOSED">CLOSED</MenuItem>
+                    <MenuItem value="CANCELLED">CANCELLED</MenuItem>
+                  </BOSTextField>
+                ) : (
+                  <BOSTextField
+                    label="Status"
+                    name="status"
+                    value={formData.status === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : formData.status}
+                    inputProps={{ readOnly: true }}
+                    fullWidth
+                  />
+                )}
+              </Box>
 
               <BOSTextField
                 required
@@ -758,6 +991,71 @@ export default function AddAuditSchedule() {
                   />
                 )}
               />
+
+              <BOSTextField
+                select
+                required
+                label="Frequency"
+                name="frequency"
+                value={formData.frequency}
+                onChange={handleChange}
+                error={!!errors.frequency}
+                helperText={errors.frequency}
+                disabled={!canWrite}
+              >
+                {['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'BI-ANNUAL', 'ANNUAL', 'CUSTOM'].map((f) => (
+                  <MenuItem key={f} value={f}>{f}</MenuItem>
+                ))}
+              </BOSTextField>
+
+              {formData.frequency === 'WEEKLY' && (
+                <BOSTextField
+                  select
+                  required
+                  label="Week Days"
+                  name="weekDays"
+                  value={formData.weekDays || ''}
+                  onChange={handleChange}
+                  error={!!errors.weekDays}
+                  helperText={errors.weekDays}
+                  disabled={!canWrite}
+                >
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d) => (
+                    <MenuItem key={d} value={d}>{d}</MenuItem>
+                  ))}
+                </BOSTextField>
+              )}
+
+              {formData.frequency === 'CUSTOM' && (
+                <>
+                  <BOSTextField
+                    required
+                    type="number"
+                    label="Repeat Every"
+                    name="repeatEveryValue"
+                    value={formData.repeatEveryValue || ''}
+                    onChange={handleChange}
+                    error={!!errors.repeatEveryValue}
+                    helperText={errors.repeatEveryValue}
+                    disabled={!canWrite}
+                  />
+                  <BOSTextField
+                    select
+                    required
+                    label="Schedule"
+                    name="repeatEveryUnit"
+                    value={formData.repeatEveryUnit || 'DAYS'}
+                    onChange={handleChange}
+                    error={!!errors.repeatEveryUnit}
+                    helperText={errors.repeatEveryUnit}
+                    disabled={!canWrite}
+                  >
+                    {['DAYS', 'WEEKS', 'MONTHS', 'YEARS'].map((u) => (
+                      <MenuItem key={u} value={u}>{u}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </>
+              )}
               <BOSTextField
                 select
                 required
@@ -991,30 +1289,30 @@ export default function AddAuditSchedule() {
                   <MenuItem key={m} value={m}>{m}</MenuItem>
                 ))}
               </BOSTextField>
-              <BOSTextField
-                select
+              <BOSTimePicker
+                required
                 label="Start Time"
                 name="startTime"
                 value={formData.startTime}
                 onChange={handleChange}
                 disabled={!canWrite}
-              >
-                {START_TIME_OPTIONS.map((t) => (
-                  <MenuItem key={t} value={t} disabled={isPastTime(t, formData.auditDate)}>{t}</MenuItem>
-                ))}
-              </BOSTextField>
-              <BOSTextField
-                select
+                minTime={getDynamicMinStartTime()}
+                maxTime="09:00 PM"
+                error={!!errors.startTime}
+                helperText={errors.startTime}
+              />
+              <BOSTimePicker
+                required
                 label="End Time"
                 name="endTime"
                 value={formData.endTime}
                 onChange={handleChange}
                 disabled={!canWrite}
-              >
-                {END_TIME_OPTIONS.map((t) => (
-                  <MenuItem key={t} value={t} disabled={isPastTime(t, formData.auditDate)}>{t}</MenuItem>
-                ))}
-              </BOSTextField>
+                minTime={getDynamicMinEndTime()}
+                maxTime="09:00 PM"
+                error={!!errors.endTime}
+                helperText={errors.endTime}
+              />
 
               {/* Dynamic Field: Co-Ordinator Select */}
               {(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') && (
@@ -1023,35 +1321,99 @@ export default function AddAuditSchedule() {
                   required
                   label="Co-Ordinator"
                   name="coOrdinator"
-                  value={formData.coOrdinator}
+                  value={(() => {
+                    const val = formData.coOrdinator;
+                    if (!val) return '';
+                    const valStr = String(val).trim().toLowerCase();
+                    const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                    const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                    // Compute options list to map
+                    const coordOptions = (employees || []).filter(emp => emp).filter(emp => {
+                      if (emp.status !== 'Active') return false;
+                      if (!formData.department) return false;
+                      const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
+                      return empDept?.departmentName === formData.department;
+                    }).map(emp => {
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      let name = '';
+                      if (fName && lName) {
+                        name = `${fName} ${lName}`.trim();
+                      } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+                        name = `${empName} ${lName}`.trim();
+                      } else if (empName) {
+                        name = empName;
+                      } else {
+                        name = `${fName} ${lName}`.trim();
+                      }
+                      return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
+                    });
+
+                    const match = coordOptions.find(opt => {
+                      const optStr = String(opt).trim().toLowerCase();
+                      const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                      const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                      if (valCode && optCode) return valCode === optCode;
+                      return valName === optName;
+                    });
+                    return match || val;
+                  })()}
                   onChange={handleChange}
                   error={!!errors.coOrdinator}
                   helperText={errors.coOrdinator}
                   disabled={!canWrite}
                 >
                   <MenuItem value="">-Select-</MenuItem>
-                  {(employees || []).filter(emp => emp).filter(emp => {
-                    if (emp.status !== 'Active') return false;
-                    if (!formData.department) return false;
-                    const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
-                    return empDept?.departmentName === formData.department;
-                  }).map(emp => {
-                    const fName = emp.firstName || '';
-                    const lName = emp.lastName || '';
-                    const empName = emp.employeeName || '';
-                    let name = '';
-                    if (fName && lName) {
-                      name = `${fName} ${lName}`.trim();
-                    } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
-                      name = `${empName} ${lName}`.trim();
-                    } else if (empName) {
-                      name = empName;
-                    } else {
-                      name = `${fName} ${lName}`.trim();
+                  {(() => {
+                    const coordOptions = (employees || []).filter(emp => emp).filter(emp => {
+                      if (emp.status !== 'Active') return false;
+                      if (!formData.department) return false;
+                      const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
+                      return empDept?.departmentName === formData.department;
+                    }).map(emp => {
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      let name = '';
+                      if (fName && lName) {
+                        name = `${fName} ${lName}`.trim();
+                      } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+                        name = `${empName} ${lName}`.trim();
+                      } else if (empName) {
+                        name = empName;
+                      } else {
+                        name = `${fName} ${lName}`.trim();
+                      }
+                      return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
+                    });
+
+                    const val = formData.coOrdinator;
+                    if (val) {
+                      const valStr = String(val).trim().toLowerCase();
+                      const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                      const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                      const hasMatch = coordOptions.some(opt => {
+                        const optStr = String(opt).trim().toLowerCase();
+                        const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                        const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                        if (valCode && optCode) return valCode === optCode;
+                        return valName === optName;
+                      });
+
+                      if (!hasMatch) {
+                        coordOptions.push(val);
+                      }
                     }
-                    const opt = `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
-                    return <MenuItem key={opt} value={opt}>{opt}</MenuItem>;
-                  })}
+
+                    return coordOptions.map(opt => (
+                      <MenuItem key={opt} value={opt}>{opt.includes(' - ') ? opt.split(' - ')[0].trim() : opt}</MenuItem>
+                    ));
+                  })()}
                 </BOSTextField>
               )}
             </Box>
@@ -1065,7 +1427,7 @@ export default function AddAuditSchedule() {
               {[
                 { role: 'AUDITEE', field: 'auditee', typeField: 'auditeeType', label: 'Auditee' },
                 { role: 'AUDITOR', field: 'auditor', typeField: 'auditorType', label: 'Auditor' },
-                { role: 'NCR APPROVED BY', field: 'ncrApprovedBy', typeField: 'ncrApprovedByType', label: 'NCR Approved By' }
+                { role: 'NC APPROVED BY', field: 'ncrApprovedBy', typeField: 'ncrApprovedByType', label: 'NC Approved By' }
               ].filter(person => {
                 if (person.role === 'AUDITOR') {
                   return !(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT');
@@ -1108,12 +1470,26 @@ export default function AddAuditSchedule() {
                   return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
                 };
 
-                const selectedEmp = filteredEmployees.find(emp => {
+                const selectedEmp = (employees || []).find(emp => {
                   const label = getEmpLabel(emp);
                   if (label === value) return true;
-                  if (value && String(value).includes(' - ')) {
-                    const code = String(value).split(' - ')[1];
-                    return String(emp?.empCode || emp?.employeeCode || emp?.id || '') === String(code);
+                  if (value) {
+                    const valStr = String(value);
+                    if (valStr.includes(' - ')) {
+                      const code = valStr.split(' - ')[1];
+                      return String(emp?.empCode || emp?.employeeCode || emp?.id || '').toLowerCase() === String(code).toLowerCase();
+                    } else {
+                      // Fallback name matching case-insensitively
+                      const fName = emp.firstName || '';
+                      const lName = emp.lastName || '';
+                      const empName = emp.employeeName || '';
+                      const names = [
+                        empName.toLowerCase(),
+                        `${fName} ${lName}`.trim().toLowerCase(),
+                        `${empName} ${lName}`.trim().toLowerCase()
+                      ].filter(Boolean);
+                      return names.includes(valStr.trim().toLowerCase());
+                    }
                   }
                   return false;
                 });
@@ -1129,6 +1505,45 @@ export default function AddAuditSchedule() {
                 }
 
                 const employeeOptions = filteredEmployees.map(emp => getEmpLabel(emp));
+                if (value) {
+                  const valStr = String(value).trim().toLowerCase();
+                  const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                  const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                  const hasMatch = employeeOptions.some(opt => {
+                    const optStr = String(opt).trim().toLowerCase();
+                    const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                    const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                    if (valCode && optCode) return valCode === optCode;
+                    return valName === optName;
+                  });
+
+                  if (!hasMatch) {
+                    employeeOptions.push(value);
+                  }
+                }
+                if (selectedEmp) {
+                  const label = getEmpLabel(selectedEmp);
+                  if (label) {
+                    const labelStr = String(label).trim().toLowerCase();
+                    const labelCode = labelStr.includes(' - ') ? labelStr.split(' - ')[1].trim() : '';
+                    const labelName = labelStr.includes(' - ') ? labelStr.split(' - ')[0].trim() : labelStr;
+
+                    const hasMatch = employeeOptions.some(opt => {
+                      const optStr = String(opt).trim().toLowerCase();
+                      const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                      const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                      if (labelCode && optCode) return optCode === labelCode;
+                      return optName === labelName;
+                    });
+
+                    if (!hasMatch) {
+                      employeeOptions.push(label);
+                    }
+                  }
+                }
 
                 return (
                   <Card key={person.role} sx={{
@@ -1173,7 +1588,23 @@ export default function AddAuditSchedule() {
                           required
                           label={`Select ${person.label}`}
                           name={person.field}
-                          value={formData[person.field]}
+                          value={(() => {
+                            const val = formData[person.field];
+                            if (!val) return '';
+                            const valStr = String(val).trim().toLowerCase();
+                            const valCode = valStr.includes(' - ') ? valStr.split(' - ')[1].trim() : '';
+                            const valName = valStr.includes(' - ') ? valStr.split(' - ')[0].trim() : valStr;
+
+                            const match = employeeOptions.find(opt => {
+                              const optStr = String(opt).trim().toLowerCase();
+                              const optCode = optStr.includes(' - ') ? optStr.split(' - ')[1].trim() : '';
+                              const optName = optStr.includes(' - ') ? optStr.split(' - ')[0].trim() : optStr;
+
+                              if (valCode && optCode) return valCode === optCode;
+                              return valName === optName;
+                            });
+                            return match || val;
+                          })()}
                           onChange={handleChange}
                           error={!!errors[person.field]}
                           helperText={errors[person.field]}
@@ -1181,7 +1612,7 @@ export default function AddAuditSchedule() {
                         >
                           <MenuItem value="">-Select-</MenuItem>
                           {employeeOptions.map((opt) => (
-                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                            <MenuItem key={opt} value={opt}>{opt.includes(' - ') ? opt.split(' - ')[0].trim() : opt}</MenuItem>
                           ))}
                         </BOSTextField>
                       </Stack>
@@ -1224,15 +1655,15 @@ export default function AddAuditSchedule() {
             <BOSDataTable
               columns={(category === 'SUPPLIER_ASSESSMENT') ? [
                 { id: 'clause', label: 'Clause', minWidth: 100 },
-                { id: 'criteriaDetails', label: 'Agenda', minWidth: 300 },
-                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
+                { id: 'criteriaDetails', label: 'Agenda', minWidth: 650 },
+                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 80 },
                 { id: 'remarks', label: 'Remarks', minWidth: 150 }
               ] : [
                 { id: 'index', label: '#', minWidth: 50 },
                 { id: 'seqNo', label: 'Seq No', minWidth: 80 },
                 { id: 'clause', label: 'Clause', minWidth: 100 },
-                { id: 'criteriaDetails', label: 'Criteria Details', minWidth: 300 },
-                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
+                { id: 'criteriaDetails', label: 'Criteria Details', minWidth: 650 },
+                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 80 },
                 { id: 'remarks', label: 'Remarks', minWidth: 150 }
               ]}
               rows={criteriaList}
@@ -1268,14 +1699,14 @@ export default function AddAuditSchedule() {
             columns={(category === 'SUPPLIER_ASSESSMENT') ? [
               { id: 'select', label: '', minWidth: 50 },
               { id: 'clause', label: 'Clause', minWidth: 100 },
-              { id: 'criteriaText', label: 'Agenda', minWidth: 400 },
-              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 }
+              { id: 'criteriaText', label: 'Agenda', minWidth: 650 },
+              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 80 }
             ] : [
               { id: 'select', label: '', minWidth: 50 },
               { id: 'seqNo', label: 'Seq No', minWidth: 80 },
               { id: 'clause', label: 'Clause', minWidth: 100 },
-              { id: 'criteriaText', label: 'Criteria Details', minWidth: 400 },
-              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 }
+              { id: 'criteriaText', label: 'Criteria Details', minWidth: 650 },
+              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 80 }
             ]}
             rows={availableCriteria}
             page={0}
@@ -1363,7 +1794,7 @@ export default function AddAuditSchedule() {
             <BOSFileUpload
               files={customAttachments}
               onChange={setCustomAttachments}
-              module="QMS"
+              module="QUALITY_MANAGEMENT_SYSTEMS_AUDIT_AUDIT_SCHEDULE"
               multiple={false}
               compact={true}
             />

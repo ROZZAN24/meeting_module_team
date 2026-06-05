@@ -143,7 +143,7 @@ npm install       # only needed first time
 npm start
 ```
 
-Open **http://localhost:3001** and log in.
+Open **http://localhost:3000** and log in.
 
 ---
 
@@ -236,13 +236,13 @@ lsof -ti:8081 | xargs kill -9
 Get-Process -Id (Get-NetTCPConnection -LocalPort 8081).OwningProcess | Stop-Process -Force
 ```
 
-### ❌ Port 3001 already in use
+### ❌ Port 3000 already in use
 ```bash
 # macOS/Linux
-lsof -ti:3001 | xargs kill -9
+lsof -ti:3000 | xargs kill -9
 
 # Windows (PowerShell)
-Get-Process -Id (Get-NetTCPConnection -LocalPort 3001).OwningProcess | Stop-Process -Force
+Get-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess | Stop-Process -Force
 ```
 
 ### ❌ npm install fails

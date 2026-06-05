@@ -28,6 +28,33 @@ const columns = [
   { id: 'status', label: 'Status', minWidth: 160 }
 ];
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '-';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const dateStr = `${day}/${month}/${year}`;
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const hoursStr = String(hours).padStart(2, '0');
+  const timeStr = `${hoursStr}:${minutes} ${ampm}`;
+  return (
+    <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', textAlign: 'center' }}>
+      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+        {dateStr}
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+        {timeStr}
+      </Typography>
+    </Stack>
+  );
+};
+
 export default function MomApprovalList() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
@@ -158,17 +185,9 @@ export default function MomApprovalList() {
     else if (col.id === 'createdUser') val = row.createdUser || '-';
     else if (col.id === 'updatedUser') val = row.updatedUser || '-';
     else if (col.id === 'createdAt') {
-      if (!row._createdAt) val = '-';
-      else {
-        const dt = new Date(row._createdAt);
-        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-      }
+      val = formatDateTime(row._createdAt);
     } else if (col.id === 'updatedAt') {
-      if (!row._updatedAt) val = '-';
-      else {
-        const dt = new Date(row._updatedAt);
-        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-      }
+      val = formatDateTime(row._updatedAt);
     } else if (col.id === 'status') {
       const s = row.status || 'PENDING FOR APPROVAL';
       let chipStatus = 'PENDING';

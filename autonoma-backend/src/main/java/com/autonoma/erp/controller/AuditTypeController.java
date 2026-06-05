@@ -32,25 +32,10 @@ public class AuditTypeController {
     private AuditTypeRepository auditTypeRepository;
 
     @GetMapping
-    @Operation(summary = "Get All Audit Types", description = "Fetches a paginated list of audit types with optional filters")
-    public ResponseEntity<java.util.Map<String, Object>> getAllAuditTypes(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String auditArea,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        log.info("Fetching audit types with search: {}, status: {}, area: {}, page: {}, size: {}", search, status, auditArea, page, size);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("id").descending());
-        org.springframework.data.domain.Page<AuditType> auditTypePage = auditTypeService.getAllPaginated(search, status, auditArea, pageable);
-        
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
-        response.put("content", auditTypePage.getContent());
-        response.put("totalElements", auditTypePage.getTotalElements());
-        response.put("totalPages", auditTypePage.getTotalPages());
-        response.put("currentPage", auditTypePage.getNumber());
-        
-        return ResponseEntity.ok(response);
+    @Operation(summary = "Get All Audit Types", description = "Fetches the list of all audit types")
+    public List<AuditType> getAllAuditTypes() {
+        log.info("Fetching all audit types");
+        return auditTypeService.getAll();
     }
 
     @GetMapping("/active")
@@ -66,7 +51,7 @@ public class AuditTypeController {
     }
 
     @PostMapping
-    @RequirePagePermission(pageCode = "M1110", action = "write")
+    @RequirePagePermission(pageCode = "M1120", action = "write")
     @Operation(summary = "Create Audit Type", description = "Creates a new audit type configuration")
     public ResponseEntity<?> createAuditType(@RequestBody AuditType auditType) {
         log.info("Saving audit type: {}", auditType);
@@ -77,7 +62,7 @@ public class AuditTypeController {
     }
 
     @PutMapping("/{id}")
-    @RequirePagePermission(pageCode = "M1110", action = "write")
+    @RequirePagePermission(pageCode = "M1120", action = "write")
     public ResponseEntity<?> updateAuditType(@PathVariable Long id, @RequestBody AuditType auditType) {
         log.info("Updating audit type with ID {}: {}", id, auditType);
         AuditType existing = auditTypeRepository.findById(id).orElse(null);
@@ -95,7 +80,7 @@ public class AuditTypeController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePagePermission(pageCode = "M1110", action = "delete")
+    @RequirePagePermission(pageCode = "M1120", action = "delete")
     public ResponseEntity<?> deleteAuditType(@PathVariable Long id) {
         log.info("Attempting to delete audit type with ID: {}", id);
         AuditType existing = auditTypeRepository.findById(id).orElse(null);

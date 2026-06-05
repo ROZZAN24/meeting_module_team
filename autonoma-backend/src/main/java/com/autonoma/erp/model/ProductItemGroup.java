@@ -29,7 +29,10 @@ public class ProductItemGroup extends BaseAuditEntity {
     @Override
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+
         super.onCreate();
         if (status == null) status = "ACTIVE";
-    }
+        }
 }

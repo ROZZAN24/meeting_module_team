@@ -4,7 +4,7 @@ import {
   Box, Typography, List, ListItem, Avatar,
   Chip, CircularProgress, IconButton, Paper, Divider,
   Grid, Card, CardContent, Tabs, Tab, TextField, InputAdornment,
-  Button
+  Button, Snackbar, Alert
 } from '@mui/material';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
@@ -25,6 +25,11 @@ export default function InboxPage() {
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [currentTab, setCurrentTab] = useState('All Inbox');
   const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+
+  const handleCloseToast = () => {
+    setToast((prev) => ({ ...prev, open: false }));
+  };
 
   const load = () => {
     setLoading(true);
@@ -47,10 +52,10 @@ export default function InboxPage() {
   const handleSyncToWorkItems = async () => {
     try {
       await inboxService.syncToWorkItems();
-      alert('Emails synced to Work Items successfully!');
+      setToast({ open: true, message: 'Emails synced to Work Items successfully!', severity: 'success' });
     } catch (err) {
       console.error('Sync failed', err);
-      alert('Failed to sync emails to Work Items');
+      setToast({ open: true, message: 'Failed to sync emails to Work Items', severity: 'error' });
     }
   };
 
@@ -370,6 +375,16 @@ export default function InboxPage() {
           )}
         </Box>
       </Paper>
+      <Snackbar 
+        open={toast.open} 
+        autoHideDuration={4000} 
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseToast} severity={toast.severity} sx={{ width: '100%' }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

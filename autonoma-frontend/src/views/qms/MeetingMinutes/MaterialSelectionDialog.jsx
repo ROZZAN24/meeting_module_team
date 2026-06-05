@@ -2,20 +2,13 @@ import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   InputAdornment,
   Stack,
   IconButton,
   MenuItem
 } from '@mui/material';
 import { IconSearch, IconCheck } from '@tabler/icons-react';
-import { BOSTextField, BOSFormDialog } from 'ui-component/bos';
+import { BOSTextField, BOSFormDialog, BOSDataTable } from 'ui-component/bos';
 
 const RM_DATA = [
   { id: 1, partNo: 'NT/NIL', partName: 'NIL' },
@@ -50,6 +43,8 @@ const PRODUCT_DATA = [
 export default function MaterialSelectionDialog({ open, onClose, onSelect, type }) {
   const [search, setSearch] = useState('');
   const [searchBy, setSearchBy] = useState('partName');
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
 
   const data = type === 'RM' ? RM_DATA : PRODUCT_DATA;
 
@@ -61,6 +56,46 @@ export default function MaterialSelectionDialog({ open, onClose, onSelect, type 
 
   const handleClear = () => {
     onSelect({ partNo: '', partName: '' });
+  };
+
+  const columns = [
+    { id: 'index', label: 'Sl No', minWidth: 60, align: 'center' },
+    { id: 'partNo', label: 'Part No', minWidth: 180 },
+    { id: 'partName', label: 'Part Name', minWidth: 300 },
+    { id: 'select', label: 'Select', minWidth: 80, align: 'center' }
+  ];
+
+  const renderCell = (col, row, idx) => {
+    if (col.id === 'index') {
+      return (
+        <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.secondary' }}>
+          {idx + 1 + page * size}
+        </Typography>
+      );
+    }
+    if (col.id === 'partNo') {
+      return (
+        <Typography variant="body2" sx={{ fontWeight: 900, color: 'primary.main' }}>
+          {row.partNo}
+        </Typography>
+      );
+    }
+    if (col.id === 'partName') {
+      return <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.partName}</Typography>;
+    }
+    if (col.id === 'select') {
+      return (
+        <IconButton 
+          size="small" 
+          color="primary" 
+          onClick={() => onSelect(row)}
+          sx={{ bgcolor: 'primary.lighter', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+        >
+          <IconCheck size={18} />
+        </IconButton>
+      );
+    }
+    return row[col.id];
   };
 
   return (
@@ -101,57 +136,24 @@ export default function MaterialSelectionDialog({ open, onClose, onSelect, type 
           />
         </Stack>
 
-        <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 450, borderRadius: 2 }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 900, width: 60, py: 1.5 }}>Sl No</TableCell>
-                <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 900, width: 180 }}>Part No</TableCell>
-                <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 900 }}>Part Name</TableCell>
-                <TableCell sx={{ bgcolor: 'grey.50', fontWeight: 900, width: 80, textAlign: 'center' }}>Select</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                      No results found for "{search}"
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredData.map((item, idx) => (
-                  <TableRow 
-                    key={item.id} 
-                    hover 
-                    onDoubleClick={() => onSelect(item)}
-                    sx={{ 
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: 'primary.lighter !important' }
-                    }}
-                  >
-                    <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>{idx + 1}</TableCell>
-                    <TableCell sx={{ fontWeight: 900, color: 'primary.main' }}>{item.partNo}</TableCell>
-                    <TableCell sx={{ fontWeight: 500 }}>{item.partName}</TableCell>
-                    <TableCell align="center">
-                      <IconButton 
-                        size="small" 
-                        color="primary" 
-                        onClick={() => onSelect(item)}
-                        sx={{ bgcolor: 'primary.lighter', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
-                      >
-                        <IconCheck size={18} />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <BOSDataTable
+          columns={columns}
+          rows={filteredData}
+          page={page}
+          size={size}
+          loading={false}
+          onPageChange={setPage}
+          onSizeChange={(s) => { setSize(s); setPage(0); }}
+          onDoubleClickRow={onSelect}
+          renderCell={renderCell}
+          showActions={false}
+          id="material-selection-table"
+          disableSearchFilter={true}
+          disableTableConfig={true}
+          sx={{ height: 420 }}
+        />
         
-        <Box sx={{ mt: 2, textAlign: 'right' }}>
+        <Box sx={{ mt: 1, textAlign: 'right' }}>
            <Typography variant="caption" color="text.secondary" fontWeight={800}>
               Showing {filteredData.length} records • Double-click row to select
            </Typography>

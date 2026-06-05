@@ -45,9 +45,16 @@ public class VerificationCriteriaService {
             }
         }
 
+        String resolvedUser = com.autonoma.erp.util.SecurityUtils.getCurrentUserEmployeeName();
+        if (resolvedUser == null || resolvedUser.trim().isEmpty()) {
+            resolvedUser = currentUser;
+        }
+
+
         if (entity.getId() == null) {
             entity.setCreatedAt(new Date());
-            entity.setCreatedBy(currentUser);
+            entity.setCreatedBy(resolvedUser);
+            entity.setCreatedUser(resolvedUser);
         } else {
             Long entityId = entity.getId();
             if (entityId == null) {
@@ -57,8 +64,10 @@ public class VerificationCriteriaService {
                     .orElseThrow(() -> new RuntimeException("Verification Criteria not found."));
             entity.setCreatedAt(existing.getCreatedAt());
             entity.setCreatedBy(existing.getCreatedBy());
+            entity.setCreatedUser(existing.getCreatedUser());
             entity.setUpdatedAt(new Date());
-            entity.setUpdatedBy(currentUser);
+            entity.setUpdatedBy(resolvedUser);
+            entity.setUpdatedUser(resolvedUser);
         }
 
         return repository.save(entity);

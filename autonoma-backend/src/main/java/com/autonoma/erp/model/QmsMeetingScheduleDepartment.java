@@ -7,8 +7,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "QMS_MEETING_SCHEDULE_DEPARTMENT")
 @Data
+@lombok.EqualsAndHashCode(callSuper = true)
+@lombok.ToString(callSuper = true)
 @NoArgsConstructor
-public class QmsMeetingScheduleDepartment {
+public class QmsMeetingScheduleDepartment extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

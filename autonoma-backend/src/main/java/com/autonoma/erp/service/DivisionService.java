@@ -125,9 +125,7 @@ public class DivisionService {
             if (division.getCreatedBy() == null || division.getCreatedBy().isBlank()) {
                 division.setCreatedBy(loggedInUser);
             }
-            division.setUpdatedBy(loggedInUser);
             division.setCreatedDate(new Date());
-            division.setUpdatedDate(new Date());
 
             Division saved = divisionRepository.save(division);
 

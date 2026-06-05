@@ -12,6 +12,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
+import useAuth from 'hooks/useAuth';
 import MomActionClosureDialog from './MomActionClosureDialog';
 
 // Reusable action status chip sx
@@ -44,8 +45,36 @@ const columns = [
   { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120, align: 'center' }
 ];
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '-';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const dateStr = `${day}/${month}/${year}`;
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const hoursStr = String(hours).padStart(2, '0');
+  const timeStr = `${hoursStr}:${minutes} ${ampm}`;
+  return (
+    <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', textAlign: 'center' }}>
+      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+        {dateStr}
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+        {timeStr}
+      </Typography>
+    </Stack>
+  );
+};
+
 export default function MomActionReviewList() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
 
@@ -141,10 +170,13 @@ export default function MomActionReviewList() {
         if (row.displayStatus !== statusFilter) return false;
       }
 
-      // Access Filter (Mocked to employee name check for now)
+      // Access Filter
       const accessFilter = globalFilters.accessFilter || 'All';
-      // In a real app, this compares with loggedInUser.employeeName
-      // if (accessFilter === 'Mine' && row.assignedTo !== loggedInUser.employeeName) return false;
+      if (accessFilter === 'Mine') {
+        if (!user?.empId || String(row.assignedToId) !== String(user.empId)) return false;
+      } else if (accessFilter === 'Team') {
+        if (!user?.empId || String(row.assignedById) !== String(user.empId)) return false;
+      }
 
       // Search Text Filter
       const searchText = globalFilters.searchText || '';
@@ -193,9 +225,7 @@ export default function MomActionReviewList() {
       return row[col.id] ? row[col.id].split('-').reverse().join('/') : '-';
     }
     if (col.id === 'createdAt') {
-      if (!row.createdAt) return '-';
-      const dt = new Date(row.createdAt);
-      return `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+      return formatDateTime(row.createdAt);
     }
     return row[col.id] || '-';
   };
@@ -230,6 +260,7 @@ export default function MomActionReviewList() {
         onDoubleClickRow={handleEdit}
         onEditRow={handleEdit}
         renderCell={renderCell}
+        disableSearchFilter={true}
         id="mom-action-review-table"
       />
 

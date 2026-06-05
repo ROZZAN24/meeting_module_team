@@ -200,6 +200,7 @@ const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSession
 const FileTraceabilityHub = Loadable(lazy(() => import('views/admin/FileTraceabilityHub')));
 const TicketManagement = Loadable(lazy(() => import('views/admin/TicketManagement')));
 const DataMigration = Loadable(lazy(() => import('views/admin/DataMigration')));
+const OrganizationChart = Loadable(lazy(() => import('views/admin/OrganizationChart')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -221,8 +222,11 @@ const VerificationCriteria = Loadable(lazy(() => import('views/master/hr/ats/Ver
 const InductionAssignment = Loadable(lazy(() => import('views/master/hr/ats/InductionAssignment')));
 const InductionTraining = Loadable(lazy(() => import('views/master/hr/ats/InductionTraining')));
 const InductionTrainee = Loadable(lazy(() => import('views/master/hr/ats/InductionTrainee')));
-const InductionRoundMaster = Loadable(lazy(() => import('views/master/hr/ats/InductionRoundMaster')));
+
 const HraApplicationTrackingSystem = Loadable(lazy(() => import('views/hra/ApplicationTrackingSystem')));
+const HraApplicantProfile = Loadable(lazy(() => import('views/hra/ApplicantProfile')));
+const HraInterviewProcess = Loadable(lazy(() => import('views/hra/InterviewProcess')));
+const HraInterviewFinalProcess = Loadable(lazy(() => import('views/hra/InterviewFinalProcess')));
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
@@ -281,6 +285,7 @@ const NpdWindFarmMaster = Loadable(lazy(() => import('views/npd/WindFarm/WindFar
 const NpdModelNameMaster = Loadable(lazy(() => import('views/qms/ModelName/ModelNameMaster')));
 const NpdProcessMaster = Loadable(lazy(() => import('views/master/npd/product/ProcessMaster')));
 const NpdUomMaster = Loadable(lazy(() => import('views/qms/Uom/UomMaster')));
+const UnderConstruction = Loadable(lazy(() => import('views/pages/maintenance/UnderConstruction')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -338,7 +343,7 @@ const MainRoutes = {
     },
     {
       path: '/admin/data-migration',
-      element: <DataMigration />
+      element: <PageGuard pageCode={PAGE_CODES.AD_DATA_MIGRATION}><DataMigration /></PageGuard>
     },
     {
       path: '/admin/division',
@@ -905,6 +910,10 @@ const MainRoutes = {
       element: <UserTaskQueue />
     },
     {
+      path: '/admin/organization-chart',
+      element: <PageGuard pageCode={PAGE_CODES.AD1190}><OrganizationChart /></PageGuard>
+    },
+    {
       path: '/dashboard/task-dashboard',
       element: <TaskDashboard />
     },
@@ -922,23 +931,23 @@ const MainRoutes = {
     },
     {
       path: '/master/qms/checklist/master',
-      element: <QmsMasterCheckList />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_CHECKLIST}><QmsMasterCheckList /></PageGuard>
     },
     {
       path: '/qms/checklist/verify',
-      element: <QmsCheckListVerify />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_CHECKLIST_VERIFY}><QmsCheckListVerify /></PageGuard>
     },
     {
       path: '/qms/checklist/close-renewal',
-      element: <QmsCloseCheckListRenewal />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_CLOSE_RENEWAL}><QmsCloseCheckListRenewal /></PageGuard>
     },
     {
       path: '/qms/checklist/renewal-verify',
-      element: <QmsCheckListRenewalVerify />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_RENEWAL_VERIFY}><QmsCheckListRenewalVerify /></PageGuard>
     },
     {
       path: '/qms/checklist/renewal-report',
-      element: <QmsCheckListRenewalReport />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_RENEWAL_REPORT}><QmsCheckListRenewalReport /></PageGuard>
     },
     {
       path: '/master/hr/department',
@@ -951,6 +960,10 @@ const MainRoutes = {
     {
       path: '/master/hr/ats',
       element: <PageGuard pageCode={PAGE_CODES.HRA_ATS}><HraApplicationTrackingSystem /></PageGuard>
+    },
+    {
+      path: '/master/hr/ats/create',
+      element: <PageGuard pageCode={PAGE_CODES.HRA_ATS}><HraApplicantProfile /></PageGuard>
     },
     {
       path: '/hr/employee/master',
@@ -1026,7 +1039,11 @@ const MainRoutes = {
     },
     {
       path: '/master/npd/uom',
-      element: <NpdUomMaster />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_UOM}><NpdUomMaster /></PageGuard>
+    },
+    {
+      path: '/master/sales/logistics/uom',
+      element: <PageGuard pageCode={PAGE_CODES.LOG_UOM}><NpdUomMaster /></PageGuard>
     },
     {
       path: '/master/qms/meeting/master',
@@ -1034,96 +1051,96 @@ const MainRoutes = {
     },
     {
       path: '/qms/meeting-schedule',
-      element: <MeetingSchedule />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_MEETING_SCHEDULE}><MeetingSchedule /></PageGuard>
     },
     {
       path: '/qms/meeting-schedule/create',
-      element: <AddMeetingSchedule />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_MEETING_SCHEDULE}><AddMeetingSchedule /></PageGuard>
     },
     {
       path: '/qms/meeting-schedule/edit/:id',
-      element: <AddMeetingSchedule />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_MEETING_SCHEDULE}><AddMeetingSchedule /></PageGuard>
     },
     {
       path: '/qms/minutesofmeeting',
       children: [
         {
           path: '',
-          element: <MeetingMinutes />
+          element: <PageGuard pageCode={PAGE_CODES.QMS_MOM}><MeetingMinutes /></PageGuard>
         },
         {
           path: 'add',
-          element: <AddMeetingMinutes />
+          element: <PageGuard pageCode={PAGE_CODES.QMS_MOM}><AddMeetingMinutes /></PageGuard>
         },
         {
           path: 'edit/:id',
-          element: <AddMeetingMinutes />
+          element: <PageGuard pageCode={PAGE_CODES.QMS_MOM}><AddMeetingMinutes /></PageGuard>
         }
       ]
     },
     {
       path: '/qms/meeting-attendance',
-      element: <MeetingAttendance />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_MEETING_ATTENDANCE}><MeetingAttendance /></PageGuard>
     },
     {
       path: '/qms/close-mom',
-      element: <CloseMom />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_CLOSE_MOM}><CloseMom /></PageGuard>
     },
     {
       path: '/qms/mom-approval',
-      element: <MomApproval />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_MOM_APPROVAL}><MomApproval /></PageGuard>
     },
     {
       path: '/qms/audit/schedule',
-      element: <QmsAuditScheduleList />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_SCHEDULE}><QmsAuditScheduleList /></PageGuard>
     },
     {
       path: '/qms/audit/schedule/add',
-      element: <QmsAddAuditSchedule />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_SCHEDULE}><QmsAddAuditSchedule /></PageGuard>
     },
     {
       path: '/qms/audit/schedule/edit/:id',
-      element: <QmsAddAuditSchedule />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_SCHEDULE}><QmsAddAuditSchedule /></PageGuard>
     },
     {
       path: '/qms/audit/attendance',
-      element: <QmsAuditAttendance />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_ATTENDANCE}><QmsAuditAttendance /></PageGuard>
     },
     {
       path: '/qms/audit/observation',
-      element: <QmsAuditObservationList />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_OBSERVATION}><QmsAuditObservationList /></PageGuard>
     },
     {
       path: '/qms/audit/observation/add',
-      element: <QmsAddAuditObservation />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_OBSERVATION}><QmsAddAuditObservation /></PageGuard>
     },
     {
       path: '/qms/audit/observation/edit/:id',
-      element: <QmsAddAuditObservation />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_OBSERVATION}><QmsAddAuditObservation /></PageGuard>
     },
     {
       path: '/qms/audit/ncr/close',
-      element: <QmsAuditNcrClose />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_NCR_CLOSE}><QmsAuditNcrClose /></PageGuard>
     },
     {
       path: '/qms/audit/ncr/approval',
-      element: <QmsAuditNcrApproval />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_NCR_APPROVAL}><QmsAuditNcrApproval /></PageGuard>
     },
     {
       path: '/qms/audit/report',
-      element: <QmsAuditReport />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_REPORT}><QmsAuditReport /></PageGuard>
     },
     {
       path: '/sm/customers',
-      element: <SmCustomerMasterList />
+      element: <PageGuard pageCode={PAGE_CODES.CRM_CUSTOMER}><SmCustomerMasterList /></PageGuard>
     },
     {
       path: '/sm/customers/create',
-      element: <SmCustomerMaster />
+      element: <PageGuard pageCode={PAGE_CODES.CRM_CUSTOMER}><SmCustomerMaster /></PageGuard>
     },
     {
       path: '/sm/contacts',
-      element: <SmContactMasterList />
+      element: <PageGuard pageCode={PAGE_CODES.CRM_CONTACT}><SmContactMasterList /></PageGuard>
     },
     {
       path: '/sm/customer-address',
@@ -1131,119 +1148,155 @@ const MainRoutes = {
     },
     {
       path: '/sm/enquiry/dashboard',
-      element: <SmEnquiryDashboard />
+      element: <PageGuard pageCode={PAGE_CODES.SM_ENQUIRY_DASHBOARD}><SmEnquiryDashboard /></PageGuard>
     },
     {
       path: '/sm/price-master',
-      element: <SmPriceMasterList />
+      element: <PageGuard pageCode={PAGE_CODES.SM_PRICE_MASTER}><SmPriceMasterList /></PageGuard>
     },
     {
       path: '/sm/suppliers',
-      element: <SmSupplierList />
+      element: <PageGuard pageCode={PAGE_CODES.VEN_SUPPLIER}><SmSupplierList /></PageGuard>
     },
     {
       path: '/sm/suppliers/create',
-      element: <SmSupplierMaster />
+      element: <PageGuard pageCode={PAGE_CODES.VEN_SUPPLIER}><SmSupplierMaster /></PageGuard>
     },
     {
       path: '/sm/suppliers/edit/:id',
-      element: <SmSupplierMaster />
+      element: <PageGuard pageCode={PAGE_CODES.VEN_SUPPLIER}><SmSupplierMaster /></PageGuard>
     },
     {
       path: '/sm/quotations',
-      element: <SmQuotationList />
+      element: <PageGuard pageCode={PAGE_CODES.SM_QUOTATION}><SmQuotationList /></PageGuard>
     },
     {
       path: '/sm/enquiries',
-      element: <SmEnquiryList />
+      element: <PageGuard pageCode={PAGE_CODES.SM_ENQUIRY}><SmEnquiryList /></PageGuard>
     },
     {
       path: '/sm/ocr/currency-master',
-      element: <CurrencyMaster />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_CURRENCY}><CurrencyMaster /></PageGuard>
     },
     {
       path: '/master/accounts/currency',
-      element: <CurrencyMaster />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_CURRENCY}><CurrencyMaster /></PageGuard>
     },
     {
       path: '/sm/ocr/segment-master',
-      element: <SegmentMaster />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_SEGMENT}><SegmentMaster /></PageGuard>
     },
     {
       path: '/sm/ocr/sub-segment-master',
-      element: <SubSegmentMaster />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_SUB_SEGMENT}><SubSegmentMaster /></PageGuard>
     },
     {
       path: '/sm/ocr/payment-terms',
-      element: <PaymentTerms />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_PAYMENT_TERMS}><PaymentTerms /></PageGuard>
     },
     {
       path: '/sm/ocr/delivery-terms',
-      element: <DeliveryTerms />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_DELIVERY_TERMS}><DeliveryTerms /></PageGuard>
     },
     {
       path: '/master/common/delivery-terms',
-      element: <DeliveryTerms />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_DELIVERY_TERMS}><DeliveryTerms /></PageGuard>
     },
     {
       path: '/master/common/payment-terms',
-      element: <PaymentTerms />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_PAYMENT_TERMS}><PaymentTerms /></PageGuard>
     },
     {
       path: '/master/common/country',
-      element: <CountryMasterPage />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_COUNTRY}><CountryMasterPage /></PageGuard>
     },
     {
       path: '/master/common/state',
-      element: <StateMasterPage />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_STATE}><StateMasterPage /></PageGuard>
     },
     {
       path: '/master/sales/crm/potential',
-      element: <CustomerPotentialMaster />
-    },
-    {
-      path: '/master/npd/product-type',
-      element: <NpdItemTypeMaster />
-    },
-    {
-      path: '/master/npd/product-subtype',
-      element: <NpdItemSubtypeMaster />
-    },
-    {
-      path: '/master/npd/product-oem',
-      element: <NpdOemMaster />
-    },
-    {
-      path: '/master/npd/product-oem-mapping',
-      element: <NpdOemMappingMaster />
-    },
-    {
-      path: '/master/npd/product-model',
-      element: <NpdModelMaster />
-    },
-    {
-      path: '/master/npd/product-capacity',
-      element: <NpdCapacityMaster />
+      element: <PageGuard pageCode={PAGE_CODES.CRM_POTENTIAL}><CustomerPotentialMaster /></PageGuard>
     },
     {
       path: '/sm/ocr/type-of-service',
-      element: <TypeOfService />
+      element: <PageGuard pageCode={PAGE_CODES.SM_TYPE_OF_SERVICE}><TypeOfService /></PageGuard>
     },
     {
       path: '/support/raised-for-me',
-      element: <TicketManagement viewType="raised-for-me" />
+      element: <PageGuard pageCode={PAGE_CODES.SUPPORT_RAISED_FOR_ME}><TicketManagement viewType="raised-for-me" /></PageGuard>
     },
     {
       path: '/support/ticket-by-me',
-      element: <TicketManagement viewType="raised-by-me" />
+      element: <PageGuard pageCode={PAGE_CODES.SUPPORT_RAISED_BY_ME}><TicketManagement viewType="raised-by-me" /></PageGuard>
     },
     {
       path: '/master/sales/logistics/despatch-mode',
-      element: <DespatchMode />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_DESPATCH_MODE}><DespatchMode /></PageGuard>
     },
     {
       path: '/master/sales/logistics/freight',
-      element: <Freight />
+      element: <PageGuard pageCode={PAGE_CODES.LOG_FREIGHT}><Freight /></PageGuard>
+    },
+    {
+      path: '/hra/ats',
+      element: <PageGuard pageCode={PAGE_CODES.HRA_ATS}><HraApplicationTrackingSystem /></PageGuard>
+    },
+    {
+      path: '/hra/ats/create',
+      element: <PageGuard pageCode={PAGE_CODES.HRA_ATS}><HraApplicantProfile /></PageGuard>
+    },
+    {
+      path: '/hra/ats/interview-process',
+      element: <PageGuard pageCode={PAGE_CODES.HRA_ATS}><HraInterviewProcess /></PageGuard>
+    },
+    {
+      path: '/hra/ats/interview-final-process',
+      element: <PageGuard pageCode={PAGE_CODES.HRA_ATS}><HraInterviewFinalProcess /></PageGuard>
+    },
+    {
+      path: '/master/hr/satisfaction',
+      element: <PageGuard pageCode={PAGE_CODES.EMP_SATISFACTION}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/hr/payroll/holiday',
+      element: <PageGuard pageCode={PAGE_CODES.PAY_HOLIDAY}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/hr/payroll/bank',
+      element: <PageGuard pageCode={PAGE_CODES.PAY_BANK}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/hr/payroll/shift',
+      element: <PageGuard pageCode={PAGE_CODES.PAY_SHIFT}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/hr/payroll/loan',
+      element: <PageGuard pageCode={PAGE_CODES.PAY_LOAN}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/hr/payroll/leave',
+      element: <PageGuard pageCode={PAGE_CODES.PAY_LEAVE}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/hr/payroll/permission',
+      element: <PageGuard pageCode={PAGE_CODES.PAY_PERMISSION}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/hr/payroll/petrol',
+      element: <PageGuard pageCode={PAGE_CODES.PAY_PETROL}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/hr/payroll/policy',
+      element: <PageGuard pageCode={PAGE_CODES.PAY_POLICY}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/sales/crm/satisfaction',
+      element: <PageGuard pageCode={PAGE_CODES.CRM_SATISFACTION}><UnderConstruction /></PageGuard>
+    },
+    {
+      path: '/master/qms/meeting/unnamed',
+      element: <PageGuard pageCode={PAGE_CODES.QMS_MEETING_UNNAMED}><UnderConstruction /></PageGuard>
     },
     {
       path: '*',

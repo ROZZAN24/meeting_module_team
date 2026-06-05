@@ -117,7 +117,7 @@ export function JWTProvider({ children }) {
         try {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) localI18n = JSON.parse(stored)?.i18n || null;
-        } catch {}
+        } catch { }
 
         const mappedSettings = {
           menuOrientation: dbSettings.menuOrientation,
@@ -132,7 +132,7 @@ export function JWTProvider({ children }) {
           container: dbSettings.container,
           dashboardLayout: dbSettings.dashboardLayout || 'glass'
         };
-        
+
         setConfigState((prev) => ({
           ...prev,
           ...mappedSettings
@@ -180,8 +180,9 @@ export function JWTProvider({ children }) {
 
   const logout = async () => {
     try {
-      if (state.user?.id) {
-        await axios.post('/api/account/logout', { userId: state.user.id });
+      const uid = state.user?.userId || state.user?.id;
+      if (uid) {
+        await axios.post('/api/account/logout', { userId: uid });
       }
     } catch (err) {
       console.error('Logout audit failed:', err);
@@ -195,12 +196,12 @@ export function JWTProvider({ children }) {
       localStorage.removeItem('theme-mode');
       localStorage.removeItem('berry-config-vite-js');
       localStorage.removeItem('lastActiveTime');
-    } catch (_) {}
+    } catch (_) { }
 
     // Clear all sessionStorage (tenantId, divisionId, companyName, divisionName, serviceToken)
     try {
       sessionStorage.clear();
-    } catch (_) {}
+    } catch (_) { }
 
     // Force a hard redirect to /login — this completely wipes all in-memory
     // React/Redux state (permissions, search filters, cached routes, etc.)
@@ -224,9 +225,9 @@ export function JWTProvider({ children }) {
         const response = await axios.get('/api/account/license-status');
         setLicenseStatus(response.data);
 
-        console.log('License check:', response.data, 'User Admin:', state.user?.isBosAdmin);
+        console.log('License check:', response.data, 'User Admin:', state.user?.userLevel);
 
-        if (response.data.isExpired && state.isLoggedIn && state.user && state.user.isBosAdmin !== 1) {
+        if (response.data.isExpired && state.isLoggedIn && state.user && state.user.userLevel !== 5) {
           if (logoutCountdown === null) {
             console.log('LICENSE EXPIRED: Starting 45s countdown...');
             setLogoutCountdown(45);
@@ -242,7 +243,7 @@ export function JWTProvider({ children }) {
     checkLicense();
     const interval = setInterval(checkLicense, 60000); // check every 1 min
     return () => clearInterval(interval);
-  }, [state.isLoggedIn, state.user?.isBosAdmin, logoutCountdown === null]);
+  }, [state.isLoggedIn, state.user?.userLevel, logoutCountdown === null]);
 
   // --- SESSION WATCHDOG ---
   // Periodically update 'lastActiveTime' in localStorage. If the browser is closed entirely,
@@ -285,6 +286,17 @@ export function JWTProvider({ children }) {
           loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
+
+          // Fetch company config for global input case style
+          try {
+            const profileRes = await axios.get('/api/CompanyProfile/profile', { skipGlobalAlert: true });
+            if (profileRes.data && profileRes.data.inputCaseStyle) {
+              window.localStorage.setItem('inputCaseStyle', profileRes.data.inputCaseStyle);
+            }
+          } catch (e) {
+            console.error('Failed to load company profile config:', e);
+          }
+
           // Ensure session context is initialized
           setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName, user.username || user.email || user.name);
           dispatch({

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, MenuItem, Chip } from '@mui/material';
-import { IconShieldCheck } from '@tabler/icons-react';
+import { Typography, Button, Stack, Tooltip, IconButton, MenuItem } from '@mui/material';
+import { IconShieldCheck, IconRefresh, IconPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -53,13 +53,7 @@ export default function VerificationCriteria() {
       id: 'status',
       label: 'Status',
       minWidth: 100,
-      render: (row) => (
-        <Chip
-          label={row.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-          size="small"
-          sx={getStatusChipSx(row.status)}
-        />
-      )
+      status: true
     },
     { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
     {
@@ -165,7 +159,7 @@ export default function VerificationCriteria() {
       delete payload.index;
 
       if (formData.id) {
-        await axios.put(`/api/hr/verification-criteria/${formData.id}`, payload);
+        await axios.put(`/api/hr/verification-criteria/${formData.id}`, payload, { skipGlobalAlert: true });
         dispatch(openSnackbar({
           open: true,
           message: 'Verification Criteria Updated Successfully',
@@ -174,7 +168,7 @@ export default function VerificationCriteria() {
           severity: 'success'
         }));
       } else {
-        await axios.post('/api/hr/verification-criteria', payload);
+        await axios.post('/api/hr/verification-criteria', payload, { skipGlobalAlert: true });
         dispatch(openSnackbar({
           open: true,
           message: 'Verification Criteria Saved Successfully',
@@ -186,7 +180,7 @@ export default function VerificationCriteria() {
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
-      const msg = error.response?.data?.message || error.response?.data || 'Failed to save verification criteria';
+      const msg = typeof error === 'string' ? error : (error.response?.data?.message || error.response?.data || 'Failed to save verification criteria');
       dispatch(openSnackbar({
         open: true,
         message: msg,
@@ -242,17 +236,17 @@ export default function VerificationCriteria() {
           <Typography variant="h3">Applicant Verification Criteria</Typography>
         </Stack>
       }
-            secondary={
+      secondary={
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="New"
+          newLabel="+ New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           exportFilename="Verification_Criteria"
           hasExportPermission={perms.export}
-          
-         columns={columns} />
+
+          columns={columns} />
       }
     >
       <BOSDataTable
@@ -343,7 +337,7 @@ export default function VerificationCriteria() {
             sx={errorStyle(!!errors.status)}
           />
         </Stack>
-        
+
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

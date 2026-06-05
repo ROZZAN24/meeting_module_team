@@ -27,7 +27,9 @@ public class SecurityUtils {
             if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
                 Object principal = auth.getPrincipal();
                 if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-                    return ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                    String username = ((org.springframework.security.core.userdetails.UserDetails) principal)
+                            .getUsername();
+                    return username;
                 } else {
                     return auth.getName();
                 }
@@ -38,8 +40,13 @@ public class SecurityUtils {
         return null;
     }
 
-    private static final java.util.concurrent.ConcurrentHashMap<String, String> employeeNameCache = 
-            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.concurrent.ConcurrentHashMap<String, String> employeeNameCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void clearCachedEmployeeName(String principalId) {
+        if (principalId != null) {
+            employeeNameCache.remove(principalId);
+        }
+    }
 
     public static void resolveAndCacheEmployeeName(String principalId) {
         if (principalId == null || principalId.isEmpty()) {
@@ -51,8 +58,10 @@ public class SecurityUtils {
         }
 
         try {
-            com.autonoma.erp.repository.admin.UserRepository userRepo = SpringContext.getBean(com.autonoma.erp.repository.admin.UserRepository.class);
-            com.autonoma.erp.repository.EmployeeMasterRepository empRepo = SpringContext.getBean(com.autonoma.erp.repository.EmployeeMasterRepository.class);
+            com.autonoma.erp.repository.admin.UserRepository userRepo = SpringContext
+                    .getBean(com.autonoma.erp.repository.admin.UserRepository.class);
+            com.autonoma.erp.repository.EmployeeMasterRepository empRepo = SpringContext
+                    .getBean(com.autonoma.erp.repository.EmployeeMasterRepository.class);
 
             if (userRepo != null && empRepo != null) {
                 String originalTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
@@ -101,7 +110,24 @@ public class SecurityUtils {
             // Ignore resolution errors
         }
 
-        employeeNameCache.put(principalId, principalId);
+        // Only cache the fallback if we have a valid tenant context (meaning the tenant
+        // database was actually queried)
+        String currentTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
+        if (currentTenant != null && !currentTenant.equalsIgnoreCase("AUTONOMA") && !currentTenant.isEmpty()) {
+            employeeNameCache.put(principalId, principalId);
+        }
+    }
+
+    public static String getCurrentUserEmployeeNameNoQuery() {
+        String principalId = getCurrentUserId();
+        if (principalId == null) {
+            return null;
+        }
+        String cached = employeeNameCache.get(principalId);
+        if (cached == null || cached.equalsIgnoreCase(principalId)) {
+            return principalId; // Return user ID directly without executing DB queries
+        }
+        return cached;
     }
 
     public static String getCurrentUserEmployeeName() {
@@ -109,10 +135,25 @@ public class SecurityUtils {
         if (principalId == null) {
             return null;
         }
-        return employeeNameCache.getOrDefault(principalId, principalId);
+        String cached = employeeNameCache.get(principalId);
+        if (cached == null) {
+            resolveAndCacheEmployeeName(principalId);
+            cached = employeeNameCache.get(principalId);
+        }
+        return cached != null ? cached : principalId;
     }
 
     public static String getCurrentUserDisplayName() {
-        return getCurrentUserEmployeeName();
+        String empName = getCurrentUserEmployeeName();
+        if (empName == null) {
+            empName = getCurrentUserId();
+        }
+        // Normalize "Administrator" / "Admin istrator" to "Admin" for display
+        // consistency
+        if (empName != null
+                && ("Administrator".equalsIgnoreCase(empName) || "Admin istrator".equalsIgnoreCase(empName))) {
+            return "Admin";
+        }
+        return empName;
     }
 }

@@ -24,6 +24,7 @@ const columns = [
   { id: 'departmentName', label: 'Dept Name', minWidth: 150 },
   { id: 'auditee', label: 'Auditee', minWidth: 120 },
   { id: 'auditor', label: 'Auditor', minWidth: 120 },
+  { id: 'complianceCount', label: 'Compliance', minWidth: 100 },
   { id: 'ncrCount', label: 'NC', minWidth: 80 },
   { id: 'ofiCount', label: 'OFI', minWidth: 80 },
   { id: 'auditScore', label: 'Score', minWidth: 80 },
@@ -114,13 +115,25 @@ export default function AuditObservationList() {
   };
 
   const handleExport = () => {
+    const formatNameOnly = (nameStr) => {
+      if (nameStr && typeof nameStr === 'string' && nameStr.includes(' - ')) {
+        return nameStr.split(' - ')[0].trim();
+      }
+      return nameStr || '';
+    };
+
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
       'Observation No': r.observationNo,
       'Date': r.observationDate ? format(new Date(r.observationDate), 'dd/MM/yyyy') : '',
       'Schedule No': r.auditScheduleNo,
-      'Dept': r.departmentName,
-      'Auditor': r.auditor,
+      'Audit Type': r.auditType,
+      'Dept Name': r.departmentName,
+      'Auditee': formatNameOnly(r.auditee),
+      'Auditor': formatNameOnly(r.auditor),
+      'Compliance': r.complianceCount,
+      'NC': r.ncrCount,
+      'OFI': r.ofiCount,
       'Score': r.auditScore,
       'Status': r.status
     }));
@@ -155,9 +168,15 @@ export default function AuditObservationList() {
       const statusText = typeof val === 'object' ? val?.name : val;
       return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'APPROVED' ? 'ACTIVE' : (statusText === 'PENDING' ? 'PENDING' : 'INACTIVE'))} />;
     }
+    if (col.id === 'auditee' || col.id === 'auditor') {
+      if (val && typeof val === 'string' && val.includes(' - ')) {
+        return val.split(' - ')[0].trim();
+      }
+    }
     if (typeof val === 'object' && val !== null) {
       return val.name || val.label || val.id || '-';
     }
+    if (val === 0) return '0';
     return val || '-';
   };
 

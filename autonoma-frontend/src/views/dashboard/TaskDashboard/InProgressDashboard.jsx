@@ -17,6 +17,8 @@ import {
   IconButton,
   Link
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { styled, alpha } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
 
@@ -157,9 +159,12 @@ const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   background: bg
 }));
 
-export default function InProgressDashboard({ isDark, realTasks = [] }) {
+export default function InProgressDashboard({ isDark, realTasks = [], activeTab }) {
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
+
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search.filters);
 
   const [activeView, setActiveView] = useState('main');
   const [trendPeriod, setTrendPeriod] = useState('weekly');
@@ -276,32 +281,23 @@ export default function InProgressDashboard({ isDark, realTasks = [] }) {
     else lowCount++;
   });
 
-  // Module Data
-  const moduleData = useMemo(() => {
-    const moduleMap = {
-      CL: { name: 'Checklist', color: '#3B82F6' },
-      MOM: { name: 'MOM Actions', color: '#F59E0B' },
-      TK: { name: 'Ticket', color: '#8B5CF6' },
-      AUDIT: { name: 'Audit Schedule', color: '#EF4444' }
-    };
-    const counts = {};
-    inProgressTasks.forEach((t) => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const mod = moduleMap[prefix] || { name: prefix || 'Other', color: '#F59E0B' };
-      if (!counts[mod.name]) counts[mod.name] = { name: mod.name, color: mod.color, total: 0, inProgress: 0, blocked: 0, totalOverall: 0 };
-      counts[mod.name].total++;
-      counts[mod.name].inProgress++;
-    });
-    // Find overall total per module for completion rate (mocking based on real tasks)
-    realTasks.forEach((t) => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const mod = moduleMap[prefix] || { name: prefix || 'Other', color: '#F59E0B' };
-      if (counts[mod.name]) counts[mod.name].totalOverall++;
-    });
-
-    const entries = Object.values(counts).sort((a, b) => b.total - a.total);
-    return entries.map((e) => ({ ...e, rate: Math.round((e.total / (e.totalOverall || 1)) * 100) }));
-  }, [inProgressTasks, realTasks]);
+    const pagesData = useMemo(() => {
+      const counts = {};
+      inProgressTasks.forEach((t) => {
+        const name = t._pageName || 'Other';
+        if (!counts[name]) counts[name] = { name, color: '#3B82F6', total: 0, inProgress: 0, blocked: 0, totalOverall: 0 };
+        counts[name].total++;
+        counts[name].inProgress++;
+      });
+      // Find overall total per page for in progress rate
+      realTasks.forEach((t) => {
+        const name = t._pageName || 'Other';
+        if (counts[name]) counts[name].totalOverall++;
+      });
+  
+      const entries = Object.values(counts).sort((a, b) => b.total - a.total);
+      return entries.map((e) => ({ ...e, rate: Math.round((e.total / (e.totalOverall || 1)) * 100) }));
+    }, [inProgressTasks, realTasks]);
 
   // Overall Status Pie (In Progress, On Hold)
   // Re-evaluating just these for the status overview
@@ -550,9 +546,9 @@ export default function InProgressDashboard({ isDark, realTasks = [] }) {
             <ArrowBackRoundedIcon />
           </IconButton>
           <Typography variant="h5" fontWeight={800} color={textColor}>
-            {activeView === 'employee' && 'In Progress by Developer (Full List)'}
-            {activeView === 'module' && 'In Progress by Module (Full Report)'}
-            {activeView === 'tasks' && 'In Progress'}
+            {activeView === 'health' && 'In Progress by Developer (Full List)'}
+            {activeView === 'pages' && 'In Progress by Pages (Full List)'}
+            {activeView === 'tasks' && 'In Progress Tasks'}
           </Typography>
           <Chip
             label="Press Esc to go back"
@@ -608,20 +604,20 @@ export default function InProgressDashboard({ isDark, realTasks = [] }) {
             </TableContainer>
           )}
 
-          {activeView === 'module' && (
+          {activeView === 'pages' && (
             <TableContainer sx={{ flex: 1 }}>
               <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Module</TableCell>
-                    <TableCell align="center">Total Tasks</TableCell>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Pages</TableCell>
+                      <TableCell align="center">Total Tasks</TableCell>
                     <TableCell align="center">In Progress</TableCell>
-                    <TableCell align="center">Completion %</TableCell>
+                    <TableCell align="center">In Progress %</TableCell>
                   </TableRow>
                 </TableHead>
-                <TableBody>
-                  {moduleData.map((row, idx) => (
-                    <TableRow key={idx} hover>
+                  <TableBody>
+                    {pagesData.map((row, idx) => (
+                      <TableRow key={idx} hover>
                       <TableCell>
                         <Typography variant="body2" fontWeight={700}>
                           {row.name}
@@ -762,7 +758,50 @@ export default function InProgressDashboard({ isDark, realTasks = [] }) {
         sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(3,1fr)', lg: 'repeat(6,1fr)' }, gap: 1.5, mb: 1.5 }}
       >
         {topStats.map((stat, idx) => (
-          <NeonCard key={idx} statcolor={stat.color} grad={stat.grad}>
+          <NeonCard 
+            key={idx} 
+            statcolor={stat.color} 
+            grad={stat.grad}
+            onClick={() => {
+              if (stat.title === 'Total In Progress Tasks' || stat.title === 'Started Today' || stat.title === 'In Progress This Week' || stat.title === 'In Progress This Month') {
+                const initialFilters = { 
+                  ticketStatus: 'In Progress',
+                  taskScope: globalFilters?.performanceScope || 'Mine'
+                };
+                
+                const now = new Date();
+                
+                if (stat.title === 'Started Today') {
+                  initialFilters.startDate = now.toISOString().split('T')[0];
+                  initialFilters.endDate = now.toISOString().split('T')[0];
+                } else if (stat.title === 'In Progress This Week') {
+                  const weekStart = new Date(now);
+                  weekStart.setDate(now.getDate() - now.getDay()); // Sunday as start of week
+                  initialFilters.startDate = weekStart.toISOString().split('T')[0];
+                  initialFilters.endDate = now.toISOString().split('T')[0];
+                } else if (stat.title === 'In Progress This Month') {
+                  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                  initialFilters.startDate = monthStart.toISOString().split('T')[0];
+                  
+                  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                  initialFilters.endDate = monthEnd.toISOString().split('T')[0];
+                }
+
+                const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+                const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+
+                navigate(routePath, { 
+                  state: { 
+                    fromDashboard: true, 
+                    fromTab: activeTab,
+                    dashboardFilters: globalFilters,
+                    initialFilters 
+                  } 
+                });
+              }
+            }}
+            sx={{ cursor: (stat.title === 'Total In Progress Tasks' || stat.title === 'Started Today' || stat.title === 'In Progress This Week' || stat.title === 'In Progress This Month') ? 'pointer' : 'default' }}
+          >
             {/* Absolute Backdrops */}
             <Box className="rotating-border" />
             <Box className="shimmer" />
@@ -980,28 +1019,28 @@ export default function InProgressDashboard({ isDark, realTasks = [] }) {
           </Box>
         </StyledCard>
 
-        {/* In Progress by Module */}
+        {/* In Progress by Pages */}
         <StyledCard sx={{ p: 1.5, display: 'flex', flexDirection: 'column' }}>
           <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
             <AssignmentRoundedIcon fontSize="small" sx={{ color: '#F59E0B' }} />
-            <Typography variant="subtitle2" fontWeight={800} color="text.primary">
-              In Progress by Module
-            </Typography>
+              <Typography variant="subtitle2" fontWeight={800} color="text.primary">
+                In Progress by Pages
+              </Typography>
           </Stack>
           <Box flex={1}>
             <TableContainer sx={{ '& .MuiTableCell-root': { py: 1.2, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}>
               <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Module</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Total Tasks</TableCell>
+                    <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Pages</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Total Tasks</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>In Progress</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Completion %</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>In Progress %</TableCell>
                   </TableRow>
                 </TableHead>
-                <TableBody>
-                  {moduleData.slice(0, 5).map((row, idx) => (
-                    <TableRow key={idx}>
+                  <TableBody>
+                    {pagesData.slice(0, 5).map((row, idx) => (
+                      <TableRow key={idx}>
                       <TableCell>
                         <Typography fontSize="0.7rem" fontWeight={700} noWrap sx={{ maxWidth: 70 }}>
                           {row.name}
@@ -1042,7 +1081,7 @@ export default function InProgressDashboard({ isDark, realTasks = [] }) {
             </TableContainer>
           </Box>
           <Box
-            onClick={() => setActiveView('module')}
+            onClick={() => setActiveView('pages')}
             sx={{
               mt: 2,
               pt: 1.5,

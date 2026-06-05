@@ -30,7 +30,10 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
 
     @Override
     public boolean onPreInsert(PreInsertEvent event) {
-        String currentUser = SecurityUtils.getCurrentUserEmployeeName();
+        String currentUser = SecurityUtils.getCurrentUserEmployeeNameNoQuery();
+        if (currentUser == null) {
+            currentUser = SecurityUtils.getCurrentUserId();
+        }
         if (currentUser == null) {
             currentUser = SecurityUtils.getCurrentUserId();
         }
@@ -67,7 +70,10 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
             return false;
         }
 
-        String currentUser = SecurityUtils.getCurrentUserEmployeeName();
+        String currentUser = SecurityUtils.getCurrentUserEmployeeNameNoQuery();
+        if (currentUser == null) {
+            currentUser = SecurityUtils.getCurrentUserId();
+        }
         if (currentUser == null) {
             currentUser = SecurityUtils.getCurrentUserId();
         }

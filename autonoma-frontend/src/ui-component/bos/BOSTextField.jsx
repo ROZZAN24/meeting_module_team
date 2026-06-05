@@ -1,5 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import PropTypes from 'prop-types';
-import { TextField, useTheme } from '@mui/material';
+import { useTheme } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { getInputStyles } from './BOSStyles';
 
@@ -14,7 +15,7 @@ export default function BOSTextField({ error, helperText, maxLength, sx, inputPr
   const isDark = colorScheme === 'dark';
   const bosInput = getInputStyles(theme, isDark);
 
-  const isDateType = type === 'date' || type === 'datetime-local';
+  const isDateType = type === 'date' || type === 'datetime-local' || type === 'time';
 
   // Auto-shrink label if value exists, if it's a date type, or if explicitly told to shrink
   const shouldShrink = isDateType || (value !== undefined && value !== null && value !== '') ? true : undefined;

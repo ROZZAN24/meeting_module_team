@@ -199,24 +199,38 @@ export const getInputStyles = (theme, isDark) => ({
   },
   '& .MuiOutlinedInput-root:not(.MuiInputBase-multiline)': {
     width: '100%',
-    height: '38px !important',
     borderRadius: '12px !important',
     bgcolor: isDark ? 'background.default' : 'grey.50',
     color: isDark ? '#c9d1d9' : '#121212',
     '& fieldset': { borderColor: 'divider', borderRadius: '12px !important' },
     '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
     '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
-    '& input': { 
+    '&:not(.MuiAutocomplete-inputRoot)': {
       height: '38px !important',
-      paddingTop: '0px !important',
-      paddingBottom: '0px !important',
-      paddingLeft: '14px !important',
-      paddingRight: '14px !important',
-      boxSizing: 'border-box !important',
-      lineHeight: '38px !important',
-      fontSize: '0.9rem', 
-      letterSpacing: '0.03em !important',
-      color: isDark ? '#c9d1d9' : '#121212' 
+      '& input': { 
+        height: '38px !important',
+        paddingTop: '0px !important',
+        paddingBottom: '0px !important',
+        paddingLeft: '14px !important',
+        paddingRight: '14px !important',
+        boxSizing: 'border-box !important',
+        lineHeight: '38px !important',
+        fontSize: '0.9rem', 
+        letterSpacing: '0.03em !important',
+        color: isDark ? '#c9d1d9' : '#121212' 
+      }
+    },
+    '&.MuiAutocomplete-inputRoot': {
+      minHeight: '38px',
+      paddingTop: '4px !important',
+      paddingBottom: '4px !important',
+      paddingLeft: '8px !important',
+      '& input': { 
+        fontSize: '0.9rem', 
+        letterSpacing: '0.03em !important',
+        color: isDark ? '#c9d1d9' : '#121212',
+        padding: '4px 6px !important'
+      }
     },
     '& .MuiSelect-select': { 
       height: '38px !important',
@@ -314,7 +328,7 @@ export const tableActionDeleteSx = {
 
 export const getStatusChipSx = (status) => {
   const isActive = ['ACTIVE', 'Active', 'active'].includes(status);
-  const isSuspended = ['SUSPENDED', 'Suspended', 'suspended'].includes(status);
+  const isSuspended = ['SUSPENDED', 'Suspended', 'suspended', 'PENDING', 'Pending', 'pending', 'WAITING_APPROVAL', 'waiting_approval'].includes(status);
   return {
     bgcolor: isActive ? '#e8f5e9' : (isSuspended ? '#fffde7' : '#ffebee'),
     color: isActive ? '#2e7d32' : (isSuspended ? '#f57f17' : '#c62828'),

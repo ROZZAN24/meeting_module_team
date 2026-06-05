@@ -1,22 +1,59 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Checkbox, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip
+import {
+  Typography, Button, Stack, Tooltip, IconButton, MenuItem, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip, Checkbox
 } from '@mui/material';
 import axios from 'utils/axios';
 import {
-  IconSearch, IconRefresh, IconPlus, IconUser, IconFileText, IconTrash, IconEdit, IconMail, IconCalendar, IconCheck, IconAlertCircle, IconBriefcase, IconSchool, IconCurrencyDollar, IconAddressBook, IconUserCheck, IconUserPlus, IconLock, IconStar, IconTrendingUp
+  IconSearch, IconRefresh, IconPlus, IconUser, IconFileText, IconTrash, IconEdit, IconMail, IconCalendar, IconCheck, IconAlertCircle, IconBriefcase, IconSchool, IconCurrencyDollar, IconAddressBook, IconUserCheck, IconUserPlus, IconLock, IconStar, IconTrendingUp, IconDeviceFloppy, IconX
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, BOSDatePicker, BOSFileUpload, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
+import {
+  BOSDataTable,
+  BOSFormDialog,
+  BOSTextField,
+  BOSDatePicker,
+  BOSFileUpload,
+  BOSTimePicker,
+  errorStyle,
+  btnNew,
+  BOSTableToolbar,
+  getCommonDateFilters,
+  matchCommonDateFilters
+} from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import useAuth from 'hooks/useAuth';
+
+const HOURS_LIST = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES_LIST = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+const BUSINESS_HOURS_LIST = ['10', '11', '12', '13', '14', '15', '16', '17'];
 
 // ==============================|| APPLICATION TRACKING SYSTEM ||============================== //
+
+const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
+  const templateColumns = typeof columns === 'object'
+    ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
+    : `repeat(${columns}, 1fr)`;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5, width: '100%' }}>
+      {children}
+    </Box>
+  );
+};
+
+const R = ({ children, lg }) => {
+  let gridColumn = 'span 1';
+  if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
+  return <Box sx={{ gridColumn, width: '100%' }}>{children}</Box>;
+};
 
 const getTodayDateString = () => {
   const today = new Date();
@@ -203,9 +240,25 @@ const VALIDATION_RULES = [
   { field: 'birthDate', label: 'Birth Date', required: true }
 ];
 
+const getSeventhWorkingDay = () => {
+  const date = new Date();
+  let count = 0;
+  while (count < 7) {
+    date.setDate(date.getDate() + 1);
+    if (date.getDay() !== 0) { // Skip Sundays
+      count++;
+    }
+  }
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export default function ApplicationTrackingSystem() {
   const dispatch = useDispatch();
   const perms = usePagePermissions(PAGE_CODES.HRA_ATS);
+  const { user } = useAuth();
 
   // Lookups mapping
   const { departments = [], designations = [], employees = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'EMPLOYEES']);
@@ -222,6 +275,35 @@ export default function ApplicationTrackingSystem() {
   const [activeTab, setActiveTab] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Call Letter Dialog State
+  const [callLetterDialogOpen, setCallLetterDialogOpen] = useState(false);
+  const [callLetterData, setCallLetterData] = useState({
+    interviewDate: '',
+    interviewTime: '',
+    from: '',
+    to: '',
+    cc: ''
+  });
+  const [callLetterErrors, setCallLetterErrors] = useState({});
+
+  // Assign Interview Dialog State
+  const [interviewDialogOpen, setInterviewDialogOpen] = useState(false);
+  const [interviewHistory, setInterviewHistory] = useState([]);
+  const [interviewData, setInterviewData] = useState({
+    screeningLevel: '',
+    interviewDate: '',
+    interviewTimeHour: '',
+    interviewTimeMinute: '',
+    round: '',
+    roundChecked: false,
+    startTimeHour: '',
+    startTimeMinute: '',
+    endTimeHour: '',
+    endTimeMinute: '',
+    interviewPerson: ''
+  });
+  const [interviewErrors, setInterviewErrors] = useState({});
 
   // Form states inside the Dialog
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
@@ -265,21 +347,21 @@ export default function ApplicationTrackingSystem() {
   // Update default filters
   useEffect(() => {
     const config = [{
-        id: 'status',
-        label: 'Status',
-        type: 'select',
-        options: [
-          { value: 'ALL', label: 'ALL' },
-          { value: 'APPLIED', label: 'APPLIED' },
-          { value: 'INTERVIEWING', label: 'INTERVIEWING' },
-          { value: 'OFFERED', label: 'OFFERED' },
-          { value: 'ON-ROLL', label: 'ON-ROLL' },
-          { value: 'REJECTED', label: 'REJECTED' }
-        ],
-        defaultValue: 'ALL',
-        isStarred: true
-      },
-      ...getCommonDateFilters('createdAt', 'updatedAt')];
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'ALL', label: 'ALL' },
+        { value: 'APPLIED', label: 'APPLIED' },
+        { value: 'INTERVIEWING', label: 'INTERVIEWING' },
+        { value: 'OFFERED', label: 'OFFERED' },
+        { value: 'ON-ROLL', label: 'ON-ROLL' },
+        { value: 'REJECTED', label: 'REJECTED' }
+      ],
+      defaultValue: 'ALL',
+      isStarred: true
+    },
+    ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -571,8 +653,322 @@ export default function ApplicationTrackingSystem() {
     }
   };
 
-  const handleSendCallLetter = () => handleBulkAction('CALL', 'Call letters successfully processed for selected candidates!');
-  const handleAssignInterview = () => handleBulkAction('INTERVIEW', 'Interviews assigned successfully.');
+  const handleSendCallLetter = () => {
+    if (selectedIds.length !== 1) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Select exactly one applicant to send a call letter.',
+        variant: 'alert',
+        severity: 'warning'
+      }));
+      return;
+    }
+    const target = rows.find(r => r.id === selectedIds[0]);
+    if (target) {
+      const dept = departments.find(d => d.id.toString() === target.department || d.departmentName === target.department);
+      const deptMail = dept ? dept.departmentMailId : '';
+
+      setCallLetterData({
+        interviewDate: getSeventhWorkingDay(),
+        interviewTime: '',
+        from: user?.email || '',
+        to: target.emailId || '',
+        cc: deptMail || ''
+      });
+      setCallLetterErrors({});
+      setCallLetterDialogOpen(true);
+    }
+  };
+
+  const handleCloseCallLetterDialog = () => {
+    setCallLetterDialogOpen(false);
+  };
+
+  const handleClearCallLetterFields = () => {
+    setCallLetterData(prev => ({
+      ...prev,
+      interviewDate: getSeventhWorkingDay(),
+      interviewTime: '',
+      from: user?.email || '',
+      to: '',
+      cc: ''
+    }));
+    setCallLetterErrors({});
+  };
+
+  const handleSendCallLetterSubmit = async () => {
+    const errs = {};
+    const todayStr = getTodayDateString();
+
+    if (!callLetterData.interviewDate) {
+      errs.interviewDate = 'Interview date is required.';
+    } else if (callLetterData.interviewDate < todayStr) {
+      errs.interviewDate = 'Only today or future dates can be selected.';
+    }
+
+    if (!callLetterData.interviewTime) {
+      errs.interviewTime = 'Interview time is required.';
+    } else {
+      // Parse the time value (format: "hh:mm AM/PM" from BOSTimePicker)
+      const parseToHHMM = (tStr) => {
+        if (!tStr) return '';
+        const clean = tStr.trim().toUpperCase();
+        const match = clean.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/);
+        if (!match) return tStr; // fallback, keep original
+        let h = parseInt(match[1], 10);
+        const m = match[2];
+        const ampm = match[3] || 'AM';
+        if (ampm === 'PM' && h !== 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        return `${String(h).padStart(2, '0')}:${m}`;
+      };
+
+      const hhmm = parseToHHMM(callLetterData.interviewTime);
+
+      if (callLetterData.interviewDate === todayStr) {
+        const now = new Date();
+        const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        if (hhmm <= currentHHMM) {
+          errs.interviewTime = 'Interview time must be in the future.';
+        }
+      }
+    }
+
+    if (!callLetterData.from) {
+      errs.from = 'From email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(callLetterData.from)) {
+      errs.from = 'Invalid email address.';
+    }
+
+    if (!callLetterData.to) {
+      errs.to = 'To email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(callLetterData.to)) {
+      errs.to = 'Invalid email address.';
+    }
+
+    if (!callLetterData.cc) {
+      errs.cc = 'CC email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(callLetterData.cc)) {
+      errs.cc = 'Invalid email address.';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setCallLetterErrors(errs);
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Please resolve the validation errors.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post('/api/hra/applicants/send-call-letter', {
+        id: selectedIds[0],
+        interviewDate: callLetterData.interviewDate,
+        interviewTime: callLetterData.interviewTime,
+        fromEmail: callLetterData.from,
+        toEmail: callLetterData.to,
+        ccEmail: callLetterData.cc
+      });
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Call letter sent successfully!',
+        variant: 'alert',
+        severity: 'success'
+      }));
+      setCallLetterDialogOpen(false);
+      setSelectedIds([]);
+      fetchApplicants();
+    } catch (e) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Failed to send call letter. Please try again.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleAssignInterview = async () => {
+    if (selectedIds.length !== 1) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Select exactly one applicant to assign an interview.',
+        variant: 'alert',
+        severity: 'warning'
+      }));
+      return;
+    }
+    const target = rows.find(r => r.id === selectedIds[0]);
+    if (target) {
+      setInterviewData({
+        screeningLevel: '',
+        interviewDate: '',
+        interviewTimeHour: '',
+        interviewTimeMinute: '',
+        round: '',
+        roundChecked: false,
+        startTimeHour: '',
+        startTimeMinute: '',
+        endTimeHour: '',
+        endTimeMinute: '',
+        interviewPerson: ''
+      });
+      setInterviewErrors({});
+      try {
+        const { data } = await axios.get(`/api/hra/applicants/${target.id}/interviews`);
+        setInterviewHistory(data || []);
+      } catch (e) {
+        console.error('Failed to load candidate interview history', e);
+        setInterviewHistory([]);
+      }
+      setInterviewDialogOpen(true);
+    }
+  };
+
+  const handleCloseInterviewDialog = () => {
+    setInterviewDialogOpen(false);
+  };
+
+  const handleClearInterviewFields = () => {
+    setInterviewData({
+      screeningLevel: '',
+      interviewDate: '',
+      interviewTimeHour: '',
+      interviewTimeMinute: '',
+      round: '',
+      roundChecked: false,
+      startTimeHour: '',
+      startTimeMinute: '',
+      endTimeHour: '',
+      endTimeMinute: '',
+      interviewPerson: ''
+    });
+    setInterviewErrors({});
+  };
+
+  const handleAssignInterviewSubmit = async () => {
+    const errs = {};
+    const todayStr = getTodayDateString();
+
+    const selectedTime = (interviewData.interviewTimeHour && interviewData.interviewTimeMinute)
+      ? `${interviewData.interviewTimeHour}:${interviewData.interviewTimeMinute}`
+      : '';
+    const selectedStartTime = (interviewData.startTimeHour && interviewData.startTimeMinute)
+      ? `${interviewData.startTimeHour}:${interviewData.startTimeMinute}`
+      : '';
+    const selectedEndTime = (interviewData.endTimeHour && interviewData.endTimeMinute)
+      ? `${interviewData.endTimeHour}:${interviewData.endTimeMinute}`
+      : '';
+
+    if (!interviewData.screeningLevel) {
+      errs.screeningLevel = 'Screening level is required.';
+    }
+
+    if (!interviewData.interviewDate) {
+      errs.interviewDate = 'Interview date is required.';
+    } else if (interviewData.interviewDate < todayStr) {
+      errs.interviewDate = 'Only today or future dates can be selected.';
+    }
+
+    if (!selectedTime) {
+      errs.interviewTime = 'Interview time is required.';
+    } else if (interviewData.interviewDate === todayStr) {
+      const now = new Date();
+      const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      if (selectedTime <= currentHHMM) {
+        errs.interviewTime = 'Interview time must be in the future.';
+      }
+    }
+
+    if (!interviewData.round) {
+      errs.round = 'Round is required.';
+    }
+
+    if (!selectedStartTime) {
+      errs.startTime = 'Start time is required.';
+    }
+
+    if (!selectedEndTime) {
+      errs.endTime = 'End time is required.';
+    } else if (selectedStartTime) {
+      const startMin = parseInt(interviewData.startTimeHour) * 60 + parseInt(interviewData.startTimeMinute);
+      const endMin = parseInt(interviewData.endTimeHour) * 60 + parseInt(interviewData.endTimeMinute);
+      if (endMin <= startMin) {
+        errs.endTime = 'End time must be after start time.';
+      }
+    }
+
+    if (!interviewData.interviewPerson) {
+      errs.interviewPerson = 'Interview person is required.';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setInterviewErrors(errs);
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Please resolve the validation errors.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post('/api/hra/applicants/bulk-action', {
+        ids: selectedIds,
+        action: 'INTERVIEW',
+        screeningLevel: interviewData.screeningLevel,
+        round: interviewData.round,
+        interviewDate: interviewData.interviewDate,
+        startTime: selectedStartTime,
+        endTime: selectedEndTime,
+        interviewPerson: interviewData.interviewPerson
+      });
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Interview assigned successfully!',
+        variant: 'alert',
+        severity: 'success'
+      }));
+      setInterviewDialogOpen(false);
+      setSelectedIds([]);
+      fetchApplicants();
+    } catch (e) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Failed to assign interview. Please try again.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSelectedApplicantDetails = () => {
+    if (selectedIds.length !== 1) return { name: '', department: '-', position: '-', level: '-', screenLevel: '-' };
+    const applicant = rows.find(r => r.id === selectedIds[0]);
+    if (!applicant) return { name: '', department: '-', position: '-', level: '-', screenLevel: '-' };
+
+    const dept = departments.find(d => d.id.toString() === applicant.department || d.departmentName === applicant.department);
+    const desig = designations.find(d => d.id.toString() === applicant.positionLookFor || d.designationName === applicant.positionLookFor);
+
+    return {
+      name: `${applicant.firstName || ''} ${applicant.lastName || ''}`.trim(),
+      department: dept ? dept.departmentName : applicant.department || '-',
+      position: desig ? desig.designationName : applicant.positionLookFor || '-',
+      level: applicant.level || '-',
+      screenLevel: applicant.screenLevel || '-'
+    };
+  };
+
+  const selectedDetails = getSelectedApplicantDetails();
   const handleIssueOffer = () => handleBulkAction('OFFER', 'Offer letters generated and sent successfully.');
   const handlePushOnRoll = () => handleBulkAction('PUSH-ON-ROLL', 'Selected candidates successfully integrated and pushed ON-ROLL!');
 
@@ -681,6 +1077,22 @@ export default function ApplicationTrackingSystem() {
     } else if (formData.refMode === 'EMPLOYEE') {
       dynamicRules.push({ field: 'refComments', label: 'Emp Name', required: true });
     }
+
+    const age = Number(formData.age);
+    if (isNaN(age) || age < 18 || age > 58) {
+      setErrors(prev => ({
+        ...prev,
+        birthDate: 'Age must be between 18 and 58 years.'
+      }));
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Applicant age must be between 18 and 58 years.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+      return;
+    }
+
     if (!validate(formData, dynamicRules)) {
       dispatch(openSnackbar({ open: true, message: 'Please fix validation errors in the main form.', variant: 'alert', severity: 'error' }));
       return;
@@ -955,18 +1367,6 @@ export default function ApplicationTrackingSystem() {
 
   // Setup grid columns
   const tableColumns = useMemo(() => [
-    {
-      id: 'select',
-      label: '',
-      minWidth: 50,
-      render: (row) => (
-        <Checkbox
-          checked={selectedIds.includes(row.id)}
-          onChange={() => handleSelectRow(row.id)}
-          size="small"
-        />
-      )
-    },
     { id: 'index', label: 'Sl.no', minWidth: 60 },
     { id: 'enRolledNo', label: 'Enrolled No', minWidth: 120, bold: true, color: 'primary.main' },
     { id: 'firstName', label: 'First Name', minWidth: 120 },
@@ -1065,31 +1465,56 @@ export default function ApplicationTrackingSystem() {
           <Typography variant="h3">Application Tracking System</Typography>
         </Stack>
       }
-            secondary={
+      secondary={
         <BOSTableToolbar
           onRefresh={fetchApplicants}
           onNew={handleOpenAdd}
-          newLabel="New"
+          newLabel="+ New"
           newTooltip={shortcutTooltip('Register Candidate', 'Ctrl + N')}
           hasWritePermission={perms.write}
-        />
+        >
+          <Button variant="contained" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
+            Call Letter
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAssignInterview}
+            startIcon={<IconCalendar size={18} />}
+            sx={{
+              borderRadius: '24px',
+              textTransform: 'none',
+              bgcolor: 'orange.main',
+              color: '#fff',
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: 'orange.dark'
+              }
+            }}
+          >
+            Assign Interview
+          </Button>
+          <Button variant="contained" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
+            Offer Letter
+          </Button>
+          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
+            Push To On-Roll
+          </Button>
+          <Button variant="contained" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
+            Cancel Selection
+          </Button>
+          <Button variant="contained" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600, '&.Mui-disabled': { color: 'rgba(0, 0, 0, 0.26)', bgcolor: 'rgba(0, 0, 0, 0.12)' } }}>
+            Edit Candidate
+          </Button>
+        </BOSTableToolbar>
       }
     >
-      <Box sx={{ mb: 2 }}>
-        {/* Bulk select checkbox info */}
-        <FormControlLabel
-          control={
-            <Checkbox
-              indeterminate={selectedIds.length > 0 && selectedIds.length < rows.length}
-              checked={selectedIds.length === rows.length && rows.length > 0}
-              onChange={(e) => handleSelectAll(e.target.checked)}
-              size="small"
-            />
-          }
-          label={`Select All Candidates (${selectedIds.length} selected)`}
-          sx={{ ml: 1 }}
-        />
-      </Box>
+      {selectedIds.length > 0 && (
+        <Box sx={{ mb: 1, px: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {selectedIds.length} candidate{selectedIds.length > 1 ? 's' : ''} selected
+          </Typography>
+        </Box>
+      )}
 
       {/* Main Grid Table */}
       <BOSDataTable
@@ -1103,31 +1528,10 @@ export default function ApplicationTrackingSystem() {
         onDoubleClickRow={handleOpenEdit}
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteRow}
+        onClickRow={(row) => handleSelectRow(row.id)}
+        selectedRowId={selectedIds}
       />
 
-      {/* Bottom Footer Actions */}
-      <Paper elevation={0} sx={{ p: 2, mt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'grey.50', borderRadius: '12px' }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="flex-end">
-          <Button variant="outlined" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Call Letter
-          </Button>
-          <Button variant="outlined" color="warning" onClick={handleAssignInterview} startIcon={<IconCalendar size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Assign Interview
-          </Button>
-          <Button variant="outlined" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Offer Letter
-          </Button>
-          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', fontWeight: 600 }}>
-            Push To On-Roll
-          </Button>
-          <Button variant="outlined" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Cancel Selection
-          </Button>
-          <Button variant="outlined" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Edit Candidate
-          </Button>
-        </Stack>
-      </Paper>
 
       {/* Candidate Registration and Detailed Dialog */}
       <BOSFormDialog
@@ -1156,255 +1560,249 @@ export default function ApplicationTrackingSystem() {
           setErrors({});
         }}
       >
-        <Grid container spacing={3}>
+        <Stack spacing={3}>
           {/* ── TOP SECTION: Main Registry Form ── */}
-          <Grid item xs={12}>
-            <Card variant="outlined" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h5" color="primary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
-                  <IconUser size={20} /> BASIC REGISTRATION DETAILS
-                </Typography>
-                <Grid container spacing={2.5}>
-                  {/* Row 1: Registry Details */}
-                  <Grid item xs={12} sm={6} md={3}>
+          <Card variant="outlined" sx={{ width: '100%', border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h5" color="primary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
+                <IconUser size={20} /> BASIC REGISTRATION DETAILS
+              </Typography>
+              <GridContainer>
+                <R>
+                  <BOSTextField
+                    required
+                    label="Enrolled NO"
+                    name="enRolledNo"
+                    value={formData.enRolledNo}
+                    onChange={handleInputChange}
+                    placeholder="ATS-2026-001"
+                    error={!!errors.enRolledNo}
+                    helperText={errors.enRolledNo}
+                    sx={errorStyle(!!errors.enRolledNo)}
+                  />
+                </R>
+                <R>
+                  <BOSDatePicker
+                    label="Applicant Date"
+                    name="applicantDate"
+                    value={formData.applicantDate}
+                    onChange={handleInputChange}
+                  />
+                </R>
+                <R>
+                  <BOSTextField
+                    select
+                    required
+                    label="Position Look For"
+                    name="positionLookFor"
+                    value={formData.positionLookFor}
+                    onChange={handleInputChange}
+                    error={!!errors.positionLookFor}
+                    helperText={errors.positionLookFor}
+                    sx={errorStyle(!!errors.positionLookFor)}
+                  >
+                    <MenuItem value="">-SELECT-</MenuItem>
+                    {designations.map(d => (
+                      <MenuItem key={d.id} value={d.designationName || d.id.toString()}>{d.designationName}</MenuItem>
+                    ))}
+                    <MenuItem value="Software Engineer">Software Engineer</MenuItem>
+                    <MenuItem value="HR Executive">HR Executive</MenuItem>
+                    <MenuItem value="Quality Auditor">Quality Auditor</MenuItem>
+                  </BOSTextField>
+                </R>
+                <R>
+                  <BOSTextField
+                    select
+                    required
+                    label="Department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleInputChange}
+                    error={!!errors.department}
+                    helperText={errors.department}
+                    sx={errorStyle(!!errors.department)}
+                  >
+                    <MenuItem value="">-SELECT-</MenuItem>
+                    {departments.map(d => (
+                      <MenuItem key={d.id} value={d.id.toString()}>{d.departmentName}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </R>
+
+                <R>
+                  <BOSTextField
+                    select
+                    label="Title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                  >
+                    {TITLE_OPTIONS.map(opt => (
+                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </R>
+                <R>
+                  <BOSTextField
+                    required
+                    label="First Name"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    error={!!errors.firstName}
+                    helperText={errors.firstName}
+                    sx={errorStyle(!!errors.firstName)}
+                  />
+                </R>
+                <R>
+                  <BOSTextField
+                    required
+                    label="Last Name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    error={!!errors.lastName}
+                    helperText={errors.lastName}
+                    sx={errorStyle(!!errors.lastName)}
+                  />
+                </R>
+                <R>
+                  <BOSDatePicker
+                    required
+                    label="Birth Date"
+                    name="birthDate"
+                    value={formData.birthDate}
+                    onChange={handleInputChange}
+                    error={!!errors.birthDate}
+                    helperText={errors.birthDate}
+                  />
+                </R>
+                <R>
+                  <BOSTextField
+                    label="Age"
+                    name="age"
+                    value={formData.age}
+                    disabled
+                    InputProps={{ readOnly: true }}
+                  />
+                </R>
+
+                <R>
+                  <BOSTextField
+                    required
+                    label="Mobile No"
+                    name="mobileNo"
+                    value={formData.mobileNo}
+                    onChange={handleInputChange}
+                    placeholder="10-digit number"
+                    error={!!errors.mobileNo}
+                    helperText={errors.mobileNo}
+                    sx={errorStyle(!!errors.mobileNo)}
+                  />
+                </R>
+                <R>
+                  <BOSTextField
+                    required
+                    label="Email ID"
+                    name="emailId"
+                    value={formData.emailId}
+                    onChange={handleInputChange}
+                    placeholder="example@mail.com"
+                    error={!!errors.emailId}
+                    helperText={errors.emailId}
+                    sx={errorStyle(!!errors.emailId)}
+                  />
+                </R>
+                <R>
+                  <Stack spacing={1}>
                     <BOSTextField
                       required
-                      label="Enrolled NO"
-                      name="enRolledNo"
-                      value={formData.enRolledNo}
+                      label="Aadhar No"
+                      name="aadharNo"
+                      value={formData.aadharNo}
                       onChange={handleInputChange}
-                      placeholder="ATS-2026-001"
-                      error={!!errors.enRolledNo}
-                      helperText={errors.enRolledNo}
-                      sx={errorStyle(!!errors.enRolledNo)}
+                      placeholder="12-digit number"
+                      error={!!errors.aadharNo}
+                      helperText={errors.aadharNo}
+                      sx={errorStyle(!!errors.aadharNo)}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSDatePicker
-                      label="Applicant Date"
-                      name="applicantDate"
-                      value={formData.applicantDate}
-                      onChange={handleInputChange}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.duplicateAadhar}
+                          onChange={handleInputChange}
+                          name="duplicateAadhar"
+                          size="small"
+                        />
+                      }
+                      label="I know its duplicate Aadhaar No"
+                      sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.75rem', fontWeight: 600 } }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Stack>
+                </R>
+
+                <R>
+                  <BOSTextField
+                    select
+                    label="Ref Mode"
+                    name="refMode"
+                    value={formData.refMode}
+                    onChange={handleInputChange}
+                  >
+                    <MenuItem value="">-Select-</MenuItem>
+                    {REF_MODES.map(opt => (
+                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </R>
+
+                {formData.refMode === 'EMPLOYEE' && (
+                  <R lg={8}>
                     <BOSTextField
                       select
                       required
-                      label="Position Look For"
-                      name="positionLookFor"
-                      value={formData.positionLookFor}
+                      label="Emp Name"
+                      name="refComments"
+                      value={formData.refComments}
                       onChange={handleInputChange}
-                      error={!!errors.positionLookFor}
-                      helperText={errors.positionLookFor}
-                      sx={errorStyle(!!errors.positionLookFor)}
+                      error={!!errors.refComments}
+                      helperText={errors.refComments}
+                      sx={errorStyle(!!errors.refComments)}
                     >
-                      <MenuItem value="">-SELECT-</MenuItem>
-                      {designations.map(d => (
-                        <MenuItem key={d.id} value={d.designationName || d.id.toString()}>{d.designationName}</MenuItem>
-                      ))}
-                      <MenuItem value="Software Engineer">Software Engineer</MenuItem>
-                      <MenuItem value="HR Executive">HR Executive</MenuItem>
-                      <MenuItem value="Quality Auditor">Quality Auditor</MenuItem>
+                      <MenuItem value="">-SELECT EMPLOYEE-</MenuItem>
+                      {employees.map(emp => {
+                        const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.empCode;
+                        const valueStr = `${emp.empCode} - ${fullName}`;
+                        return (
+                          <MenuItem key={emp.id} value={valueStr}>
+                            {valueStr}
+                          </MenuItem>
+                        );
+                      })}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      select
-                      required
-                      label="Department"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleInputChange}
-                      error={!!errors.department}
-                      helperText={errors.department}
-                      sx={errorStyle(!!errors.department)}
-                    >
-                      <MenuItem value="">-SELECT-</MenuItem>
-                      {departments.map(d => (
-                        <MenuItem key={d.id} value={d.id.toString()}>{d.departmentName}</MenuItem>
-                      ))}
-                    </BOSTextField>
-                  </Grid>
+                  </R>
+                )}
 
-                  {/* Row 2: Candidate basic info */}
-                  <Grid item xs={12} sm={6} md={3}>
+                {formData.refMode && formData.refMode !== 'EMPLOYEE' && (
+                  <R lg={8}>
                     <BOSTextField
-                      select
-                      label="Title"
-                      name="title"
-                      value={formData.title}
+                      required={formData.refMode === 'OTHERS'}
+                      label="Ref Comments"
+                      name="refComments"
+                      value={formData.refComments}
                       onChange={handleInputChange}
-                    >
-                      {TITLE_OPTIONS.map(opt => (
-                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                      ))}
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      required
-                      label="First Name"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      error={!!errors.firstName}
-                      helperText={errors.firstName}
-                      sx={errorStyle(!!errors.firstName)}
+                      error={!!errors.refComments}
+                      helperText={errors.refComments}
+                      sx={errorStyle(!!errors.refComments)}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      required
-                      label="Last Name"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      error={!!errors.lastName}
-                      helperText={errors.lastName}
-                      sx={errorStyle(!!errors.lastName)}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSDatePicker
-                      required
-                      label="Birth Date"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                      error={!!errors.birthDate}
-                      helperText={errors.birthDate}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      label="Age"
-                      name="age"
-                      value={formData.age}
-                      disabled
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-
-                  {/* Row 3: Contact & ID info */}
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      required
-                      label="Mobile No"
-                      name="mobileNo"
-                      value={formData.mobileNo}
-                      onChange={handleInputChange}
-                      placeholder="10-digit number"
-                      error={!!errors.mobileNo}
-                      helperText={errors.mobileNo}
-                      sx={errorStyle(!!errors.mobileNo)}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      required
-                      label="Email ID"
-                      name="emailId"
-                      value={formData.emailId}
-                      onChange={handleInputChange}
-                      placeholder="example@mail.com"
-                      error={!!errors.emailId}
-                      helperText={errors.emailId}
-                      sx={errorStyle(!!errors.emailId)}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Stack spacing={1}>
-                      <BOSTextField
-                        required
-                        label="Aadhar No"
-                        name="aadharNo"
-                        value={formData.aadharNo}
-                        onChange={handleInputChange}
-                        placeholder="12-digit number"
-                        error={!!errors.aadharNo}
-                        helperText={errors.aadharNo}
-                        sx={errorStyle(!!errors.aadharNo)}
-                      />
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={formData.duplicateAadhar}
-                            onChange={handleInputChange}
-                            name="duplicateAadhar"
-                            size="small"
-                          />
-                        }
-                        label="I know its duplicate Aadhaar No"
-                        sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.75rem', fontWeight: 600 } }}
-                      />
-                    </Stack>
-                  </Grid>
-
-                  {/* Row 4: Reference Details */}
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      select
-                      label="Ref Mode"
-                      name="refMode"
-                      value={formData.refMode}
-                      onChange={handleInputChange}
-                    >
-                      <MenuItem value="">-Select-</MenuItem>
-                      {REF_MODES.map(opt => (
-                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                      ))}
-                    </BOSTextField>
-                  </Grid>
-
-                  {formData.refMode === 'EMPLOYEE' && (
-                    <Grid item xs={12} sm={6} md={9}>
-                      <BOSTextField
-                        select
-                        required
-                        label="Emp Name"
-                        name="refComments"
-                        value={formData.refComments}
-                        onChange={handleInputChange}
-                        error={!!errors.refComments}
-                        helperText={errors.refComments}
-                        sx={errorStyle(!!errors.refComments)}
-                      >
-                        <MenuItem value="">-SELECT EMPLOYEE-</MenuItem>
-                        {employees.map(emp => {
-                          const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.empCode;
-                          const valueStr = `${emp.empCode} - ${fullName}`;
-                          return (
-                            <MenuItem key={emp.id} value={valueStr}>
-                              {valueStr}
-                            </MenuItem>
-                          );
-                        })}
-                      </BOSTextField>
-                    </Grid>
-                  )}
-
-                  {formData.refMode && formData.refMode !== 'EMPLOYEE' && (
-                    <Grid item xs={12} sm={6} md={9}>
-                      <BOSTextField
-                        required={formData.refMode === 'OTHERS'}
-                        label="Ref Comments"
-                        name="refComments"
-                        value={formData.refComments}
-                        onChange={handleInputChange}
-                        error={!!errors.refComments}
-                        helperText={errors.refComments}
-                        sx={errorStyle(!!errors.refComments)}
-                      />
-                    </Grid>
-                  )}
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
+                  </R>
+                )}
+              </GridContainer>
+            </CardContent>
+          </Card>
 
           {/* ── BOTTOM TABS FOR SUB-SECTIONS ── */}
-          <Grid item xs={12}>
+          <Box sx={{ width: '100%' }}>
             <Box sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mb: 2 }}>
               <Tabs
                 value={activeTab}
@@ -1427,12 +1825,12 @@ export default function ApplicationTrackingSystem() {
             </Box>
 
             {/* TAB CONTENTS */}
-            <Box sx={{ minHeight: '300px', p: 1 }}>
+            <Box sx={{ minHeight: '300px', p: 1, width: '100%' }}>
 
               {/* 1. PERSONAL DETAILS */}
               {activeTab === 0 && (
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6} md={3}>
+                <GridContainer>
+                  <R>
                     <BOSTextField
                       label="Enrolled NO"
                       name="enRollNo"
@@ -1440,8 +1838,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       select
                       label="Gender"
@@ -1455,8 +1853,8 @@ export default function ApplicationTrackingSystem() {
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       select
                       label="Marital Status"
@@ -1469,8 +1867,8 @@ export default function ApplicationTrackingSystem() {
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSDatePicker
                       label="Birth Date"
                       name="birthDate"
@@ -1478,16 +1876,16 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       onChange={() => {}}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="PAN No"
                       name="panNo"
                       value={personalData.panNo}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       select
                       label="Religion"
@@ -1500,84 +1898,84 @@ export default function ApplicationTrackingSystem() {
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Nationality"
                       name="nationality"
                       value={personalData.nationality}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Office Phone No"
                       name="officePhoneNo"
                       value={personalData.officePhoneNo}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Phone No"
                       name="phoneNo"
                       value={personalData.phoneNo}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Mobile No"
                       name="mobileNo"
                       value={personalData.mobileNo || formData.mobileNo}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Email Id"
                       name="emailId"
                       value={personalData.emailId || formData.emailId}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <Divider sx={{ my: 1 }} />
                     <Typography variant="h6" color="primary" sx={{ mb: 1, fontWeight: 600 }}>PERMANENT ADDRESS</Typography>
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Address line 1"
                       name="permAdd1"
                       value={personalData.permAdd1}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Address line 2"
                       name="permAdd2"
                       value={personalData.permAdd2}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="City"
                       name="city"
                       value={personalData.city}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="State"
                       name="state"
                       value={personalData.state}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <FormControlLabel
                       control={
                         <Checkbox
@@ -1589,8 +1987,8 @@ export default function ApplicationTrackingSystem() {
                       label="Personal Address as above"
                       sx={{ fontWeight: 'bold' }}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Personal Add1"
                       name="persAdd1"
@@ -1598,8 +1996,8 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                       disabled={personalData.sameAsPermanent}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Personal Add2"
                       name="persAdd2"
@@ -1607,8 +2005,8 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                       disabled={personalData.sameAsPermanent}
                     />
-                  </Grid>
-                </Grid>
+                  </R>
+                </GridContainer>
               )}
 
               {/* 2. EXPERIENCE DETAILS */}
@@ -1933,8 +2331,8 @@ export default function ApplicationTrackingSystem() {
 
               {/* 5. EVALUATION DETAILS */}
               {activeTab === 4 && (
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6}>
+                <GridContainer>
+                  <R>
                     <BOSTextField
                       label="Enrolled No"
                       name="enRolledNo"
@@ -1942,16 +2340,16 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSDatePicker
                       label="Interview Date"
                       name="interviewDate"
                       value={evaluationData.interviewDate}
                       onChange={(e) => setEvaluationData(prev => ({ ...prev, interviewDate: e.target.value }))}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       select
                       label="Interview Status"
@@ -1963,24 +2361,24 @@ export default function ApplicationTrackingSystem() {
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Technical Interviewed By"
                       name="technicalInterviewedBy"
                       value={evaluationData.technicalInterviewedBy}
                       onChange={(e) => setEvaluationData(prev => ({ ...prev, technicalInterviewedBy: e.target.value }))}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="HR Interviewed By"
                       name="hrInterviewedBy"
                       value={evaluationData.hrInterviewedBy}
                       onChange={(e) => setEvaluationData(prev => ({ ...prev, hrInterviewedBy: e.target.value }))}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Comments"
                       name="comments"
@@ -1989,14 +2387,14 @@ export default function ApplicationTrackingSystem() {
                       multiline
                       rows={3}
                     />
-                  </Grid>
-                </Grid>
+                  </R>
+                </GridContainer>
               )}
 
               {/* 6. CONTACT DETAILS */}
               {activeTab === 5 && (
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6}>
+                <GridContainer>
+                  <R>
                     <BOSTextField
                       label="Enrolled No"
                       name="enRolledNo"
@@ -2004,8 +2402,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Phone No"
                       name="phoneNo"
@@ -2013,8 +2411,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Mobile No"
                       name="mobileNo"
@@ -2022,8 +2420,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="City"
                       name="city"
@@ -2031,8 +2429,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Address line 1"
                       name="address1"
@@ -2040,8 +2438,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Address line 2"
                       name="address2"
@@ -2049,8 +2447,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                </Grid>
+                  </R>
+                </GridContainer>
               )}
 
               {/* 7. KYC DETAILS */}
@@ -2104,16 +2502,16 @@ export default function ApplicationTrackingSystem() {
                     group: 'I. PERSONAL & FAMILY DETAILS',
                     fields: [
                       { name: 'q1_native', label: '1. Native Place' },
-                      { name: 'q2_presentAddress', label: '2. Present Address' },
-                      { name: 'q3_permanentAddress', label: '3. Permanent Address' },
+                      { name: 'q2_presentAddress', label: '2. Present Address', lg: 12 },
+                      { name: 'q3_permanentAddress', label: '3. Permanent Address', lg: 12 },
                       { name: 'q4_fatherOccupation', label: "4. Father's Occupation" },
                       { name: 'q5_motherOccupation', label: "5. Mother's Occupation" },
                       { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: MARITAL_STATUSES },
                       { name: 'q7_spouseOccupation', label: "7. Occupation of Spouse" },
                       { name: 'q8_children', label: '8. Children' },
                       { name: 'q9_hasRelativesInCompany', label: '9. Any relative or friends working here?', select: true, options: ['NO', 'YES'] },
-                      { name: 'q10_relativesDetails', label: '10. Relative or friends details' },
-                      { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations' }
+                      { name: 'q10_relativesDetails', label: '10. Relative or friends details', lg: 12 },
+                      { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations', lg: 12 }
                     ]
                   },
                   {
@@ -2129,10 +2527,10 @@ export default function ApplicationTrackingSystem() {
                   {
                     group: 'III. PERSONAL GOALS & REFLECTION',
                     fields: [
-                      { name: 'q17_positivePoints', label: '17. Brief about positive points' },
-                      { name: 'q18_negativePoints', label: '18. Brief about negative points' },
-                      { name: 'q19_lifeGoals', label: "19. What's your life goals?" },
-                      { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas' }
+                      { name: 'q17_positivePoints', label: '17. Brief about positive points', lg: 12 },
+                      { name: 'q18_negativePoints', label: '18. Brief about negative points', lg: 12 },
+                      { name: 'q19_lifeGoals', label: "19. What's your life goals?", lg: 12 },
+                      { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas', lg: 12 }
                     ]
                   },
                   {
@@ -2155,9 +2553,9 @@ export default function ApplicationTrackingSystem() {
                     fields: [
                       { name: 'q31_prevLocation', label: '31. Previous/current company location' },
                       { name: 'q32_prevShift', label: '32. Previously worked shift' },
-                      { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job' },
+                      { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job', lg: 12 },
                       { name: 'q34_noticePeriod', label: '34. Notice period (days)' },
-                      { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details' },
+                      { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details', lg: 12 },
                       { name: 'q36_prevDeptCount', label: '36. Prev dept employee count' },
                       { name: 'q37_prevReportingTo', label: '37. Prev manager/reporting to' }
                     ]
@@ -2165,8 +2563,8 @@ export default function ApplicationTrackingSystem() {
                   {
                     group: 'VI. BEHAVIORAL & WORK RATINGS',
                     fields: [
-                      { name: 'q38_handleMistake', label: '38. How you handle mistakes' },
-                      { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences' },
+                      { name: 'q38_handleMistake', label: '38. How you handle mistakes', lg: 12 },
+                      { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences', lg: 12 },
                       { name: 'q40_computerSelfRating', label: '40. Self rating (MS-Office, Outlook)', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'POOR'] },
                       { name: 'payslip', label: 'PAY SLIP', type: 'file' }
                     ]
@@ -2180,9 +2578,9 @@ export default function ApplicationTrackingSystem() {
                         <Typography variant="h5" color="primary" sx={{ mb: 2.5, fontWeight: 700, borderBottom: '1.5px solid', borderColor: 'primary.light', pb: 1 }}>
                           {g.group}
                         </Typography>
-                        <Grid container spacing={2.5}>
+                        <GridContainer>
                           {g.fields.map(f => (
-                            <Grid item xs={12} sm={12} md={12} key={f.name}>
+                            <R key={f.name} lg={f.lg}>
                               {f.type === 'file' ? (
                                 <Box>
                                   <Typography sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', mb: 1 }}>
@@ -2215,9 +2613,9 @@ export default function ApplicationTrackingSystem() {
                                   onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
                                 />
                               )}
-                            </Grid>
+                            </R>
                           ))}
-                        </Grid>
+                        </GridContainer>
                       </Card>
                     ))}
                   </Stack>
@@ -2282,8 +2680,8 @@ export default function ApplicationTrackingSystem() {
               )}
 
             </Box>
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </BOSFormDialog>
 
       {/* Delete Confirmation */}
@@ -2295,6 +2693,624 @@ export default function ApplicationTrackingSystem() {
         message="Are you sure you want to completely remove this candidate application?"
         itemName={`${deleteTarget?.firstName} ${deleteTarget?.lastName}`}
       />
+
+      {/* Interview Availability Call Letter Dialog */}
+      <BOSFormDialog
+        open={callLetterDialogOpen}
+        onClose={handleCloseCallLetterDialog}
+        onClear={handleClearCallLetterFields}
+        title="Interview Availability"
+        maxWidth="sm"
+        secondaryActions={
+          <Button
+            onClick={handleSendCallLetterSubmit}
+            variant="contained"
+            sx={{
+              bgcolor: 'success.main',
+              color: '#fff',
+              '&:hover': { bgcolor: 'success.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+              borderRadius: '24px',
+              textTransform: 'none',
+              px: 4,
+              py: 1,
+              fontWeight: 700,
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
+            }}
+            startIcon={<IconMail size={20} />}
+          >
+            sent
+          </Button>
+        }
+      >
+        <Grid container spacing={2.5}>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              type="date"
+              label="Interview date:"
+              name="interviewDate"
+              value={callLetterData.interviewDate}
+              onChange={(e) => {
+                setCallLetterData(prev => ({ ...prev, interviewDate: e.target.value }));
+                if (callLetterErrors.interviewDate) {
+                  setCallLetterErrors(prev => ({ ...prev, interviewDate: '' }));
+                }
+              }}
+              inputProps={{
+                min: getTodayDateString()
+              }}
+              error={!!callLetterErrors.interviewDate}
+              helperText={callLetterErrors.interviewDate}
+              sx={errorStyle(!!callLetterErrors.interviewDate)}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTimePicker
+              required
+              format24h
+              label="Interview time (24h):"
+              name="interviewTime"
+              value={callLetterData.interviewTime}
+              onChange={(e) => {
+                setCallLetterData(prev => ({ ...prev, interviewTime: e.target.value }));
+                if (callLetterErrors.interviewTime) {
+                  setCallLetterErrors(prev => ({ ...prev, interviewTime: '' }));
+                }
+              }}
+              error={!!callLetterErrors.interviewTime}
+              helperText={callLetterErrors.interviewTime}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              label="From:"
+              name="from"
+              value={callLetterData.from}
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: 'grey.50' }}
+              error={!!callLetterErrors.from}
+              helperText={callLetterErrors.from}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              label="To:"
+              name="to"
+              value={callLetterData.to}
+              onChange={(e) => {
+                setCallLetterData(prev => ({ ...prev, to: e.target.value }));
+                if (callLetterErrors.to) {
+                  setCallLetterErrors(prev => ({ ...prev, to: '' }));
+                }
+              }}
+              error={!!callLetterErrors.to}
+              helperText={callLetterErrors.to}
+              sx={errorStyle(!!callLetterErrors.to)}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              label="CC:"
+              name="cc"
+              value={callLetterData.cc}
+              onChange={(e) => {
+                setCallLetterData(prev => ({ ...prev, cc: e.target.value }));
+                if (callLetterErrors.cc) {
+                  setCallLetterErrors(prev => ({ ...prev, cc: '' }));
+                }
+              }}
+              error={!!callLetterErrors.cc}
+              helperText={callLetterErrors.cc}
+              sx={errorStyle(!!callLetterErrors.cc)}
+            />
+          </Grid>
+        </Grid>
+      </BOSFormDialog>
+
+      {/* Assign Interview Dialog */}
+      {/* Assign Interview Dialog */}
+      <BOSFormDialog
+        open={interviewDialogOpen}
+        onClose={handleCloseInterviewDialog}
+        title={`Assign Interview process( ${selectedDetails.name} )`}
+        maxWidth="lg"
+        hideFooter={true}
+      >
+        {/* Candidate Details subheader */}
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          p: 1.5,
+          mb: 3,
+          border: '1px solid',
+          borderColor: 'grey.300',
+          borderRadius: '8px',
+          bgcolor: 'background.paper',
+          flexWrap: 'wrap',
+          gap: 2,
+          boxShadow: '0px 1px 3px rgba(0,0,0,0.05)'
+        }}>
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.85rem' }}>
+            DEPARTMENT : <span style={{ color: '#2196f3' }}>{(selectedDetails.department || '').toUpperCase()}</span>
+          </Typography>
+          <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, height: 20, alignSelf: 'center', borderColor: 'grey.300' }} />
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.85rem' }}>
+            POSITION : <span style={{ color: '#2196f3' }}>{(selectedDetails.position || '').toUpperCase()}</span>
+          </Typography>
+          <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, height: 20, alignSelf: 'center', borderColor: 'grey.300' }} />
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.85rem' }}>
+            LEVEL : <span style={{ color: '#2196f3' }}>{(selectedDetails.level || '').toUpperCase()}</span>
+          </Typography>
+          <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, height: 20, alignSelf: 'center', borderColor: 'grey.300' }} />
+          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.85rem' }}>
+            SCREEN LEVEL : <span style={{ color: '#2196f3' }}>{(selectedDetails.screenLevel || '').toUpperCase()}</span>
+          </Typography>
+        </Box>
+
+        {/* Input Row */}
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 2,
+          flexWrap: 'wrap',
+          mb: 1
+        }}>
+          {/* Screening Level */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 100 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Screening Level<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <BOSTextField
+              select
+              size="small"
+              value={interviewData.screeningLevel}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (selected === '' || selected === undefined || selected === null) {
+                    return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                  }
+                  return selected;
+                }
+              }}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, screeningLevel: e.target.value }));
+                if (interviewErrors.screeningLevel) {
+                  setInterviewErrors(prev => ({ ...prev, screeningLevel: '' }));
+                }
+              }}
+              error={!!interviewErrors.screeningLevel}
+              helperText={interviewErrors.screeningLevel}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+            >
+              <MenuItem value="">-select-</MenuItem>
+              <MenuItem value="1">1</MenuItem>
+              <MenuItem value="2">2</MenuItem>
+              <MenuItem value="3">3</MenuItem>
+              <MenuItem value="4">4</MenuItem>
+            </BOSTextField>
+          </Box>
+
+          {/* Interview Date + Time */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Interview Date<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <BOSTextField
+                type="date"
+                size="small"
+                value={interviewData.interviewDate}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, interviewDate: e.target.value }));
+                  if (interviewErrors.interviewDate) {
+                    setInterviewErrors(prev => ({ ...prev, interviewDate: '' }));
+                  }
+                }}
+                inputProps={{ min: getTodayDateString() }}
+                error={!!interviewErrors.interviewDate}
+                sx={{ width: 135, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              />
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.interviewTimeHour}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, interviewTimeHour: e.target.value }));
+                  if (interviewErrors.interviewTime) {
+                    setInterviewErrors(prev => ({ ...prev, interviewTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.interviewTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {BUSINESS_HOURS_LIST.map(h => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+              </BOSTextField>
+              <Typography sx={{ fontWeight: 'bold' }}>:</Typography>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.interviewTimeMinute}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, interviewTimeMinute: e.target.value }));
+                  if (interviewErrors.interviewTime) {
+                    setInterviewErrors(prev => ({ ...prev, interviewTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.interviewTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {MINUTES_LIST.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </BOSTextField>
+            </Box>
+            {interviewErrors.interviewTime && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{interviewErrors.interviewTime}</Typography>
+            )}
+            {interviewErrors.interviewDate && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{interviewErrors.interviewDate}</Typography>
+            )}
+          </Box>
+
+          {/* Round */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Round<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Checkbox
+                size="small"
+                checked={interviewData.roundChecked || false}
+                onChange={(e) => setInterviewData(prev => ({ ...prev, roundChecked: e.target.checked }))}
+                sx={{ p: 0.5 }}
+              />
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.round}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, round: e.target.value }));
+                  if (interviewErrors.round) {
+                    setInterviewErrors(prev => ({ ...prev, round: '' }));
+                  }
+                }}
+                error={!!interviewErrors.round}
+                helperText={interviewErrors.round}
+                sx={{ width: 140, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                <MenuItem value="TECHNICAL">TECHNICAL</MenuItem>
+                <MenuItem value="HR">HR</MenuItem>
+                <MenuItem value="MANAGEMENT">MANAGEMENT</MenuItem>
+                <MenuItem value="SPECIAL ROUND">SPECIAL ROUND</MenuItem>
+              </BOSTextField>
+            </Box>
+          </Box>
+
+          {/* Start Time */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Start Time<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.startTimeHour}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, startTimeHour: e.target.value }));
+                  if (interviewErrors.startTime) {
+                    setInterviewErrors(prev => ({ ...prev, startTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.startTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {BUSINESS_HOURS_LIST.map(h => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+              </BOSTextField>
+              <Typography sx={{ fontWeight: 'bold' }}>:</Typography>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.startTimeMinute}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, startTimeMinute: e.target.value }));
+                  if (interviewErrors.startTime) {
+                    setInterviewErrors(prev => ({ ...prev, startTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.startTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {MINUTES_LIST.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </BOSTextField>
+            </Box>
+            {interviewErrors.startTime && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{interviewErrors.startTime}</Typography>
+            )}
+          </Box>
+
+          {/* End Time */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              End Time<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.endTimeHour}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, endTimeHour: e.target.value }));
+                  if (interviewErrors.endTime) {
+                    setInterviewErrors(prev => ({ ...prev, endTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.endTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {BUSINESS_HOURS_LIST.map(h => <MenuItem key={h} value={h}>{h}</MenuItem>)}
+              </BOSTextField>
+              <Typography sx={{ fontWeight: 'bold' }}>:</Typography>
+              <BOSTextField
+                select
+                size="small"
+                value={interviewData.endTimeMinute}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === '' || selected === undefined || selected === null) {
+                      return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                    }
+                    return selected;
+                  }
+                }}
+                onChange={(e) => {
+                  setInterviewData(prev => ({ ...prev, endTimeMinute: e.target.value }));
+                  if (interviewErrors.endTime) {
+                    setInterviewErrors(prev => ({ ...prev, endTime: '' }));
+                  }
+                }}
+                error={!!interviewErrors.endTime}
+                sx={{ width: 95, '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+              >
+                <MenuItem value="">-select-</MenuItem>
+                {MINUTES_LIST.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </BOSTextField>
+            </Box>
+            {interviewErrors.endTime && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{interviewErrors.endTime}</Typography>
+            )}
+          </Box>
+
+          {/* Interview Person */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, minWidth: 160 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Interview Person<span style={{ color: 'red' }}>*</span>
+            </Typography>
+            <BOSTextField
+              select
+              size="small"
+              value={interviewData.interviewPerson}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (selected === '' || selected === undefined || selected === null) {
+                    return <span style={{ color: '#9e9e9e' }}>-select-</span>;
+                  }
+                  return selected;
+                }
+              }}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, interviewPerson: e.target.value }));
+                if (interviewErrors.interviewPerson) {
+                  setInterviewErrors(prev => ({ ...prev, interviewPerson: '' }));
+                }
+              }}
+              error={!!interviewErrors.interviewPerson}
+              helperText={interviewErrors.interviewPerson}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+            >
+              <MenuItem value="">-select-</MenuItem>
+              {employees.map(emp => {
+                const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.empCode;
+                const valueStr = `${emp.empCode} - ${fullName}`;
+                return (
+                  <MenuItem key={emp.id} value={valueStr}>
+                    {valueStr}
+                  </MenuItem>
+                );
+              })}
+            </BOSTextField>
+          </Box>
+        </Box>
+
+        {/* Buttons Centered */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3, mb: 3 }}>
+          <Button
+            variant="contained"
+            onClick={handleCloseInterviewDialog}
+            sx={{
+              bgcolor: '#5A738E',
+              color: '#fff',
+              '&:hover': { bgcolor: '#4b5e75' },
+              textTransform: 'none',
+              fontWeight: 'bold',
+              px: 3.5,
+              py: 0.75,
+              borderRadius: '4px'
+            }}
+            startIcon={<IconX size={18} />}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAssignInterviewSubmit}
+            sx={{
+              bgcolor: '#4b6584',
+              color: '#fff',
+              '&:hover': { bgcolor: '#3d526b' },
+              textTransform: 'none',
+              fontWeight: 'bold',
+              px: 3.5,
+              py: 0.75,
+              borderRadius: '4px'
+            }}
+            startIcon={<IconDeviceFloppy size={18} />}
+          >
+            Save
+          </Button>
+        </Box>
+
+        {/* History Grid */}
+        <TableContainer component={Paper} variant="outlined" sx={{ mt: 1, maxHeight: 280, overflowY: 'auto', borderRadius: '8px' }}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                {['#', 'Screening Level', 'Round', 'Date', 'Start Time', 'End Time', 'Interview by', 'Interview Status', 'Created By', 'Status'].map((col) => (
+                  <TableCell
+                    key={col}
+                    sx={{
+                      bgcolor: '#5A738E',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      fontSize: '0.8rem',
+                      py: 1,
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    {col}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {interviewHistory.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={10} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                    No interview history found for this candidate.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                interviewHistory.map((item, idx) => (
+                  <TableRow key={item.id} hover>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{idx + 1}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.screeningLevel}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>
+                      <Chip label={item.round} size="small" color="primary" variant="outlined" sx={{ fontWeight: 'bold', fontSize: '0.7rem' }} />
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.interviewDate}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.startTime}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.endTime}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.interviewPerson}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>
+                      <Chip
+                        label={item.interviewStatus}
+                        size="small"
+                        sx={{
+                          bgcolor: item.interviewStatus === 'PENDING' ? '#ffebee' :
+                                   item.interviewStatus === 'REJECTED' ? '#ffebee' :
+                                   item.interviewStatus === 'SELECTED' ? '#e8f5e9' :
+                                   item.interviewStatus === 'ON HOLD' ? '#fff3e0' :
+                                   item.interviewStatus === 'WAITING FOR PROGRESS' ? '#f3e5f5' : '#f5f5f5',
+                          color: item.interviewStatus === 'PENDING' ? '#c62828' :
+                                 item.interviewStatus === 'REJECTED' ? '#c62828' :
+                                 item.interviewStatus === 'SELECTED' ? '#2e7d32' :
+                                 item.interviewStatus === 'ON HOLD' ? '#e65100' :
+                                 item.interviewStatus === 'WAITING FOR PROGRESS' ? '#4a148c' : '#757575',
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>{item.createdBy}</TableCell>
+                    <TableCell sx={{ fontSize: '0.8rem', py: 0.75 }}>
+                      <Chip
+                        label={item.status}
+                        size="small"
+                        sx={{
+                          bgcolor: item.status === 'ACTIVE' ? '#e8f5e9' : '#fafafa',
+                          color: item.status === 'ACTIVE' ? '#2e7d32' : 'text.secondary',
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem'
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </BOSFormDialog>
     </MainCard>
   );
 }

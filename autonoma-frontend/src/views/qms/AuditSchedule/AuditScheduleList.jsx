@@ -25,6 +25,7 @@ const columns = [
   { id: 'auditor', label: 'Auditor', minWidth: 120 },
   { id: 'auditee', label: 'Auditee', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'frequency', label: 'Frequency', minWidth: 120 },
   { id: 'rescheduleCount', label: 'Reschedule Count', minWidth: 120 },
   { id: 'totalPoint', label: 'Total Point', minWidth: 100 },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
@@ -56,10 +57,11 @@ export default function AuditScheduleList() {
         options: [
           { value: 'All', label: 'ALL' },
           { value: 'OPEN', label: 'OPEN' },
+          { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' },
           { value: 'CLOSED', label: 'CLOSED' },
           { value: 'CANCELLED', label: 'CANCELLED' }
         ],
-        defaultValue: 'OPEN',
+        defaultValue: 'All',
         isStarred: true
       },
       { id: 'scheduleNo', label: 'Schedule No', type: 'text', placeholder: 'Filter by No...', isStarred: true },
@@ -117,14 +119,23 @@ export default function AuditScheduleList() {
   };
 
   const handleExport = () => {
+    const formatNameOnly = (nameStr) => {
+      if (nameStr && typeof nameStr === 'string' && nameStr.includes(' - ')) {
+        return nameStr.split(' - ')[0].trim();
+      }
+      return nameStr || '';
+    };
+
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
       'Schedule No': r.scheduleNo,
       'Date': r.scheduleDate ? format(new Date(r.scheduleDate), 'dd/MM/yyyy') : '',
       'Audit Type': r.auditType,
       'Audit Area': r.auditArea,
-      'Auditee': r.auditee,
+      'Auditee': formatNameOnly(r.auditee),
+      'Auditor': formatNameOnly(r.auditor),
       'Status': r.status,
+      'Frequency': r.frequency,
       'Reschedule Count': r.rescheduleCount !== undefined && r.rescheduleCount !== null ? r.rescheduleCount : 0,
       'Total Point': r.totalPoint !== undefined && r.totalPoint !== null ? r.totalPoint : 0
     }));
@@ -135,7 +146,7 @@ export default function AuditScheduleList() {
     const filtered = rows.filter((row) => {
       if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
 
-      const statusFilter = globalFilters.status || 'OPEN';
+      const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       
       const scheduleNoFilter = globalFilters.scheduleNo || '';
@@ -184,9 +195,16 @@ export default function AuditScheduleList() {
     }
     if (col.id === 'status') {
       const statusText = typeof val === 'object' ? val?.name : val;
-      return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'OPEN' ? 'ACTIVE' : 'INACTIVE')} />;
+      const displayLabel = statusText === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : statusText;
+      return <Chip label={displayLabel} size="small" sx={getStatusChipSx((statusText === 'OPEN' || statusText === 'CLOSED') ? 'ACTIVE' : (statusText === 'WAITING_APPROVAL' ? 'PENDING' : 'INACTIVE'))} />;
     }
-    if (col.id === 'auditDate' || col.id === 'createdDate' || col.id === 'updatedDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'auditDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'createdDate' || col.id === 'updatedDate') return val ? format(new Date(val), 'dd/MM/yyyy HH:mm') : '-';
+    if (col.id === 'auditee' || col.id === 'auditor') {
+      if (val && typeof val === 'string' && val.includes(' - ')) {
+        return val.split(' - ')[0].trim();
+      }
+    }
     
     if (typeof val === 'object' && val !== null) {
       return val.name || val.label || val.id || '-';
@@ -199,7 +217,7 @@ export default function AuditScheduleList() {
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCalendarEvent size={24} />
-          <Typography variant="h3">Audit Schedule Master</Typography>
+          <Typography variant="h3">Audit Schedule</Typography>
         </Stack>
       }
       secondary={
@@ -224,9 +242,27 @@ export default function AuditScheduleList() {
         loading={loading}
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
-        onEditRow={perms.write ? handleOpenEdit : undefined}
-        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
+        onDoubleClickRow={perms.write ? (row) => {
+          if (row.hasAttendance) {
+            dispatch(openSnackbar({ open: true, message: 'Cannot edit/reschedule this audit schedule as attendance has already been recorded.', severity: 'warning', variant: 'alert' }));
+            return;
+          }
+          handleOpenEdit(row);
+        } : undefined}
+        onEditRow={perms.write ? (row) => {
+          if (row.hasAttendance) {
+            dispatch(openSnackbar({ open: true, message: 'Cannot edit/reschedule this audit schedule as attendance has already been recorded.', severity: 'warning', variant: 'alert' }));
+            return;
+          }
+          handleOpenEdit(row);
+        } : undefined}
+        onDeleteRow={perms.delete ? (row) => {
+          if (row.hasAttendance) {
+            dispatch(openSnackbar({ open: true, message: 'Cannot delete this audit schedule as attendance has already been recorded.', severity: 'warning', variant: 'alert' }));
+            return;
+          }
+          handleDeleteClick(row);
+        } : undefined}
         renderCell={renderCell}
         customActions={(row) => (
           <Tooltip title="Close Audit">

@@ -65,14 +65,14 @@ public class CompanyCredential {
     @Column(name = "DIRECTORY_PATH", columnDefinition = "NVARCHAR(1000)")
     private String directoryPath;
 
-    @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "UPDATED_DATE")
@@ -82,24 +82,88 @@ public class CompanyCredential {
     @Column(name = "LIC_EXP_REMAINDER_DAYS")
     private long licExpRemainderDays;
 
-    @Column(name = "RESTORE_ENABLE_DAYS")
+    @Column(name = "restore_enable_days")
     private Integer restoreEnableDays;
 
     @Column(name = "IS_ACTIVE")
     private Boolean isActive = true;
 
+    @Column(name = "INPUT_CASE_STYLE", columnDefinition = "NVARCHAR(50)")
+    private String inputCaseStyle;
+
+    @Column(name = "REGISTRATION_NO", columnDefinition = "NVARCHAR(100)")
+    private String registrationNo;
+
+    @Column(name = "PAN_NO", columnDefinition = "NVARCHAR(50)")
+    private String panNo;
+
+    @Column(name = "MOBILE_NO", columnDefinition = "NVARCHAR(20)")
+    private String mobileNo;
+
+    @Column(name = "PHONE_NO", columnDefinition = "NVARCHAR(20)")
+    private String phoneNo;
+
+    @Column(name = "EMAIL_ID", columnDefinition = "NVARCHAR(100)")
+    private String emailId;
+
+    @Column(name = "WEBSITE", columnDefinition = "NVARCHAR(100)")
+    private String website;
+
+    @Column(name = "GMAPLINK", columnDefinition = "NVARCHAR(500)")
+    private String gmaplink;
+
+    @Column(name = "DECIMAL_PLACES")
+    private Integer decimalPlaces;
+
+    @Column(name = "CURRENCY_CODE", columnDefinition = "NVARCHAR(10)")
+    private String currencyCode;
+
+    @Column(name = "SMTP_HOST", columnDefinition = "NVARCHAR(100)")
+    private String smtpHost;
+
+    @Column(name = "SMTP_PORT")
+    private Integer smtpPort;
+
+    @Column(name = "SMTP_USERNAME", columnDefinition = "NVARCHAR(100)")
+    private String smtpUsername;
+
+    @Column(name = "SMTP_PASSWORD", columnDefinition = "NVARCHAR(255)")
+    private String smtpPassword;
+
+    @Column(name = "SMTP_SSL_ENABLED")
+    private Boolean smtpSslEnabled;
+
+    @Column(name = "SUPPORT_EMAIL", columnDefinition = "NVARCHAR(100)")
+    private String supportEmail;
+
+    @Column(name = "SUPPORT_PHONE", columnDefinition = "NVARCHAR(20)")
+    private String supportPhone;
+
+    @Column(name = "AUDIT_LOG_ENABLED")
+    private Boolean auditLogEnabled;
+
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "Admin";
+        this.updatedBy = null;
+
         createdDate = new Date();
         if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
         if (isActive == null) isActive = true;
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "Admin";
+        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+
         updatedDate = new Date();
         if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
-    }
+        }
 
     public Long getId() {
         return id;
@@ -275,5 +339,149 @@ public class CompanyCredential {
 
     public void setRestoreEnableDays(Integer restoreEnableDays) {
         this.restoreEnableDays = restoreEnableDays;
+    }
+
+    public String getInputCaseStyle() {
+        return inputCaseStyle;
+    }
+
+    public void setInputCaseStyle(String inputCaseStyle) {
+        this.inputCaseStyle = inputCaseStyle;
+    }
+
+    public String getRegistrationNo() {
+        return registrationNo;
+    }
+
+    public void setRegistrationNo(String registrationNo) {
+        this.registrationNo = registrationNo;
+    }
+
+    public String getPanNo() {
+        return panNo;
+    }
+
+    public void setPanNo(String panNo) {
+        this.panNo = panNo;
+    }
+
+    public String getMobileNo() {
+        return mobileNo;
+    }
+
+    public void setMobileNo(String mobileNo) {
+        this.mobileNo = mobileNo;
+    }
+
+    public String getPhoneNo() {
+        return phoneNo;
+    }
+
+    public void setPhoneNo(String phoneNo) {
+        this.phoneNo = phoneNo;
+    }
+
+    public String getEmailId() {
+        return emailId;
+    }
+
+    public void setEmailId(String emailId) {
+        this.emailId = emailId;
+    }
+
+    public String getWebsite() {
+        return website;
+    }
+
+    public void setWebsite(String website) {
+        this.website = website;
+    }
+
+    public String getGmaplink() {
+        return gmaplink;
+    }
+
+    public void setGmaplink(String gmaplink) {
+        this.gmaplink = gmaplink;
+    }
+
+    public Integer getDecimalPlaces() {
+        return decimalPlaces;
+    }
+
+    public void setDecimalPlaces(Integer decimalPlaces) {
+        this.decimalPlaces = decimalPlaces;
+    }
+
+    public String getCurrencyCode() {
+        return currencyCode;
+    }
+
+    public void setCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
+    }
+
+    public String getSmtpHost() {
+        return smtpHost;
+    }
+
+    public void setSmtpHost(String smtpHost) {
+        this.smtpHost = smtpHost;
+    }
+
+    public Integer getSmtpPort() {
+        return smtpPort;
+    }
+
+    public void setSmtpPort(Integer smtpPort) {
+        this.smtpPort = smtpPort;
+    }
+
+    public String getSmtpUsername() {
+        return smtpUsername;
+    }
+
+    public void setSmtpUsername(String smtpUsername) {
+        this.smtpUsername = smtpUsername;
+    }
+
+    public String getSmtpPassword() {
+        return smtpPassword;
+    }
+
+    public void setSmtpPassword(String smtpPassword) {
+        this.smtpPassword = smtpPassword;
+    }
+
+    public Boolean getSmtpSslEnabled() {
+        return smtpSslEnabled;
+    }
+
+    public void setSmtpSslEnabled(Boolean smtpSslEnabled) {
+        this.smtpSslEnabled = smtpSslEnabled;
+    }
+
+    public String getSupportEmail() {
+        return supportEmail;
+    }
+
+    public void setSupportEmail(String supportEmail) {
+        this.supportEmail = supportEmail;
+    }
+
+    public String getSupportPhone() {
+        return supportPhone;
+    }
+
+    public void setSupportPhone(String supportPhone) {
+        this.supportPhone = supportPhone;
+    }
+
+    public Boolean getAuditLogEnabled() {
+        return auditLogEnabled;
+    }
+
+    public void setAuditLogEnabled(Boolean auditLogEnabled) {
+        this.auditLogEnabled = auditLogEnabled;
     }
 }

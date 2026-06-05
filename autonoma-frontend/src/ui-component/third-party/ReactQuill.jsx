@@ -81,7 +81,7 @@ export default function ReactQuillDemo({ value, editorMinHeight = 125, onChange 
         })
       }}
     >
-      <ReactQuill {...(value && { value })} {...(onChange && { onChange })} />
+      <ReactQuill value={value || ''} {...(onChange && { onChange })} />
     </Box>
   );
 }

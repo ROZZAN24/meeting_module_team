@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, Grid, MenuItem, Box, Checkbox, ListItemText } from '@mui/material';
+import { Typography, Button, Stack, Tooltip, IconButton, Grid, MenuItem, Box, Checkbox, ListItemText, Chip } from '@mui/material';
 import { IconClipboardCheck, IconRefresh, IconPlus, IconDeviceFloppy, IconEraser, IconEye } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
@@ -35,7 +35,8 @@ const LEVEL_OPTIONS = [
   { code: 'L3', label: 'L3 - Executive' },
   { code: 'L4', label: 'L4 - Senior Executive' },
   { code: 'L5', label: 'L5 - Assistant Manager' },
-  { code: 'L6', label: 'L6 - Manager & Above' }
+  { code: 'L6', label: 'L6 - Manager & Above' },
+  { code: 'L7', label: 'L7 - Director / VP & Above' }
 ];
 
 const VALIDATION_RULES = [
@@ -89,7 +90,6 @@ export default function InductionCriteria() {
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_CRITERIA);
 
   const columns = useMemo(() => [
-    { id: 'index', label: 'Sl.No', minWidth: 60 },
     { id: 'serialNo', label: 'Serial No', bold: true, color: 'primary.main', minWidth: 100 },
     { id: 'inductionDetails', label: 'Induction Details', required: true, bold: true, minWidth: 250 },
     { id: 'answer', label: 'Answer', required: true, minWidth: 200 },
@@ -160,11 +160,11 @@ export default function InductionCriteria() {
         label: 'Status',
         type: 'select',
         options: [
-          { value: 'ALL', label: 'ALL' },
+          { value: 'All', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'IN ACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'All',
         isStarred: true
       },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
@@ -220,7 +220,16 @@ export default function InductionCriteria() {
     );
     const order = LEVEL_OPTIONS.map(l => l.code);
     const rawLevels = originalRow.levelCodes ? originalRow.levelCodes.split(',').filter(Boolean) : [];
-    const sortedLevels = [...rawLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    const sortedLevels = [...rawLevels].sort((a, b) => {
+      const idxA = order.indexOf(a);
+      const idxB = order.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      const aNum = parseInt(a.replace(/^\D+/g, ''), 10) || 0;
+      const bNum = parseInt(b.replace(/^\D+/g, ''), 10) || 0;
+      return aNum - bNum;
+    });
 
     setFormData({
       ...originalRow,
@@ -273,22 +282,57 @@ export default function InductionCriteria() {
 
   const handleLevelChange = (e) => {
     const { value } = e.target;
+    let newLevels = [];
     if (value.includes('ALL')) {
       if (formData.levelCodes.length === levelOptions.length) {
-        setFormData(prev => ({ ...prev, levelCodes: [] }));
+        newLevels = [];
       } else {
-        setFormData(prev => ({ ...prev, levelCodes: levelOptions.map(l => l.code) }));
+        newLevels = levelOptions.map(l => l.code);
       }
-      const rawCodes = typeof value === 'string' ? value.split(',') : value;
-      const order = LEVEL_OPTIONS.map(l => l.code);
-      const sortedCodes = [...rawCodes].sort((a, b) => order.indexOf(a) - order.indexOf(b));
-      setFormData((prev) => ({ ...prev, levelCodes: sortedCodes }));
+    } else {
+      newLevels = value;
     }
+    const order = LEVEL_OPTIONS.map(l => l.code);
+    const sortedLevels = [...newLevels].sort((a, b) => {
+      const idxA = order.indexOf(a);
+      const idxB = order.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      const aNum = parseInt(a.replace(/^\D+/g, ''), 10) || 0;
+      const bNum = parseInt(b.replace(/^\D+/g, ''), 10) || 0;
+      return aNum - bNum;
+    });
+    setFormData(prev => ({ ...prev, levelCodes: sortedLevels }));
     if (errors.levelCodes) clearErrors('levelCodes');
   };
 
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
+
+    const selectedLevels = formData.levelCodes || [];
+    if (selectedLevels.includes('L1') && selectedLevels.length < 2) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Minimum 2 levels must be selected when Level L1 is chosen.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error'
+      }));
+      setErrors(prev => ({ ...prev, levelCodes: 'Minimum 2 levels required for L1' }));
+      return;
+    }
+    if ((selectedLevels.includes('L6') || selectedLevels.includes('L7')) && selectedLevels.length < 3) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Minimum 3 levels must be selected when Level L6 or L7 is chosen.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error'
+      }));
+      setErrors(prev => ({ ...prev, levelCodes: 'Minimum 3 levels required for L6/L7' }));
+      return;
+    }
 
     if (formData.attachmentRequired === 'YES' && (!formData.inductionAttachment || formData.inductionAttachment.length === 0)) {
       dispatch(openSnackbar({
@@ -368,7 +412,8 @@ export default function InductionCriteria() {
       setDeleteDialogOpen(false);
       fetchRows();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete', variant: 'alert', severity: 'error' }));
+      const msg = error.response?.data?.message || error.response?.data || 'Failed to delete';
+      dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -380,7 +425,7 @@ export default function InductionCriteria() {
             .split(',')
             .map((code) => {
               const match = departments.find((d) => d.departmentNo === code.trim());
-              return match ? match.departmentName : code;
+              return match ? match.departmentName.toUpperCase() : code.toUpperCase();
             })
             .join(', ')
         : '-';
@@ -388,7 +433,7 @@ export default function InductionCriteria() {
       return {
         ...r,
         index: i + 1,
-        serialNo: `IND-${r.id.toString().padStart(3, '0')}`,
+        serialNo: (i + 1).toString(),
         departmentCodes: deptNames, // Render friendly department names in table row
         createdUser: r.createdUser || r.createdBy || '-',
         updatedUser: r.updatedUser || r.updatedBy || '-',
@@ -414,7 +459,7 @@ export default function InductionCriteria() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="New"
+          newLabel="+ New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           
@@ -455,7 +500,13 @@ export default function InductionCriteria() {
               <BOSTextField
                 name="id"
                 label="SERIAL NO"
-                value={formData.id ? `IND-${formData.id.toString().padStart(3, '0')}` : (nextSequence ? `IND-${nextSequence.toString().padStart(3, '0')}` : 'IND-001')}
+                value={
+                  formData.id
+                    ? formData.id.toString()
+                    : nextSequence
+                    ? nextSequence.toString()
+                    : '1'
+                }
                 disabled
                 InputProps={{
                   readOnly: true,
@@ -558,7 +609,7 @@ export default function InductionCriteria() {
                     renderValue: (selected) => {
                       if (!selected || selected.length === 0) return <em>-Select-</em>;
                       if (selected.length === departments.length) return 'All Departments';
-                      return selected.map(id => departments.find(d => d.id.toString() === id)?.departmentName || id).join(', ');
+                      return selected.map(id => (departments.find(d => d.id.toString() === id)?.departmentName || id).toUpperCase()).join(', ');
                     }
                   }}
                   required
@@ -575,7 +626,7 @@ export default function InductionCriteria() {
                   {departments.map((d) => (
                     <MenuItem key={d.id} value={d.id.toString()}>
                       <Checkbox checked={formData.departmentCodes.includes(d.id.toString())} />
-                      <ListItemText primary={d.departmentName} secondary={d.departmentNo} />
+                      <ListItemText primary={d.departmentName.toUpperCase()} secondary={d.departmentNo} />
                     </MenuItem>
                   ))}
                 </BOSTextField>
@@ -589,7 +640,6 @@ export default function InductionCriteria() {
                     multiple: true,
                     renderValue: (selected) => {
                       if (!selected || selected.length === 0) return <em>-Select-</em>;
-                      if (selected.length === levelOptions.length) return 'All Levels';
                       return selected.map(code => levelOptions.find(l => l.code === code)?.label || code).join(', ');
                     }
                   }}

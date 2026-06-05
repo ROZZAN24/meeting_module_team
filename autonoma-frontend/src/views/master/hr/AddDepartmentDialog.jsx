@@ -22,7 +22,8 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
     departmentNo: '',
     ndaCertificate: 'No',
     sequenceNo: 0,
-    status: 'Active'
+    status: 'Active',
+    departmentMailId: ''
   });
 
   useEffect(() => {
@@ -34,7 +35,8 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
           departmentNo: initialData.departmentNo || '',
           ndaCertificate: initialData.ndaCertificate || 'No',
           sequenceNo: initialData.sequenceNo || 0,
-          status: initialData.status || 'Active'
+          status: initialData.status || 'Active',
+          departmentMailId: initialData.departmentMailId || ''
         });
         setIsEditing(false);
       } else {
@@ -60,7 +62,8 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
   const handleSave = async () => {
     const { isValid, firstMissing } = validate([
       { field: 'departmentName', label: 'Department Name' },
-      { field: 'departmentNo', label: 'Department Number' }
+      { field: 'departmentNo', label: 'Department Number' },
+      { field: 'departmentMailId', label: 'Department Mail Id' }
     ]);
 
     if (!isValid) {
@@ -166,6 +169,19 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
               sx={{ bgcolor: 'grey.50' }}
               required
               error={errors.departmentNo}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, mt: 3 }}>
+            <BOSTextField
+              name="departmentMailId"
+              label="Department Mail Id"
+              type="email"
+              value={formData.departmentMailId}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+              required
+              error={errors.departmentMailId}
+              sx={errorStyle(errors.departmentMailId)}
             />
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3, mt: 3 }}>

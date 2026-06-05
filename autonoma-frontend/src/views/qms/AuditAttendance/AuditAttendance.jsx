@@ -22,9 +22,7 @@ const columns = [
   { id: 'inTime', label: 'In Time', minWidth: 100 },
   { id: 'attendanceStatus', label: 'Attendance Status', minWidth: 150 },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
-  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
-  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
-  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 }
 ];
 
 const TIME_OPTIONS = [
@@ -51,10 +49,36 @@ const getSystemTime12h = () => {
   return `${strHours}:${strMinutes} ${ampm}`;
 };
 
-const parseScheduleDateTime = (s) => {
-  if (!s || !s.auditDate || !s.startTime) return null;
+const stripEmpCode = (name) => {
+  if (!name) return '';
+  return name.replace(/\s*\(\s*EMP-\d+\s*\)/gi, '').replace(/\s+-\s+EMP-\d+/gi, '').replace(/\s*EMP-\d+/gi, '').trim();
+};
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const strHours = String(hours).padStart(2, '0');
+    return `${day}/${month}/${year} ${strHours}:${minutes} ${ampm}`;
+  } catch (e) {
+    return dateStr;
+  }
+};
+
+const parseScheduleDateTime = (s, isEnd = false) => {
+  if (!s || !s.auditDate) return null;
+  const timeStr = isEnd ? s.endTime : s.startTime;
+  if (!timeStr) return null;
   const dStr = s.auditDate.split('T')[0];
-  const match = s.startTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
   if (!match) return null;
   
   let hours = parseInt(match[1], 10);
@@ -76,7 +100,7 @@ const getNearestScheduleNo = (availableSchedules) => {
   let minDiff = Infinity;
   
   availableSchedules.forEach(s => {
-    const schTime = parseScheduleDateTime(s);
+    const schTime = parseScheduleDateTime(s, false);
     if (schTime) {
       const diff = Math.abs(schTime.getTime() - now.getTime());
       if (diff < minDiff) {
@@ -186,6 +210,8 @@ export default function AuditAttendance() {
         .map(r => r.auditScheduleNo)
     );
     
+    const now = new Date();
+    
     return (schedules || []).filter(s => {
       // If editing or already matches the selected value, always show it
       if (s.scheduleNo === formData.auditScheduleNo) {
@@ -195,6 +221,19 @@ export default function AuditAttendance() {
       // 1. Once the current user has submitted attendance, do not show it again
       if (submittedByCurrentUser.has(s.scheduleNo)) {
         return false;
+      }
+
+      // 2. Schedule must start within the next 10 minutes and not have started yet
+      const schStartTime = parseScheduleDateTime(s, false);
+
+      if (schStartTime) {
+        const tenMinsBeforeStart = new Date(schStartTime.getTime() - 10 * 60 * 1000);
+        if (now < tenMinsBeforeStart) {
+          return false; // too early
+        }
+        if (now > schStartTime) {
+          return false; // past schedule / already started
+        }
       }
       
       return true;
@@ -208,7 +247,7 @@ export default function AuditAttendance() {
     setFormData({
       id: null,
       auditScheduleNo: nearestScheduleNo,
-      name: defaultName,
+      name: stripEmpCode(defaultName),
       employeeCode: defaultCode,
       inTime: getSystemTime12h(),
       attendanceStatus: 'PRESENT'
@@ -304,11 +343,14 @@ export default function AuditAttendance() {
     if (col.id === 'index') return idx + 1 + page * size;
     let val = row[col.id];
 
+    if (col.id === 'name') {
+      return stripEmpCode(val);
+    }
     if (col.id === 'createdUser') {
       val = row.createdUser || row.createdBy;
     }
-    if (col.id === 'updatedUser') {
-      val = row.updatedUser || row.updatedBy;
+    if (col.id === 'createdDate') {
+      return formatDateTime(val);
     }
 
     if (col.id === 'employeeCode' && (!val || val === '-')) {
@@ -324,6 +366,21 @@ export default function AuditAttendance() {
     return String(val || '-');
   }, [page, size]);
 
+  const exportRows = useMemo(() => {
+    return rows.map((r, i) => {
+      const empCodeOfRow = (r.employeeCode || '').trim();
+      const code = (!empCodeOfRow || empCodeOfRow === '-') && r.name && r.name.includes(' - ')
+        ? r.name.split(' - ')[1].trim()
+        : empCodeOfRow;
+      return {
+        ...r,
+        employeeCode: code || '-',
+        createdUser: r.createdUser || r.createdBy || '-',
+        createdDate: formatDateTime(r.createdDate)
+      };
+    });
+  }, [rows]);
+
   return (
     <MainCard fullWidth 
       title={
@@ -337,7 +394,7 @@ export default function AuditAttendance() {
           onRefresh={fetchData}
           onNew={handleOpenAdd}
           hasWritePermission={perms.write}
-          exportData={rows}
+          exportData={exportRows}
           
           exportFilename="Audit_Attendance"
           hasExportPermission={perms.export}
@@ -353,13 +410,11 @@ export default function AuditAttendance() {
         loading={loading}
         onPageChange={setPage}
         onSizeChange={setSize}
-        onEditRow={perms.write ? handleOpenEdit : undefined}
-        onDeleteRow={perms.delete ? (r) => { setDeleteTarget(r); setDeleteDialogOpen(true); } : undefined}
         renderCell={renderCell}
       />
 
       <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'View Attendance' : 'Add Attendance'} isViewOnly={!!formData.id || !perms.write}>
-        <BOSFormSection title="Details" icon={<IconPlus size={20} />}>
+        <BOSFormSection>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2.5 }}>
             <BOSTextField
               select
@@ -383,7 +438,7 @@ export default function AuditAttendance() {
                 required
                 disabled
                 label="Name"
-                value={formData.name ? `${formData.name} (${formData.employeeCode})` : `${currentUserEmp?.employeeName || user?.name} (${currentUserEmp?.empCode || user?.employeeCode})`}
+                value={stripEmpCode(formData.name || currentUserEmp?.employeeName || user?.name || '')}
                 InputProps={{ readOnly: true }}
                 error={!!errors.name}
                 helperText={errors.name}
@@ -396,17 +451,20 @@ export default function AuditAttendance() {
                 value={formData.name && formData.employeeCode ? formData.name + '|' + formData.employeeCode : ''}
                 onChange={(e) => {
                   const [n, c] = e.target.value.split('|');
-                  setFormData({ ...formData, name: n, employeeCode: c });
+                  setFormData({ ...formData, name: stripEmpCode(n), employeeCode: c });
                 }}
                 error={!!errors.name}
                 helperText={errors.name}
                 disabled={!!formData.id}
+                SelectProps={{
+                  renderValue: (val) => val ? stripEmpCode(val.split('|')[0]) : ''
+                }}
               >
                 {participants.length > 0 ? (
-                  participants.map(p => <MenuItem key={p.code + p.name} value={p.name + '|' + p.code}>{p.name} ({p.code})</MenuItem>)
+                  participants.map(p => <MenuItem key={p.code + p.name} value={p.name + '|' + p.code}>{stripEmpCode(p.name)}</MenuItem>)
                 ) : (
                   formData.name ? (
-                    <MenuItem value={formData.name + '|' + formData.employeeCode}>{formData.name} ({formData.employeeCode})</MenuItem>
+                    <MenuItem value={formData.name + '|' + formData.employeeCode}>{stripEmpCode(formData.name)}</MenuItem>
                   ) : (
                     <MenuItem disabled value="">No Participants Found</MenuItem>
                   )

@@ -191,7 +191,7 @@ const BusinessAuthorization = () => {
   }, [filteredData, page, rowsPerPage]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 145px)', gap: 1, overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 145px)', gap: 1, overflow: 'hidden', width: "100%" }}>
       {/* ── HEADER SECTION ── */}
       <Box sx={{
         bgcolor: 'white',
@@ -201,7 +201,8 @@ const BusinessAuthorization = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        flexShrink: 0
+        flexShrink: 0,
+        width: '100%'
       }}>
         <Stack direction="row" spacing={2.5} alignItems="center">
           <Avatar
@@ -241,129 +242,145 @@ const BusinessAuthorization = () => {
             Save All Changes
           </Button>
         )}
-            {/* ── TABLE SECTION ── */}
+      </Box>
       <Box sx={{
-        flexGrow: 1,
+        bgcolor: 'white',
+        p: '10px 24px',
+        borderRadius: '12px',
+        border: '1px solid #eef2f6',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        border: '1px solid #eef2f6',
-        bgcolor: 'white',
+        flexGrow: 1,
+        width: '100%',
         minHeight: 0
       }}>
-        {(() => {
-          const columns = [
-            { id: 'index', label: '#' },
-            {
-              id: 'module',
-              label: 'Module & Sub Module',
-              render: (row) => (
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 800, color: '#673ab7', textTransform: 'uppercase', fontSize: '0.7rem', lineHeight: 1.2 }}>
-                    {row.module?.modName}
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem' }}>
-                    {row.subModule?.subModName || 'Main Module'}
-                  </Typography>
-                </Box>
-              )
-            },
-            {
-              id: 'pageName',
-              label: 'Page Identity',
-              render: (row) => (
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem', lineHeight: 1.2 }}>
-                    {row.pageName}
-                  </Typography>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#2196f3', fontSize: '0.65rem' }}>
-                      ID: {row.pageId}
+
+
+
+        {/* ── TABLE SECTION ── */}
+        <Box sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          border: '1px solid #eef2f6',
+          bgcolor: 'white',
+          minHeight: 0
+        }}>
+          {(() => {
+            const columns = [
+              { id: 'index', label: '#', align: 'center' },
+              {
+                id: 'module',
+                label: 'Module & Sub Module',
+                render: (row) => (
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: '#673ab7', textTransform: 'uppercase', fontSize: '0.7rem', lineHeight: 1.2 }}>
+                      {row.module?.modName}
                     </Typography>
-                    {row.pageCode && (
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem', bgcolor: '#f1f5f9', px: 0.5, borderRadius: '4px' }}>
-                        {row.pageCode}
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem' }}>
+                      {row.subModule?.subModName || 'Main Module'}
+                    </Typography>
+                  </Box>
+                )
+              },
+              {
+                id: 'pageName',
+                label: 'Page Identity',
+                render: (row) => (
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem', lineHeight: 1.2 }}>
+                      {row.pageName}
+                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: '#2196f3', fontSize: '0.65rem' }}>
+                        ID: {row.pageId}
                       </Typography>
-                    )}
+                      {row.pageCode && (
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem', bgcolor: '#f1f5f9', px: 0.5, borderRadius: '4px' }}>
+                          {row.pageCode}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                )
+              },
+              {
+                id: 'enabled',
+                align: 'center',
+                label: (
+                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                    <Checkbox
+                      size="small"
+                      indeterminate={isSomeEnabled}
+                      checked={isAllEnabled}
+                      disabled={!perms.write}
+                      onChange={(e) => perms.write && handleEnableAll(e.target.checked)}
+                      sx={{ color: '#fff', '&.MuiCheckbox-indeterminate': { color: '#fff' }, '&.Mui-checked': { color: '#fff' }, p: 0 }}
+                    />
+                    <Typography variant="caption" sx={{ fontWeight: 900, fontSize: '0.65rem', color: '#fff' }}>Enable All</Typography>
                   </Stack>
-                </Box>
-              )
-            },
-            {
-              id: 'enabled',
-              label: (
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-                  <Checkbox
-                    size="small"
-                    indeterminate={isSomeEnabled}
-                    checked={isAllEnabled}
-                    disabled={!perms.write}
-                    onChange={(e) => perms.write && handleEnableAll(e.target.checked)}
-                    sx={{ color: '#fff', '&.MuiCheckbox-indeterminate': { color: '#fff' }, '&.Mui-checked': { color: '#fff' }, p: 0 }}
-                  />
-                  <Typography variant="caption" sx={{ fontWeight: 900, fontSize: '0.65rem', color: '#fff' }}>Enable All</Typography>
-                </Stack>
-              ),
-              render: (row) => {
-                const globalIdx = pageData.findIndex(item => item.pageId === row.pageId);
-                return (
-                  <Checkbox
-                    checked={row.enabled === 1}
-                    onChange={() => perms.write && handleCheckboxChange(globalIdx)}
-                    disabled={!perms.write}
-                    icon={<IconX size={18} color="#cbd5e1" />}
-                    checkedIcon={<IconCheck size={18} color="#4caf50" />}
-                    sx={{
-                      p: 0,
-                      transition: 'transform 0.1s',
-                      '&:hover': { transform: 'scale(1.2)' },
-                      '&.Mui-checked': { color: '#4caf50' }
-                    }}
-                  />
-                );
+                ),
+                render: (row) => {
+                  const globalIdx = pageData.findIndex(item => item.pageId === row.pageId);
+                  return (
+                    <Checkbox
+                      checked={row.enabled === 1}
+                      onChange={() => perms.write && handleCheckboxChange(globalIdx)}
+                      disabled={!perms.write}
+                      icon={<IconX size={18} color="#cbd5e1" />}
+                      checkedIcon={<IconCheck size={18} color="#4caf50" />}
+                      sx={{
+                        p: 0,
+                        transition: 'transform 0.1s',
+                        '&:hover': { transform: 'scale(1.2)' },
+                        '&.Mui-checked': { color: '#4caf50' }
+                      }}
+                    />
+                  );
+                }
               }
-            }
-          ];
+            ];
 
-          const actionColumn = {
-            render: (row) => (
-              <Tooltip title="Commit Change" arrow>
-                <span>
-                  <IconButton
-                    onClick={() => handleSaveRow(row)}
-                    disabled={!perms.write}
-                    sx={{
-                      bgcolor: alpha(theme.palette.primary.main, 0.08),
-                      color: theme.palette.primary.main,
-                      borderRadius: '6px',
-                      p: 0.5,
-                      '&:hover': { bgcolor: theme.palette.primary.main, color: 'white' }
-                    }}
-                  >
-                    <IconDeviceFloppy size={18} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )
-          };
+            const actionColumn = {
+              render: (row) => (
+                <Tooltip title="Commit Change" arrow>
+                  <span>
+                    <IconButton
+                      onClick={() => handleSaveRow(row)}
+                      disabled={!perms.write}
+                      sx={{
+                        bgcolor: alpha(theme.palette.primary.main, 0.08),
+                        color: theme.palette.primary.main,
+                        borderRadius: '6px',
+                        p: 0.5,
+                        '&:hover': { bgcolor: theme.palette.primary.main, color: 'white' }
+                      }}
+                    >
+                      <IconDeviceFloppy size={18} />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )
+            };
 
-          return (
-            <BOSDataTable
-              columns={columns}
-              data={filteredData}
-              page={page}
-              size={rowsPerPage}
-              totalCount={filteredData.length}
-              onPageChange={setPage}
-              onSizeChange={(s) => { setRowsPerPage(s); setPage(0); }}
-              showActions={true}
-              actionColumn={actionColumn}
-              loading={loading}
-            />
-          );
-        })()}
-      </Box>
+            return (
+              <BOSDataTable
+                columns={columns}
+                data={filteredData}
+                page={page}
+                size={rowsPerPage}
+                totalCount={filteredData.length}
+                onPageChange={setPage}
+                onSizeChange={(s) => { setRowsPerPage(s); setPage(0); }}
+                showActions={true}
+                actionColumn={actionColumn}
+                loading={loading}
+              />
+            );
+          })()}
+        </Box>
       </Box>
     </Box>
   );

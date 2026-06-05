@@ -56,6 +56,20 @@ const HALF_HOUR_TIME_OPTIONS = ALL_TIME_OPTIONS.filter((t) => {
   return isAfterOrEqual9AM && isBeforeOrEqual830PM && isHalfHour;
 }).map((t) => t.label);
 
+const parseTimeToMinutes = (timeStr) => {
+  if (!timeStr) return null;
+  const clean = timeStr.trim().toUpperCase();
+  const match = clean.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/);
+  if (!match) return null;
+  let h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const ampm = match[3] || 'AM';
+  if (h < 1 || h > 12 || m < 0 || m > 59) return null;
+  if (ampm === 'PM' && h !== 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  return h * 60 + m;
+};
+
 const to24h = (time12h) => {
   if (!time12h) return null;
   const [time, modifier] = time12h.split(' ');
@@ -94,7 +108,7 @@ const addMinutesToTime12h = (time12h, minutesToAdd) => {
 const getMinEndTime = (startTime, intervalTime) => {
   const baseTime = intervalTime || startTime;
   if (!baseTime) return '';
-  return addMinutesToTime12h(baseTime, 15);
+  return addMinutesToTime12h(baseTime, 1);
 };
 
 const INITIAL_FORM = {
@@ -155,36 +169,47 @@ export default function AddMeetingSchedule() {
     return HALF_HOUR_TIME_OPTIONS.slice(startIndex + 1);
   }, [form.startTime]);
 
-  // Auto-clear end time and interval time if they are less than or equal to start time
+  // Auto-clear end time and interval time if they violate chronological constraints
   useEffect(() => {
-    if (form.startTime) {
-      const startIndex = HALF_HOUR_TIME_OPTIONS.indexOf(form.startTime);
-      if (startIndex !== -1) {
-        setForm(prev => {
-          let updated = false;
-          const nextForm = { ...prev };
-          
-          if (nextForm.endTime) {
-            const endIndex = HALF_HOUR_TIME_OPTIONS.indexOf(nextForm.endTime);
-            if (endIndex <= startIndex) {
-              nextForm.endTime = '';
-              updated = true;
-            }
+    setForm(prev => {
+      let updated = false;
+      const nextForm = { ...prev };
+      
+      const startMins = parseTimeToMinutes(nextForm.startTime);
+      if (startMins !== null) {
+        // 1. If intervalTime is set but is less than or equal to startTime, clear it
+        if (nextForm.intervalTime) {
+          const intervalMins = parseTimeToMinutes(nextForm.intervalTime);
+          if (intervalMins !== null && intervalMins <= startMins) {
+            nextForm.intervalTime = '';
+            updated = true;
           }
-          
-          if (nextForm.intervalTime) {
-            const intervalIndex = HALF_HOUR_TIME_OPTIONS.indexOf(nextForm.intervalTime);
-            if (intervalIndex <= startIndex) {
-              nextForm.intervalTime = '';
-              updated = true;
-            }
+        }
+        
+        // 2. If endTime is set, validate it
+        if (nextForm.endTime) {
+          const endMins = parseTimeToMinutes(nextForm.endTime);
+          const baseMins = nextForm.intervalTime ? parseTimeToMinutes(nextForm.intervalTime) : startMins;
+          if (endMins !== null && baseMins !== null && endMins <= baseMins) {
+            nextForm.endTime = '';
+            updated = true;
           }
-          
-          return updated ? nextForm : prev;
-        });
+        }
+      } else {
+        // If startTime is cleared, clear intervalTime and endTime too
+        if (nextForm.intervalTime) {
+          nextForm.intervalTime = '';
+          updated = true;
+        }
+        if (nextForm.endTime) {
+          nextForm.endTime = '';
+          updated = true;
+        }
       }
-    }
-  }, [form.startTime]);
+      
+      return updated ? nextForm : prev;
+    });
+  }, [form.startTime, form.intervalTime]);
 
   const fetchSchedule = useCallback(async () => {
     if (!id) return;
@@ -696,6 +721,7 @@ export default function AddMeetingSchedule() {
                 value={form.startTime || ''}
                 onChange={h}
                 selectedDate={form.meetingDate}
+                futureMinutes={10}
                 error={!!errors.startTime}
                 helperText={errors.startTime}
                 fullWidth
@@ -708,8 +734,8 @@ export default function AddMeetingSchedule() {
                 value={form.intervalTime || ''}
                 onChange={h}
                 selectedDate={form.meetingDate}
-                minTime={addMinutesToTime12h(form.startTime, 15)}
-                minTimeMessage="Interval time must be at least 15 minutes after start time."
+                minTime={addMinutesToTime12h(form.startTime, 1)}
+                minTimeMessage="select the future time"
                 disabled={!form.startTime}
                 error={!!errors.intervalTime}
                 helperText={errors.intervalTime}
@@ -725,7 +751,7 @@ export default function AddMeetingSchedule() {
                 onChange={h}
                 selectedDate={form.meetingDate}
                 minTime={getMinEndTime(form.startTime, form.intervalTime)}
-                minTimeMessage={form.intervalTime ? "End time must be at least 15 minutes after interval time." : "End time must be at least 15 minutes after start time."}
+                minTimeMessage="select the future time"
                 disabled={!form.startTime}
                 error={!!errors.endTime}
                 helperText={errors.endTime}
@@ -862,7 +888,7 @@ export default function AddMeetingSchedule() {
                         fullWidth
                         disabled={form.departments.length === 0}
                         options={filteredEmployees}
-                        getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+                        getOptionLabel={(option) => option.employeeName || ''}
                         value={selectedEmp}
                         onChange={(e, val) => {
                           setForm(p => {
@@ -903,7 +929,7 @@ export default function AddMeetingSchedule() {
                 (!form.hostBy || String(e.id) !== String(form.hostBy.id)) &&
                 !form.participants.some(p => p.id === e.id || p.empCode === e.empCode)
               )}
-              getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+              getOptionLabel={(option) => option.employeeName || ''}
               value={form.participants}
               onChange={(e, val) => {
                 setForm(p => ({ ...p, participants: val }));

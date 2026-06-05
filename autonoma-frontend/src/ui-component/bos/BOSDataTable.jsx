@@ -35,8 +35,8 @@ export default function BOSDataTable({
   selectable = false,
   onSelectionChange,
   totalCount,
-  page = 0,
-  size = 10,
+  page: pageProp,
+  size: sizeProp,
   onPageChange,
   onSizeChange,
   footerActions,
@@ -57,6 +57,32 @@ export default function BOSDataTable({
   const [localSelectedId, setLocalSelectedId] = useState(null);
   const lastConfigRef = useRef(null);
 
+  const [localPage, setLocalPage] = useState(0);
+  const [localSize, setLocalSize] = useState(10);
+
+  const isControlledPage = pageProp !== undefined && onPageChange !== undefined;
+  const page = isControlledPage ? pageProp : localPage;
+
+  const isControlledSize = sizeProp !== undefined && onSizeChange !== undefined;
+  const size = isControlledSize ? sizeProp : localSize;
+
+  const handlePageChange = (newPage) => {
+    if (isControlledPage) {
+      onPageChange(newPage);
+    } else {
+      setLocalPage(newPage);
+    }
+  };
+
+  const handleSizeChange = (newSize) => {
+    if (isControlledSize) {
+      onSizeChange(newSize);
+    } else {
+      setLocalSize(newSize);
+      setLocalPage(0);
+    }
+  };
+
   useEffect(() => {
     if (columns && rows) {
       // Rule 1 extension: Extract unique values from rows for each column to provide dropdown options
@@ -64,23 +90,27 @@ export default function BOSDataTable({
         if (col.id === 'index' || col.id === 'photo' || col.id === 'actions') return col;
         
         const uniqueValues = [...new Set(rows.map(r => resolveNestedValue(col.id, r)))]
-          .filter(v => v !== undefined && v !== null && v !== '')
+          .filter(v => v !== undefined && v !== null && v !== '' && typeof v !== 'object' && typeof v !== 'function')
           .map(v => ({ value: v, label: String(v) }));
 
         return { ...col, options: uniqueValues };
       });
 
-      // Serialize options safely to avoid redundant dispatches
-      const serialized = JSON.stringify(
-        columnsWithData.map(c => ({
+      // Only dispatch serializable metadata to Redux
+      const serializableConfig = columnsWithData
+        .filter(c => c.id !== 'index' && c.id !== 'photo' && c.id !== 'actions')
+        .map(c => ({
           id: c.id,
-          label: c.label,
-          options: c.options
-        }))
-      );
+          label: typeof c.label === 'string' ? c.label : String(c.id).toUpperCase(),
+          options: c.options || []
+        }));
+
+      // Serialize safely to avoid redundant dispatches
+      const serialized = JSON.stringify(serializableConfig);
+      
       if (!disableTableConfig && lastConfigRef.current !== serialized) {
         lastConfigRef.current = serialized;
-        dispatch(setTableConfig(columnsWithData));
+        dispatch(setTableConfig(serializableConfig));
       }
     }
   }, [columns, rows, dispatch, disableTableConfig]);
@@ -105,11 +135,14 @@ export default function BOSDataTable({
   const searchQuery = useSelector((state) => state.search?.query || '');
   const globalFilters = useSelector((state) => state.search?.filters || {});
 
-  const formatDate = (d) => {
+  const formatDate = (d, colId) => {
     if (!d) return '-';
     try { 
       const dateObj = new Date(d);
       if (isNaN(dateObj.getTime())) return String(d);
+      if (colId && (colId === 'createdDate' || colId === 'updatedDate' || colId === 'createdAt' || colId === 'updatedAt' || colId === 'created_at' || colId === 'updated_at')) {
+        return format(dateObj, 'dd/MM/yyyy HH:mm');
+      }
       return format(dateObj, 'dd/MM/yyyy'); 
     } catch { 
       return '-'; 
@@ -162,7 +195,7 @@ export default function BOSDataTable({
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
 
     if (isDateField && !isFalsePositive) {
-      return formatDate(val);
+      return formatDate(val, col.id);
     }
     
     // Handle Boolean values (Yes/No)
@@ -193,7 +226,7 @@ export default function BOSDataTable({
 
         // Loop through all regular filters
         for (const [key, fVal] of Object.entries(globalFilters)) {
-          if (fVal === undefined || fVal === null || fVal === '' || fVal === 'All') continue;
+          if (fVal === undefined || fVal === null || fVal === '' || String(fVal).toLowerCase() === 'all') continue;
           
           // Skip start, end, and consider keys as they will be processed together
           if (key.endsWith('Start') || key.endsWith('End') || key.endsWith('Consider')) {
@@ -232,7 +265,7 @@ export default function BOSDataTable({
 
           const startVal = globalFilters[`${baseKey}Start`];
           const endVal = globalFilters[`${baseKey}End`];
-          const considerVal = globalFilters[`${baseKey}Consider`] || 'Yes';
+          const considerVal = globalFilters[`${baseKey}Consider`] || 'No';
 
           if (!startVal && !endVal) continue;
           if (considerVal === 'No') continue;
@@ -416,7 +449,7 @@ export default function BOSDataTable({
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
 
     if (isDateField && !isFalsePositive) {
-      return formatDate(val);
+      return formatDate(val, col.id);
     }
     
     // Handle Boolean values (Yes/No)
@@ -483,7 +516,9 @@ export default function BOSDataTable({
             ) : (
               paginatedRows.map((row, idx) => {
                 const rowId = row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`;
-                const isSelected = activeSelectedId === rowId || activeSelectedId === row.id;
+                const isSelected = Array.isArray(activeSelectedId)
+                  ? activeSelectedId.includes(row.id) || activeSelectedId.includes(rowId)
+                  : activeSelectedId === rowId || activeSelectedId === row.id;
                 
                 const rowSx = {
                   cursor: 'pointer',
@@ -509,7 +544,6 @@ export default function BOSDataTable({
                   <TableRow 
                     key={rowId}
                     hover 
-                    title={showEditTooltip ? "Double Tap To Edit" : undefined}
                     sx={rowSx} 
                     onClick={() => {
                       setLocalSelectedId(rowId);
@@ -573,7 +607,7 @@ export default function BOSDataTable({
                 );
 
                 return isDoubleTapSupported ? (
-                  <Tooltip key={rowId} title="Double Tap" followCursor placement="top" arrow>
+                  <Tooltip key={rowId} title="Double Tap To Edit" followCursor placement="top" arrow>
                     {rowElement}
                   </Tooltip>
                 ) : (
@@ -608,8 +642,8 @@ export default function BOSDataTable({
             count={totalCount ?? (rows?.length || 0)}
             rowsPerPage={size}
             page={page}
-            onPageChange={(e, p) => onPageChange(p)}
-            onRowsPerPageChange={(e) => onSizeChange(parseInt(e.target.value, 10))}
+            onPageChange={(e, p) => handlePageChange(p)}
+            onRowsPerPageChange={(e) => handleSizeChange(parseInt(e.target.value, 10))}
             sx={{
               minHeight: '36px !important',
               height: '36px !important',
@@ -649,12 +683,12 @@ export default function BOSDataTable({
 BOSDataTable.propTypes = {
   columns: PropTypes.array.isRequired,
   rows: PropTypes.array.isRequired,
-  page: PropTypes.number.isRequired,
-  size: PropTypes.number.isRequired,
+  page: PropTypes.number,
+  size: PropTypes.number,
   totalCount: PropTypes.number,
   loading: PropTypes.bool,
-  onPageChange: PropTypes.func.isRequired,
-  onSizeChange: PropTypes.func.isRequired,
+  onPageChange: PropTypes.func,
+  onSizeChange: PropTypes.func,
   onDoubleClickRow: PropTypes.func,
   onClickRow: PropTypes.func,
   selectedRowId: PropTypes.any,

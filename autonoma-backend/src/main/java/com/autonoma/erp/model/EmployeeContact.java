@@ -61,14 +61,14 @@ public class EmployeeContact {
     @Column(name = "IS_ACTIVE")
     private Boolean isActive = true;
 
-    @Column(name = "CREATED_BY", length = 100)
-    private String createdBy;
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
+    private String createdBy = "admin";
 
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", length = 100)
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "UPDATED_DATE")
@@ -76,8 +76,20 @@ public class EmployeeContact {
     private Date updatedDate;
 
     @PrePersist
-    protected void onCreate() { createdDate = new Date(); }
+    protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = null;
+ createdDate = new Date();     }
 
     @PreUpdate
-    protected void onUpdate() { updatedDate = new Date(); }
+    protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdBy == null || this.createdBy.trim().isEmpty()) {
+            this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        }
+ updatedDate = new Date();     }
 }

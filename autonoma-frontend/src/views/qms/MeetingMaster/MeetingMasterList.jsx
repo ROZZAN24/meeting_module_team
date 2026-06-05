@@ -14,6 +14,22 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useAuth from 'hooks/useAuth';
 import AddMeetingMasterDialog from './AddMeetingMasterDialog';
 
+const formatEmployeeNames = (val) => {
+  if (!val || val === '-') return '-';
+  return val.split(',').map(item => {
+    const trimmed = item.trim();
+    if (trimmed.includes(' - ')) {
+      const parts = trimmed.split(' - ');
+      const isCode = (str) => /^[A-Z0-9_-]+$/i.test(str) || str.includes('EMP-') || str.includes('ADMIN_');
+      if (isCode(parts[0].trim())) {
+        return parts[1] ? parts[1].trim() : parts[0].trim();
+      }
+      return parts[0].trim();
+    }
+    return trimmed;
+  }).join(', ');
+};
+
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'meetingName', label: 'Meeting Name', minWidth: 150, bold: true },
@@ -28,6 +44,33 @@ const columns = [
   { id: 'attachmentName', label: 'Attachment', minWidth: 100 },
   { id: 'status', label: 'Status', minWidth: 100 }
 ];
+
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '-';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const dateStr = `${day}/${month}/${year}`;
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const hoursStr = String(hours).padStart(2, '0');
+  const timeStr = `${hoursStr}:${minutes} ${ampm}`;
+  return (
+    <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', textAlign: 'center' }}>
+      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+        {dateStr}
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+        {timeStr}
+      </Typography>
+    </Stack>
+  );
+};
 
 export default function MeetingMasterList() {
   const dispatch = useDispatch();
@@ -164,8 +207,7 @@ export default function MeetingMasterList() {
       return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE')} />;
     }
     if (col.id === 'createdAt') {
-      const dateVal = row[col.id];
-      return dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      return formatDateTime(row[col.id]);
     }
     if (col.id === 'createdUser') {
       return row.createdUser || row.createdBy || '-';
@@ -175,7 +217,7 @@ export default function MeetingMasterList() {
     }
     if (col.id === 'updatedAt') {
       const dateVal = row[col.id];
-      return (dateVal && (row.updatedUser || row.updatedBy)) ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      return (dateVal && (row.updatedUser || row.updatedBy)) ? formatDateTime(dateVal) : '-';
     }
     if (col.id === 'attachmentName') {
       const url = row.attachmentUrl;
@@ -194,6 +236,9 @@ export default function MeetingMasterList() {
         );
       }
       return '-';
+    }
+    if (col.id === 'employeeName') {
+      return formatEmployeeNames(row[col.id]);
     }
     return row[col.id] || '-';
   };
@@ -214,6 +259,7 @@ export default function MeetingMasterList() {
           hasWritePermission={perms.write}
           exportData={filteredRows.map(row => ({
             ...row,
+            employeeName: formatEmployeeNames(row.employeeName),
             createdUser: row.createdUser || row.createdBy || '-',
             updatedUser: row.updatedUser || row.updatedBy || '-',
             updatedAt: (row.updatedUser || row.updatedBy) ? row.updatedAt : null

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "ticket_status_history")
+@Table(name = "TICKET_STATUS_HISTORY")
 @Data
 @Builder
 @NoArgsConstructor
@@ -28,7 +28,7 @@ public class SupportTicketStatusHistory {
     @Column(name = "to_status", nullable = false, length = 50)
     private String toStatus;
 
-    @Column(name = "updated_by", nullable = false, length = 100)
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "updated_at")
@@ -40,6 +40,13 @@ public class SupportTicketStatusHistory {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        
+        if (this.updatedBy == null) {
+            this.updatedBy = currentUserId != null ? currentUserId : "System";
+        }
+
         this.updatedAt = new Date();
-    }
+        }
 }

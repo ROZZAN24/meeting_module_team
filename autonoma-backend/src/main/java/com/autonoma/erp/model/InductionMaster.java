@@ -22,10 +22,10 @@ public class InductionMaster extends BaseAuditEntity {
     @Column(name = "ANSWER", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String answer;
 
-    @Column(name = "DEPARTMENT_CODES", length = 100)
+    @Column(name = "DEPARTMENT_CODES", length = 500)
     private String departmentCodes; // Comma separated list of department codes
 
-    @Column(name = "LEVEL_CODES", length = 100)
+    @Column(name = "LEVEL_CODES", length = 500)
     private String levelCodes; // Comma separated list of levels (L1, L2, etc.)
 
     @Column(name = "INDUCTION_ROUND")

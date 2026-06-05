@@ -14,6 +14,37 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import CloseMomDialog from './CloseMomDialog';
 import { isMobile } from 'react-device-detect';
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal || dateVal === '-') return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const dateStr = `${day}/${month}/${year}`;
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = String(hours).padStart(2, '0');
+    const timeStr = `${hoursStr}:${minutes} ${ampm}`;
+    return (
+      <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', textAlign: 'center' }}>
+        <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          {dateStr}
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+          {timeStr}
+        </Typography>
+      </Stack>
+    );
+  } catch (e) {
+    return '-';
+  }
+};
+
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'momNo', label: 'Meeting Min No', minWidth: 200, bold: true },
@@ -27,7 +58,10 @@ const columns = [
   { id: 'assignedTo', label: 'Assigned To', minWidth: 130 },
   { id: 'assignedBy', label: 'Assigned By', minWidth: 130 },
   { id: 'status', label: 'Status', minWidth: 140 },
-  { id: 'createdAt', label: 'Created Date', minWidth: 140 },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 140 },
   { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 110 }
 ];
 
@@ -104,7 +138,10 @@ export default function CloseMomList() {
               _momNo: mom.momNo,
               _momDate: mom.momDate,
               _scheduleNo: mom.schedule?.scheduleNo || '',
-              _createdAt: mom.createdAt,
+              _createdAt: detail.createdAt || mom.createdAt,
+              _updatedAt: detail.updatedAt || mom.updatedAt,
+              createdUser: detail.createdUser || detail.createdBy || mom.createdUser || mom.createdBy || '-',
+              updatedUser: detail.updatedUser || detail.updatedBy || mom.updatedUser || mom.updatedBy || '-',
               _mom: mom
             });
           }
@@ -160,12 +197,13 @@ export default function CloseMomList() {
     else if (col.id === 'assignedTo') val = row.assignedTo?.employeeName || '-';
     else if (col.id === 'assignedBy') val = row.assignedBy?.employeeName || '-';
     else if (col.id === 'targetDate') val = row.targetDate || '-';
+    else if (col.id === 'createdUser') val = row.createdUser || '-';
+    else if (col.id === 'updatedUser') val = row.updatedUser || '-';
     else if (col.id === 'createdAt') {
-      if (!row._createdAt) val = '-';
-      else {
-        const dt = new Date(row._createdAt);
-        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-      }
+      val = formatDateTime(row._createdAt);
+    }
+    else if (col.id === 'updatedAt') {
+      val = formatDateTime(row._updatedAt);
     }
     else if (col.id === 'status') {
       const s = row.status || 'OPEN';

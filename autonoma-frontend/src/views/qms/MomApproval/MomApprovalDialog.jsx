@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Stack, Typography, Box, Grid, Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions, Skeleton } from '@mui/material';
+import { Stack, Typography, Box, Grid, Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, IconButton } from '@mui/material';
 import { BOSFormDialog, BOSTextField, BOSFormSection } from 'ui-component/bos';
-import { IconShieldCheck, IconX, IconPaperclip } from '@tabler/icons-react';
+import BOSFilePreview from 'ui-component/bos/BOSFilePreview';
+import { IconShieldCheck, IconX, IconPaperclip, IconEye } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import { getFileViewUrl } from 'utils/upload-helper';
 import useAuth from 'hooks/useAuth';
+
+const getCleanFileName = (name) => {
+  if (!name) return 'Attachment';
+  const parts = name.split('_');
+  if (parts.length > 1 && parts[0].length >= 32) {
+    return parts.slice(1).join('_');
+  }
+  return name;
+};
 
 const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
   const dispatch = useDispatch();
@@ -21,6 +31,9 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
 
   const [loadingOriginal, setLoadingOriginal] = useState(false);
   const [originalAttachments, setOriginalAttachments] = useState([]);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   useEffect(() => {
     if (open && item) {
@@ -141,7 +154,7 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
         String(user.name || '').toLowerCase() === String(item.assignedBy?.employeeName || '').toLowerCase() ||
         String(user.id || '').toLowerCase() === String(item.assignedBy?.employeeName || '').toLowerCase())
   );
-  const isAdmin = Boolean(user && (user.isBosAdmin === 1 || user.id?.toLowerCase() === 'admin'));
+  const isAdmin = Boolean(user && (user.userLevel === 5 || user.id?.toLowerCase() === 'admin'));
   const showApprovalActions = Boolean(isAssignedByMe || isAdmin);
 
   return (
@@ -305,15 +318,27 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
                       {sampleAttachment.name}
                     </Typography>
                   </Stack>
-                  <Button
-                    variant="outlined"
+                  <IconButton
                     size="small"
-                    href={getFileViewUrl(sampleAttachment.url)}
-                    target="_blank"
-                    sx={{ ml: 1, borderRadius: '8px', textTransform: 'none', fontWeight: 700 }}
+                    onClick={() => {
+                      setPreviewFile({
+                        fileName: sampleAttachment.name,
+                        serverFileName: sampleAttachment.url,
+                        isServer: true
+                      });
+                      setPreviewOpen(true);
+                    }}
+                    sx={{
+                      ml: 1,
+                      bgcolor: 'primary.lighter',
+                      color: 'primary.main',
+                      border: '1px solid',
+                      borderColor: 'primary.light',
+                      '&:hover': { bgcolor: 'primary.main', color: 'white' }
+                    }}
                   >
-                    View
-                  </Button>
+                    <IconEye size={18} />
+                  </IconButton>
                 </Box>
               ) : (
                 <Box
@@ -328,49 +353,65 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
 
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700, color: 'text.primary' }}>
-                ORIGINAL ATTACHMENT
+                Document Attachment
               </Typography>
               {loadingOriginal ? (
                 <Skeleton variant="rectangular" height={54} sx={{ borderRadius: 2 }} />
               ) : originalAttachments.length > 0 ? (
                 <Stack spacing={1}>
-                  {originalAttachments.map((file, i) => (
-                    <Box
-                      key={file.id || i}
-                      sx={{
-                        p: 1.5,
-                        border: '1px solid',
-                        borderColor: 'success.light',
-                        borderRadius: 2,
-                        bgcolor: 'success.lighter',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          boxShadow: '0 2px 8px rgba(76, 175, 80, 0.15)',
-                          borderColor: 'success.main'
-                        }
-                      }}
-                    >
-                      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
-                        <IconPaperclip size={20} style={{ color: '#4caf50' }} />
-                        <Typography variant="body2" fontWeight={600} noWrap sx={{ color: 'success.dark' }}>
-                          {file.fileName || 'Attachment'}
-                        </Typography>
-                      </Stack>
-                      <Button
-                        variant="outlined"
-                        color="success"
-                        size="small"
-                        href={getFileViewUrl(file.serverFileName)}
-                        target="_blank"
-                        sx={{ ml: 1, borderRadius: '8px', textTransform: 'none', fontWeight: 700 }}
+                  {originalAttachments.map((file, idx) => {
+                    const name = file.fileName || file.name || 'Attachment';
+                    const cleanName = getCleanFileName(name);
+                    const fileUrl = file.serverFileName || file.url || '';
+                    return (
+                      <Box
+                        key={idx}
+                        sx={{
+                          p: 1.5,
+                          border: '1px solid',
+                          borderColor: 'primary.light',
+                          borderRadius: 2,
+                          bgcolor: 'primary.lighter',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            boxShadow: '0 2px 8px rgba(33, 150, 243, 0.15)',
+                            borderColor: 'primary.main'
+                          }
+                        }}
                       >
-                        View
-                      </Button>
-                    </Box>
-                  ))}
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+                          <IconPaperclip size={20} style={{ color: '#2196f3' }} />
+                          <Typography variant="body2" fontWeight={600} noWrap sx={{ color: 'primary.dark' }}>
+                            {cleanName}
+                          </Typography>
+                        </Stack>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setPreviewFile({
+                              fileName: name,
+                              serverFileName: fileUrl,
+                              isServer: true
+                            });
+                            setPreviewOpen(true);
+                          }}
+                          sx={{
+                            ml: 1,
+                            bgcolor: 'primary.lighter',
+                            color: 'primary.main',
+                            border: '1px solid',
+                            borderColor: 'primary.light',
+                            '&:hover': { bgcolor: 'primary.main', color: 'white' }
+                          }}
+                        >
+                          <IconEye size={18} />
+                        </IconButton>
+                      </Box>
+                    );
+                  })}
                 </Stack>
               ) : (
                 <Box
@@ -440,6 +481,12 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
           </Box>
         )}
       </BOSFormDialog>
+
+      <BOSFilePreview
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        file={previewFile}
+      />
 
       {/* Rejection Dialog */}
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>

@@ -48,6 +48,8 @@ public class QmsMomMasterService {
             dto.setProcessType(d.getProcessType());
             dto.setAssignedBy(d.getAssignedBy() != null ? d.getAssignedBy().getEmployeeName() : null);
             dto.setAssignedTo(d.getAssignedTo() != null ? d.getAssignedTo().getEmployeeName() : null);
+            dto.setAssignedToId(d.getAssignedTo() != null ? d.getAssignedTo().getId() : null);
+            dto.setAssignedById(d.getAssignedBy() != null ? d.getAssignedBy().getId() : null);
             dto.setTargetDate(d.getTargetDate());
             dto.setReviewDate(d.getReviewDate());
             dto.setAttachmentRequired(d.getAttachmentRequired());

@@ -22,7 +22,7 @@ import {
   Tooltip,
   Chip
 } from '@mui/material';
-import { BOSFormSection, BOSTextField, BOSFormDialog, BOSAutocomplete, BOSAnalogTimePicker, btnSave, btnCancel, btnClear } from 'ui-component/bos';
+import { BOSFormSection, BOSTextField, BOSFormDialog, BOSAutocomplete, BOSAnalogTimePicker, btnSave, btnCancel, btnClear, BOSDataTable } from 'ui-component/bos';
 import {
   IconPlus,
   IconTrash,
@@ -788,7 +788,7 @@ export default function AddMeetingMinutes() {
                           type="date"
                           value={form.momDate}
                           onChange={(e) => setForm({ ...form, momDate: e.target.value })}
-                          disabled={!perms.write}
+                          disabled={true}
                           sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { py: 0.8 } }}
                         />
                       )
@@ -1114,9 +1114,8 @@ export default function AddMeetingMinutes() {
                         <Tooltip title="Add New Row" placement="top" arrow>
                           <IconButton
                             size="small"
-                            color="primary"
                             onClick={() => handleOpenDetailDialog(null)}
-                            sx={{ bgcolor: 'primary.lighter', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+                            sx={{ bgcolor: 'white', color: 'primary.dark', '&:hover': { bgcolor: 'primary.lighter', color: 'primary.dark' } }}
                           >
                             <IconPlus size={16} />
                           </IconButton>
@@ -1362,19 +1361,7 @@ export default function AddMeetingMinutes() {
                 </TableBody>
               </Table>
             </TableContainer>
-            {perms.write && (
-              <Box sx={{ mt: 1.5, mb: 1.5, mr: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<IconPlus size={18} />}
-                  onClick={() => handleOpenDetailDialog(null)}
-                  sx={{ px: 3, fontWeight: 800, borderRadius: '8px' }}
-                >
-                  Add Row
-                </Button>
-              </Box>
-            )}
+
           </BOSFormSection>
         </Box>
       </Box>

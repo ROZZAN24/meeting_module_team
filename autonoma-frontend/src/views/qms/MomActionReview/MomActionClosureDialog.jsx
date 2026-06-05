@@ -285,7 +285,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
               <BOSFileUpload
                 files={attachments}
                 onChange={setAttachments}
-                module="QMS"
+                module="QUALITY_MANAGEMENT_SYSTEMS_MEETING_CLOSE_MOM"
                 multiple={true}
                 disabled={isReadonly}
               />

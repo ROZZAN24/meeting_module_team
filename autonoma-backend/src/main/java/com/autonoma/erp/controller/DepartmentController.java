@@ -89,6 +89,8 @@ public class DepartmentController {
                     department.setNdaCertificate(departmentDetails.getNdaCertificate());
                     department.setSequenceNo(departmentDetails.getSequenceNo());
                     department.setStatus(departmentDetails.getStatus());
+                    department.setDepartmentMailId(departmentDetails.getDepartmentMailId());
+                    
                     return ResponseEntity.ok(departmentRepository.save(department));
                 }).orElse(ResponseEntity.notFound().build());
     }

@@ -39,6 +39,7 @@ Row:
   STATUS = 1
   TASK_STATUS = 0
   VERIFY_STATUS = 0
+  IS_ACTIVE = true
 Row:
   id = 1
   assign_date = null
@@ -79,3 +80,4 @@ Row:
   STATUS = 1
   TASK_STATUS = 0
   VERIFY_STATUS = 0
+  IS_ACTIVE = true

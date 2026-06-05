@@ -22,7 +22,8 @@ const BOSActionSection = ({
     rows = 3,
     error,
     helperText,
-    sx = {}
+    sx = {},
+    readOnly = false
 }) => {
     return (
         <Grid item xs={12} sx={sx}>
@@ -40,44 +41,47 @@ const BOSActionSection = ({
                     helperText={helperText}
                     InputLabelProps={{ shrink: true }}
                     sx={{ flex: 1 }}
+                    inputProps={{ readOnly }}
                 />
-                <Stack direction="row" spacing={1.5} sx={{ mt: 3.5 }}>
-                    <Tooltip title="Upload Evidence">
-                        <IconButton 
-                            component="label" 
-                            size="small" 
-                            color="primary" 
-                            sx={{ border: '1px dashed', borderColor: 'divider', p: 1.5, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light' } }}
-                        >
-                            <IconCloudUpload size={20} />
-                            <input type="file" hidden onChange={(e) => onFileSelect(e.target.files[0])} />
-                        </IconButton>
-                    </Tooltip>
-                    {hasFile && (
-                        <>
-                            <Tooltip title="Preview">
-                                <IconButton 
-                                    size="small" 
-                                    color="secondary" 
-                                    onClick={onFilePreview}
-                                    sx={{ border: '1px solid', borderColor: 'divider', p: 1.5 }}
-                                >
-                                    <IconEye size={20} />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Remove">
-                                <IconButton 
-                                    size="small" 
-                                    color="error" 
-                                    onClick={onFileRemove}
-                                    sx={{ border: '1px solid', borderColor: 'divider', p: 1.5 }}
-                                >
-                                    <IconTrash size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        </>
-                    )}
-                </Stack>
+                {!readOnly && (
+                    <Stack direction="row" spacing={1.5} sx={{ mt: 3.5, width: 162, flexShrink: 0, justifyContent: 'flex-start' }}>
+                        <Tooltip title="Upload Evidence">
+                            <IconButton 
+                                component="label" 
+                                size="small" 
+                                color="primary" 
+                                sx={{ border: '1px dashed', borderColor: 'divider', p: 1.5, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light' } }}
+                            >
+                                <IconCloudUpload size={20} />
+                                <input type="file" hidden onChange={(e) => onFileSelect(e.target.files[0])} />
+                            </IconButton>
+                        </Tooltip>
+                        {hasFile && (
+                            <>
+                                <Tooltip title="Preview">
+                                    <IconButton 
+                                        size="small" 
+                                        color="secondary" 
+                                        onClick={onFilePreview}
+                                        sx={{ border: '1px solid', borderColor: 'divider', p: 1.5 }}
+                                    >
+                                        <IconEye size={20} />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Remove">
+                                    <IconButton 
+                                        size="small" 
+                                        color="error" 
+                                        onClick={onFileRemove}
+                                        sx={{ border: '1px solid', borderColor: 'divider', p: 1.5 }}
+                                    >
+                                        <IconTrash size={20} />
+                                    </IconButton>
+                                </Tooltip>
+                            </>
+                        )}
+                    </Stack>
+                )}
             </Box>
             {hasFile && fileName && (
                 <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 600, mt: 1, ml: 0.5, display: 'block' }}>

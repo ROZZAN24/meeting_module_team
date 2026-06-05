@@ -39,7 +39,7 @@ public class AuditAreaController {
     }
 
     @PostMapping
-    @RequirePagePermission(pageCode = "M1120", action = "write")
+    @RequirePagePermission(pageCode = "M1110", action = "write")
     @Operation(summary = "Create Audit Area", description = "Creates a new audit area")
     public ResponseEntity<?> createAuditArea(@RequestBody AuditArea auditArea) {
         log.info("Saving audit area: {}", auditArea);
@@ -53,7 +53,7 @@ public class AuditAreaController {
     }
 
     @PutMapping("/{id}")
-    @RequirePagePermission(pageCode = "M1120", action = "write")
+    @RequirePagePermission(pageCode = "M1110", action = "write")
     @Operation(summary = "Update Audit Area", description = "Updates an existing audit area")
     public ResponseEntity<?> updateAuditArea(@PathVariable Long id, @RequestBody AuditArea auditArea) {
         log.info("Updating audit area with id: {}, data: {}", id, auditArea);
@@ -75,7 +75,7 @@ public class AuditAreaController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePagePermission(pageCode = "M1120", action = "delete")
+    @RequirePagePermission(pageCode = "M1110", action = "delete")
     @Operation(summary = "Delete Audit Area", description = "Deletes an audit area by its ID")
     public ResponseEntity<?> deleteAuditArea(@PathVariable Long id) {
         AuditArea existing = auditAreaRepository.findById(id).orElse(null);
@@ -94,17 +94,26 @@ public class AuditAreaController {
 
         // 1. Check if referenced in Audit Type
         List<com.autonoma.erp.model.AuditType> matchingTypes = auditTypeRepository.findAll().stream()
-            .filter(t -> t.getAuditArea() != null && t.getAuditArea().toLowerCase().contains(searchName))
+            .filter(t -> t.getAuditArea() != null &&
+                java.util.Arrays.stream(t.getAuditArea().split(","))
+                    .map(String::trim)
+                    .anyMatch(a -> a.equalsIgnoreCase(searchName)))
             .toList();
 
         // 2. Check if referenced in Audit Schedule
         boolean inSchedule = auditScheduleRepository.findAll().stream()
             .filter(s -> !s.isDeleted())
             .anyMatch(s -> {
-                if (s.getAuditArea() != null && s.getAuditArea().toLowerCase().contains(searchName)) {
+                if (s.getAuditArea() != null &&
+                    java.util.Arrays.stream(s.getAuditArea().split(","))
+                        .map(String::trim)
+                        .anyMatch(a -> a.equalsIgnoreCase(searchName))) {
                     return true;
                 }
-                if (s.getAuditeeDetails() != null && s.getAuditeeDetails().toLowerCase().contains(searchName)) {
+                if (s.getAuditeeDetails() != null &&
+                    java.util.Arrays.stream(s.getAuditeeDetails().split(","))
+                        .map(String::trim)
+                        .anyMatch(a -> a.equalsIgnoreCase(searchName))) {
                     return true;
                 }
                 return false;
@@ -115,7 +124,11 @@ public class AuditAreaController {
         if (!matchingTypes.isEmpty()) {
             List<String> typeNames = matchingTypes.stream().map(t -> t.getAuditType().toLowerCase()).toList();
             inCriteria = auditCriteriaRepository.findAll().stream()
-                .anyMatch(c -> c.getAuditType() != null && typeNames.contains(c.getAuditType().toLowerCase()));
+                .anyMatch(c -> c.getAuditType() != null &&
+                    java.util.Arrays.stream(c.getAuditType().split(","))
+                        .map(String::trim)
+                        .map(String::toLowerCase)
+                        .anyMatch(typeNames::contains));
         }
 
         if (!matchingTypes.isEmpty() || inSchedule || inCriteria) {

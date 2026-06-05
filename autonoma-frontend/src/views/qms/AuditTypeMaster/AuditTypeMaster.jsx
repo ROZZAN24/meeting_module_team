@@ -47,7 +47,6 @@ export default function AuditTypeMaster() {
   const [loading, setLoading] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
-  const [totalElements, setTotalElements] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
@@ -81,15 +80,8 @@ export default function AuditTypeMaster() {
   const fetchAuditTypes = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get(API_PATHS.QMS.AUDIT_TYPE, {
-        params: {
-          page, size,
-          search: globalQuery,
-          status: globalFilters?.status === 'All' ? '' : globalFilters?.status
-        }
-      });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+      const response = await axios.get(API_PATHS.QMS.AUDIT_TYPE);
+      setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch audit types:', error);
       setRows([
@@ -99,7 +91,7 @@ export default function AuditTypeMaster() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, globalQuery, globalFilters]);
+  }, []);
 
   useEffect(() => { fetchAuditTypes(); }, [fetchAuditTypes]);
 
@@ -122,12 +114,16 @@ export default function AuditTypeMaster() {
     } catch (error) {
       console.error('Failed to delete audit type:', error);
       let errorMsg = 'Failed to delete audit type.';
-      if (error.response?.data) {
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
         if (typeof error.response.data === 'string') {
           errorMsg = error.response.data;
         } else if (error.response.data.message) {
           errorMsg = error.response.data.message;
         }
+      } else if (error.message) {
+        errorMsg = error.message;
       }
       dispatch(openSnackbar({
         open: true,
@@ -206,6 +202,10 @@ export default function AuditTypeMaster() {
     return [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
   }, [rows, globalQuery, globalFilters]);
 
+  const paginatedRows = useMemo(() => {
+    return filteredRows.slice(page * size, page * size + size);
+  }, [filteredRows, page, size]);
+
   return (
     <MainCard fullWidth
       title={
@@ -224,15 +224,15 @@ export default function AuditTypeMaster() {
           
           exportFilename="Audit_Type_Details"
           hasExportPermission={perms.export}
-         columns={columns} />
+          columns={columns} />
       }
     >
       <BOSDataTable
         columns={columns}
-        rows={filteredRows}
+        rows={paginatedRows}
         page={page}
         size={size}
-        totalCount={totalElements || filteredRows.length}
+        totalCount={filteredRows.length}
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}

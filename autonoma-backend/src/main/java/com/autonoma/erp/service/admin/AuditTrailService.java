@@ -14,12 +14,17 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class AuditTrailService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuditTrailService.class);
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -39,6 +44,23 @@ public class AuditTrailService {
     @Async
     public void saveAuditTrailAsync(String actionType, String tableName, String recordId, String prevVal,
             String currVal, String comments, String userId, String pageName) {
+
+        // Check if audit logs are globally enabled in the company configuration
+        try {
+            List<CompanyCredential> companies = companyCredentialRepository.findAll();
+            if (!companies.isEmpty()) {
+                Boolean isAuditEnabled = companies.get(0).getAuditLogEnabled();
+                if (isAuditEnabled == null || !isAuditEnabled) {
+                    return; // Skip saving the audit trail if it is disabled
+                }
+            } else {
+                return; // Do not save if no company profile exists
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to check audit log configuration: " + e.getMessage());
+            return;
+        }
+
         if (pageName == null) {
             pageName = tableName + " Page";
         }
@@ -50,6 +72,8 @@ public class AuditTrailService {
         try {
             jdbcTemplate.update(sql, userId != null ? userId : "SYSTEM", pageName, actionType, tableName, recordId,
                     prevVal, currVal, comments);
+            log.info("[DB_CHANGE] Action: {} | Table: {} | RecordId: {} | User: {} | Comments: {}", 
+                    actionType, tableName, recordId, userId != null ? userId : "SYSTEM", comments);
         } catch (Exception e) {
             System.err.println("Failed to save audit trail asynchronously: " + e.getMessage());
         }

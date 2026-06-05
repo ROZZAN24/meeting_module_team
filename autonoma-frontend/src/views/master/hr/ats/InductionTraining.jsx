@@ -1,3 +1,4 @@
+import TextField from 'ui-component/CustomTextField';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'utils/axios';
@@ -5,9 +6,7 @@ import { useTheme } from '@mui/material/styles';
 import useAuth from 'hooks/useAuth';
 
 // MUI & Icons
-import {
-  Box, Typography, Stack, Tooltip, IconButton, MenuItem, Button, Chip, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Radio, FormControlLabel, Dialog, DialogTitle, DialogContent, DialogActions
-} from '@mui/material';
+import { Box, Typography, Stack, Tooltip, IconButton, MenuItem, Button, Chip, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Radio, FormControlLabel, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import {
   IconRefresh, IconPlayerPlay, IconCheck, IconClipboardCheck, IconInfoCircle, IconCloudUpload, IconTrash, IconX
 } from '@tabler/icons-react';
@@ -117,9 +116,11 @@ export default function InductionTraining() {
   const completedCount = useMemo(() => trainingDetails.filter(d => d.trainerStatus === 'COMPLETED').length, [trainingDetails]);
   const totalCount = useMemo(() => trainingDetails.length, [trainingDetails]);
 
-  // Dispatch starred filter configuration matching Status
+  // Dispatch starred filter configuration matching Status and Training Date
   useEffect(() => {
-    const config = [{
+    const todayStr = new Date().toISOString().split('T')[0];
+    const config = [
+      {
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -131,7 +132,15 @@ export default function InductionTraining() {
         defaultValue: 'PENDING',
         isStarred: true
       },
-      ...getCommonDateFilters('createdAt', 'updatedAt')];
+      {
+        id: 'trainingDate',
+        label: 'Training Date',
+        type: 'date',
+        defaultValue: todayStr,
+        isStarred: true
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')
+    ];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -184,14 +193,26 @@ export default function InductionTraining() {
   // Open training dialog
   const handleStartTraining = useCallback(async (row) => {
     console.log('[InductionTraining] handleStartTraining called with row:', JSON.stringify(row));
-    console.log('[InductionTraining] row.id:', row.id, 'row.currentStatus:', row.currentStatus);
     setSelectedAssignment(row);
     setLoading(true);
     try {
+      const activeTrainingDate = globalFilters.trainingDate || new Date().toISOString().split('T')[0];
+      const filteredAssignments = row.assignments.filter(a => {
+        if (!a.inductionDate) return false;
+        const aDateStr = new Date(a.inductionDate).toISOString().split('T')[0];
+        return aDateStr === activeTrainingDate;
+      });
+
+      if (filteredAssignments.length === 0) {
+        dispatch(openSnackbar({ open: true, message: 'No assignments found matching the selected training date', variant: 'alert', severity: 'warning' }));
+        setLoading(false);
+        return;
+      }
+
       // Start training for any PENDING or RESCHEDULE assignments that this trainer is authorized for
-      const startPromises = row.assignments
+      const startPromises = filteredAssignments
         .filter(a => a.currentStatus === 'PENDING' || a.currentStatus === 'RESCHEDULE')
-        .filter(a => user?.isBosAdmin === 1 || a.trainerEmpCode === user?.empCode)
+        .filter(a => user?.userLevel === 5 || a.trainerEmpCode === user?.empCode)
         .map(a => axios.post(`/api/hr/induction-training/${a.id}/start`));
       
       if (startPromises.length > 0) {
@@ -205,8 +226,8 @@ export default function InductionTraining() {
         }));
       }
 
-      // Load details for all assignments of this employee in parallel
-      const detailsPromises = row.assignments.map(a => axios.get(`/api/hr/induction-training/${a.id}/details`));
+      // Load details for all filtered assignments of this employee in parallel
+      const detailsPromises = filteredAssignments.map(a => axios.get(`/api/hr/induction-training/${a.id}/details`));
       const detailsResponses = await Promise.all(detailsPromises);
       
       // Flatten all training detail records cleanly without duplicates
@@ -261,7 +282,7 @@ export default function InductionTraining() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch, user]);
+  }, [dispatch, user, globalFilters]);
 
   // Update a detail item locally, updating all entries that share the same criteria
   const updateDetail = (detailId, field, value) => {
@@ -316,7 +337,7 @@ export default function InductionTraining() {
       // Filter details that this user is authorized to edit
       const authorizedDetails = trainingDetails.filter(d => {
         const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
-        return user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+        return user?.userLevel === 5 || (assignment && assignment.trainerEmpCode === user?.empCode);
       });
 
       // Find modified details by comparing trainingDetails with initialDetails
@@ -427,7 +448,7 @@ export default function InductionTraining() {
       // Filter details that this user is authorized to edit
       const authorizedDetails = trainingDetails.filter(d => {
         const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
-        return user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+        return user?.userLevel === 5 || (assignment && assignment.trainerEmpCode === user?.empCode);
       });
 
       // 1. Validation before saving:
@@ -497,7 +518,7 @@ export default function InductionTraining() {
     const unique = [];
     trainingDetails.forEach(d => {
       const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
-      const isAuthorized = user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+      const isAuthorized = user?.userLevel === 5 || (assignment && assignment.trainerEmpCode === user?.empCode);
       if (!isAuthorized) return;
 
       if (d.inductionMasterId) {
@@ -512,14 +533,53 @@ export default function InductionTraining() {
     return unique;
   }, [trainingDetails, selectedAssignment, user]);
 
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const parts = dateStr.split('T')[0].split('-');
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return `${parts[0]}/${parts[1]}/${parts[2]}`;
+      }
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   // Filter rows dynamically
   const resolvedRows = useMemo(() => {
     let filtered = rows;
+    
+    const trainingDateVal = globalFilters.trainingDate || new Date().toISOString().split('T')[0];
+    if (trainingDateVal) {
+      filtered = filtered.filter(r => 
+        r.assignments.some(a => {
+          if (!a.inductionDate) return false;
+          const aDateStr = new Date(a.inductionDate).toISOString().split('T')[0];
+          return aDateStr === trainingDateVal;
+        })
+      );
+    }
+
     const statusVal = globalFilters.status || 'ALL';
     if (statusVal !== 'ALL') {
       filtered = filtered.filter(r => {
-        const completedCount = r.assignments.filter(a => ['TRAINING GIVEN', 'COMPLETED'].includes(a.currentStatus)).length;
-        const totalCount = r.assignments.length;
+        const filteredAssignments = r.assignments.filter(a => {
+          if (!trainingDateVal) return true;
+          if (!a.inductionDate) return false;
+          const aDateStr = new Date(a.inductionDate).toISOString().split('T')[0];
+          return aDateStr === trainingDateVal;
+        });
+        const completedCount = filteredAssignments.filter(a => ['TRAINING GIVEN', 'COMPLETED'].includes(a.currentStatus)).length;
+        const totalCount = filteredAssignments.length;
         const isCompleted = completedCount === totalCount;
         
         if (statusVal === 'PENDING') {
@@ -540,18 +600,25 @@ export default function InductionTraining() {
     }
 
     return filtered.map((r, i) => {
-      const completedCount = r.assignments.filter(a => ['TRAINING GIVEN', 'COMPLETED'].includes(a.currentStatus)).length;
-      const totalCount = r.assignments.length;
+      const filteredAssignments = r.assignments.filter(a => {
+        if (!trainingDateVal) return true;
+        if (!a.inductionDate) return false;
+        const aDateStr = new Date(a.inductionDate).toISOString().split('T')[0];
+        return aDateStr === trainingDateVal;
+      });
 
-      const ratedAssignments = r.assignments.filter(a => a.averageRating !== null && a.averageRating !== undefined && a.averageRating > 0);
+      const completedCount = filteredAssignments.filter(a => ['TRAINING GIVEN', 'COMPLETED'].includes(a.currentStatus)).length;
+      const totalCount = filteredAssignments.length;
+
+      const ratedAssignments = filteredAssignments.filter(a => a.averageRating !== null && a.averageRating !== undefined && a.averageRating > 0);
       const averageRating = ratedAssignments.length > 0
         ? ratedAssignments.reduce((sum, a) => sum + a.averageRating, 0) / ratedAssignments.length
         : 0;
 
-      const uniqueDates = Array.from(new Set(r.assignments.map(a => a.inductionDate ? new Date(a.inductionDate).toLocaleDateString('en-GB') : '-')));
+      const uniqueDates = Array.from(new Set(filteredAssignments.map(a => a.inductionDate ? formatDateDDMMYYYY(a.inductionDate) : '-')));
       const inductionDateStr = uniqueDates.filter(d => d !== '-').join(', ') || '-';
       
-      const roundsStr = r.assignments.map(a => a.inductionRound).join(', ');
+      const roundsStr = filteredAssignments.map(a => a.inductionRound).join(', ');
       const isCompleted = completedCount === totalCount;
 
       return {
@@ -567,7 +634,7 @@ export default function InductionTraining() {
         inductionStatus: isCompleted ? 'COMPLETED' : 'PENDING'
       };
     });
-  }, [rows, globalFilters.status, globalQuery]);
+  }, [rows, globalFilters.status, globalFilters.trainingDate, globalQuery]);
 
   if (perms.loading) {
     return null;
@@ -623,21 +690,31 @@ export default function InductionTraining() {
         title="Induction Process"
         fullWidth
         maxWidth="xl"
-        onSave={perms.write ? handleSaveProgress : null}
+        onSave={null}
         isViewOnly={!perms.write}
         saveLabel="Save"
         saveLoading={saving}
         secondaryActions={
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleCompleteTraining}
-            disabled={saving || completedCount < totalCount}
-            startIcon={<IconCheck size={18} />}
-            sx={{ fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
-          >
-            Complete Training ({completedCount}/{totalCount})
-          </Button>
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="contained"
+              sx={btnCancel}
+              onClick={() => setDialogOpen(false)}
+              startIcon={<IconX size={18} />}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleCompleteTraining}
+              disabled={saving || completedCount < totalCount}
+              startIcon={<IconCheck size={18} />}
+              sx={{ fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
+            >
+              Complete Training ({completedCount}/{totalCount})
+            </Button>
+          </Stack>
         }
       >
         {selectedAssignment && (

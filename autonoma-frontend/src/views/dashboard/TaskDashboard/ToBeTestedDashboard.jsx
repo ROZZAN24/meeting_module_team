@@ -17,6 +17,8 @@ import {
   Link,
   IconButton
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { styled, alpha } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
 
@@ -167,9 +169,12 @@ function getTestStatus(rawStatus) {
   return null;
 }
 
-export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
+export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab }) {
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
+
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search.filters);
 
   const [activeView, setActiveView] = useState('main');
   const [trendPeriod, setTrendPeriod] = useState('weekly');
@@ -228,23 +233,16 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
 
   const getTicketId = (t) => t._ticketId || t._id || 'TCK-???';
 
-  // Pages data (derived from _id prefix, like ReopenDashboard)
+  // Pages data (derived from _pageName)
   const pagesData = useMemo(() => {
-    const moduleMap = {
-      CL: { name: 'Checklist', color: '#3B82F6' },
-      MOM: { name: 'MOM Actions', color: '#F59E0B' },
-      TK: { name: 'Ticket', color: '#8B5CF6' },
-      AUDIT: { name: 'Audit Schedule', color: '#EF4444' }
-    };
     const counts = {};
     testTasks.forEach((t) => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const mod = moduleMap[prefix] || { name: prefix || 'Other', color: '#94A3B8' };
-      if (!counts[mod.name]) counts[mod.name] = { name: mod.name, color: mod.color, total: 0, waiting: 0, inTesting: 0, completed: 0 };
-      counts[mod.name].total++;
-      if (t._testStatus === 'Waiting') counts[mod.name].waiting++;
-      if (t._testStatus === 'In Testing') counts[mod.name].inTesting++;
-      if (t._testStatus === 'Completed') counts[mod.name].completed++;
+      const name = t._pageName || 'Other';
+      if (!counts[name]) counts[name] = { name, color: '#8B5CF6', total: 0, waiting: 0, inTesting: 0, completed: 0 };
+      counts[name].total++;
+      if (t._testStatus === 'Waiting') counts[name].waiting++;
+      if (t._testStatus === 'In Testing') counts[name].inTesting++;
+      if (t._testStatus === 'Completed') counts[name].completed++;
     });
     const entries = Object.values(counts).sort((a, b) => b.total - a.total);
     const total = entries.reduce((s, e) => s + e.total, 0) || 1;
@@ -257,10 +255,9 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     // Helper: pick best available date, fallback to now if invalid/missing
     const getDate = (t) => {
-      const d = t._rawDate || t._dueDate || t.updatedAt || t.createdAt;
+      const d = t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate || t._dueDate || t.updatedAt || t.createdAt;
       let parsed = d ? new Date(d) : new Date();
       if (isNaN(parsed.getTime())) parsed = new Date();
-      // If the task has a future date, cap it to 'now' so it shows up in current week/month graphs
       if (parsed > now) {
         parsed = now;
       }
@@ -683,7 +680,9 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
                           </TableCell>
                           <TableCell sx={{ textAlign: 'center' }}>
                             <Typography fontWeight={700} fontSize="0.85rem" color={textMuted}>
-                              {t._createdDate
+                              {t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate
+                                ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : t._createdDate
                                 ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                                 : t._rawDate
                                   ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -822,7 +821,38 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
         sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(3,1fr)', lg: 'repeat(5,1fr)' }, gap: 1.5, mb: 1.5 }}
       >
         {topStats.map((stat, idx) => (
-          <LabCard key={idx} statcolor={stat.color}>
+          <LabCard 
+            key={idx} 
+            statcolor={stat.color}
+            onClick={() => {
+              let statusFilter = '';
+              if (stat.title === 'Total To Be Tested' || stat.title === 'Waiting for Tester' || stat.title === 'In Testing') {
+                statusFilter = 'To Be Tested'; // Currently TicketManagement only supports exact 'To Be Tested' status.
+              } else if (stat.title === 'Test Completed') {
+                statusFilter = 'To Be Tested'; // Or we route to To Be Tested and let the user see it
+              }
+
+              if (statusFilter && stat.title !== 'Assigned Testers') {
+                const initialFilters = {
+                  ticketStatus: statusFilter,
+                  taskScope: globalFilters?.performanceScope || 'Mine'
+                };
+                
+                const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+                const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+
+                navigate(routePath, { 
+                  state: { 
+                    fromDashboard: true, 
+                    fromTab: activeTab,
+                    dashboardFilters: globalFilters,
+                    initialFilters 
+                  } 
+                });
+              }
+            }}
+            sx={{ cursor: stat.title !== 'Assigned Testers' ? 'pointer' : 'default' }}
+          >
             <Box className="rotating-border" />
             <Box className="shimmer" />
             <Box className="hud-corner hud-tl" />

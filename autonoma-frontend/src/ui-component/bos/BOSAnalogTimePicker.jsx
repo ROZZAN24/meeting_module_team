@@ -79,6 +79,7 @@ export default function BOSAnalogTimePicker({
   minTimeMessage,
   disableFutureValidation = false,
   hideClockIcon = false,
+  futureMinutes = 15,
   ...rest
 }) {
   const theme = useTheme();
@@ -99,6 +100,12 @@ export default function BOSAnalogTimePicker({
   // Initialize selected components
   const parsedTime = useMemo(() => {
     if (!cleanValue) {
+      if (minTime) {
+        const minMins = parseTimeToMinutes(minTime);
+        if (minMins !== null) {
+          return minutesToTimeParts(minMins);
+        }
+      }
       const now = new Date();
       let h = now.getHours() % 12 || 12;
       return {
@@ -125,7 +132,7 @@ export default function BOSAnalogTimePicker({
     } catch (e) {
       return { hour: 12, minute: '00', ampm: 'AM' };
     }
-  }, [cleanValue]);
+  }, [cleanValue, minTime]);
 
   // Keep internal state updated with parsedTime
   const [selectedHour, setSelectedHour] = useState(parsedTime.hour);
@@ -203,7 +210,7 @@ export default function BOSAnalogTimePicker({
       }
     }
 
-    // 2. Today's date check (must be at least 15 minutes in the future)
+    // 2. Today's date check (must be at least futureMinutes in the future)
     if (!disableFutureValidation) {
       const todayStr = getLocalDateString(new Date());
       const targetDateStr = getLocalDateString(selectedDate);
@@ -212,9 +219,9 @@ export default function BOSAnalogTimePicker({
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-        // Must be at least 15 minutes in the future
-        if (selectedMinutes < currentMinutes + 15) {
-          return { valid: false, reason: 'future15' };
+        // Must be at least futureMinutes in the future
+        if (selectedMinutes < currentMinutes + futureMinutes) {
+          return { valid: false, reason: 'futureOffset' };
         }
       }
     }
@@ -227,7 +234,7 @@ export default function BOSAnalogTimePicker({
       if (result.reason === 'minTime') {
         setValidationError(minTimeMessage || `Time must be after ${minTime}.`);
       } else {
-        setValidationError('You must choose a time at least 15 minutes in the future.');
+        setValidationError(`You must choose a time at least ${futureMinutes} minutes in the future.`);
       }
       return;
     }
@@ -238,6 +245,8 @@ export default function BOSAnalogTimePicker({
   };
 
   const handleIconClick = (e) => {
+    if (disabled) return;
+    if (e) e.stopPropagation();
     setAnchorEl(e.currentTarget);
     setMode('hours');
     setOpen(true);
@@ -259,8 +268,6 @@ export default function BOSAnalogTimePicker({
         label={label ? `${label}${required ? ' *' : ''}` : undefined}
         value={cleanValue}
         disabled={disabled}
-        readOnly
-        onClick={handleIconClick}
         size="small"
         fullWidth
         error={!!error}
@@ -268,6 +275,8 @@ export default function BOSAnalogTimePicker({
         name={name}
         autoComplete="off"
         InputProps={{
+          readOnly: true,
+          onClick: handleIconClick,
           endAdornment: (disabled || hideClockIcon) ? null : (
             <InputAdornment position="end">
               <IconButton onClick={handleIconClick} disabled={disabled} size="small" sx={{ p: '4px' }}>
@@ -543,5 +552,6 @@ BOSAnalogTimePicker.propTypes = {
   minTime: PropTypes.string,
   minTimeMessage: PropTypes.string,
   disableFutureValidation: PropTypes.bool,
-  hideClockIcon: PropTypes.bool
+  hideClockIcon: PropTypes.bool,
+  futureMinutes: PropTypes.number
 };

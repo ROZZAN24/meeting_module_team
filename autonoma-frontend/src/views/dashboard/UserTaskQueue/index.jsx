@@ -1,11 +1,7 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box, Grid, Typography, Stack, useTheme,
-  Skeleton, Avatar, IconButton, Chip, Tabs, Tab,
-  TextField, InputAdornment, Tooltip, Fade, LinearProgress, Divider,
-  Badge, CircularProgress, useMediaQuery, Paper, MenuItem, Select, FormControl, Autocomplete, Collapse,
-} from '@mui/material';
+import { Box, Grid, Typography, Stack, useTheme, Skeleton, Avatar, IconButton, Chip, Tabs, Tab, InputAdornment, Tooltip, Fade, LinearProgress, Divider, Badge, CircularProgress, useMediaQuery, Paper, MenuItem, Select, FormControl, Autocomplete, Collapse } from '@mui/material';
 import { styled, alpha, keyframes, useColorScheme, ThemeProvider, createTheme } from '@mui/material/styles';
 import axios from 'utils/axios';
 import useAuth from 'hooks/useAuth';
@@ -531,6 +527,10 @@ const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, activ
         borderRadius: 4,
         p: 3,
         cursor: 'pointer',
+        flexGrow: 1,
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         bgcolor: isDark ? '#1E293B' : '#fff',
         boxShadow: active
           ? `0 12px 30px ${alpha(pal.solid, 0.4)}, 0 4px 10px ${alpha(pal.solid, 0.15)}`
@@ -586,12 +586,14 @@ const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, activ
           </Box>
         </Box>
       </Box>
-      <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5, fontSize: '2rem' }}>
-        {count || 0}
-      </Typography>
-      <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-        {moduleName}
-      </Typography>
+      <Box sx={{ mt: 'auto' }}>
+        <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5, fontSize: '2rem' }}>
+          {count || 0}
+        </Typography>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          {moduleName}
+        </Typography>
+      </Box>
     </Paper>
   );
 }
@@ -608,7 +610,7 @@ export default function UserTaskQueue() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(null);
   const [countdown, setCountdown] = useState(REFRESH_S);
 
   const [targetUserId, setTargetUserId] = useState('');
@@ -635,10 +637,10 @@ export default function UserTaskQueue() {
         setActiveUserId(uid);
         setInitialized(true);
         const roles = String(user.roles || user.role || '').toLowerCase();
-        if (roles.includes('admin') || roles.includes('super') || user.isSuperUser || user.isBosAdmin === 1) {
+        if (roles.includes('admin') || roles.includes('super') || user.isSuperUser || user.userLevel === 5) {
           setIsSuperUser(true);
         }
-        if (user.isBosAdmin === 1) {
+        if (user.userLevel === 5) {
           setIsBosSuper(true);
           axios.get('/api/users/all').then(res => setAllUsers(res.data || [])).catch(e => console.error(e));
         }
@@ -765,7 +767,7 @@ export default function UserTaskQueue() {
     TICKET: tasks.filter(t => t.type === 'TICKET').length,
     AUDIT: tasks.filter(t => t.type === 'AUDIT').length,
   };
-  const visibleTasks = activeTab === 0 ? tasks : tasks.filter(t => t.type === TAB_TYPES[activeTab]);
+  const visibleTasks = activeTab === null ? tasks : tasks.filter(t => t.type === activeTab);
 
   const overdueCount = tasks.filter(t =>
     isOverdue(t.dueDate) && !['Closed', 'Resolved', 'Approved', 'Completed'].includes(t.status)
@@ -942,24 +944,6 @@ export default function UserTaskQueue() {
               />
             )}
 
-            {/* Refresh / Countdown Pill */}
-            <Tooltip title={`Auto-refresh`} placement="top" arrow>
-              <Box sx={{
-                display: 'flex', alignItems: 'center', gap: 1,
-                background: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
-                borderRadius: 20, px: 2, py: 0.75,
-                border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
-                color: isDark ? '#E2E8F0' : '#475569',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                '&:hover': { background: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9', borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1' }
-              }} onClick={() => fetchData(false)}>
-                <RefreshRoundedIcon sx={{ fontSize: 16, animation: refreshing ? `${spin} 1s linear infinite` : 'none', color: 'inherit' }} />
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: 'inherit' }}>
-                  {countdown}s
-                </Typography>
-              </Box>
-            </Tooltip>
           </Stack>
         </Stack>
       </HeroBanner>
@@ -974,8 +958,6 @@ export default function UserTaskQueue() {
           ))
         ) : (
           (() => {
-            const enabledAuths = pageAuths.filter(a => a.addTaskEnable === 1);
-
             const tasksByType = {
               'CHECKLIST': tasks.filter(t => t.type === 'CHECKLIST'),
               'MEETING': tasks.filter(t => t.type === 'MEETING'),
@@ -983,55 +965,62 @@ export default function UserTaskQueue() {
               'AUDIT': tasks.filter(t => t.type === 'AUDIT'),
             };
 
-            let modulesToRender = [];
+            // Check page authorization flags for the 4 task modules
+            const hasChecklistAuth = pageAuths.some(a => a.addTaskEnable === 1 && (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('CHECK'));
+            const hasMeetingAuth   = pageAuths.some(a => a.addTaskEnable === 1 && (
+              (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('MEET') ||
+              (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('MOM')
+            ));
+            const hasTicketAuth    = pageAuths.some(a => a.addTaskEnable === 1 && (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('TICKET'));
+            const hasAuditAuth     = pageAuths.some(a => a.addTaskEnable === 1 && (a.page?.pageName || a.page?.pageCode || '').toUpperCase().includes('AUDIT'));
 
+            // If no dashboard authorizations are set for any task modules, show all 4 modules as fallback
+            const noTaskAuthsEnabled = !hasChecklistAuth && !hasMeetingAuth && !hasTicketAuth && !hasAuditAuth;
+
+            let dynamicModules = [];
+
+            if (noTaskAuthsEnabled) {
+              dynamicModules = [
+                { name: 'CHECKLISTS', count: tasksByType['CHECKLIST'].length, paletteKey: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 28 }} />, type: 'CHECKLIST' },
+                { name: 'MEETINGS', count: tasksByType['MEETING'].length, paletteKey: 'emerald', icon: <GroupsIcon sx={{ fontSize: 28 }} />, type: 'MEETING' },
+                { name: 'TICKETS', count: tasksByType['TICKET'].length, paletteKey: 'sky', icon: <ConfirmationNumberIcon sx={{ fontSize: 28 }} />, type: 'TICKET' },
+                { name: 'AUDITS', count: tasksByType['AUDIT'].length, paletteKey: 'amber', icon: <PolicyIcon sx={{ fontSize: 28 }} />, type: 'AUDIT' },
+              ];
+            } else {
+              if (hasChecklistAuth) {
+                dynamicModules.push({ name: 'CHECKLISTS', count: tasksByType['CHECKLIST'].length, paletteKey: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 28 }} />, type: 'CHECKLIST' });
+              }
+              if (hasMeetingAuth) {
+                dynamicModules.push({ name: 'MEETINGS', count: tasksByType['MEETING'].length, paletteKey: 'emerald', icon: <GroupsIcon sx={{ fontSize: 28 }} />, type: 'MEETING' });
+              }
+              if (hasTicketAuth) {
+                dynamicModules.push({ name: 'TICKETS', count: tasksByType['TICKET'].length, paletteKey: 'sky', icon: <ConfirmationNumberIcon sx={{ fontSize: 28 }} />, type: 'TICKET' });
+              }
+              if (hasAuditAuth) {
+                dynamicModules.push({ name: 'AUDITS', count: tasksByType['AUDIT'].length, paletteKey: 'amber', icon: <PolicyIcon sx={{ fontSize: 28 }} />, type: 'AUDIT' });
+              }
+            }
+
+            // Order by pending count ascending
+            dynamicModules.sort((a, b) => a.count - b.count);
+
+            let modulesToRender = [];
             // Always add ALL TASKS first
             modulesToRender.push({
               name: 'ALL TASKS',
               count: tasks.length,
               paletteKey: 'indigo',
               icon: <NotificationsActiveIcon sx={{ fontSize: 28 }} />,
-              tabIndex: 0
+              type: null
             });
 
-            let dynamicModules = [];
-
-            if (enabledAuths.length > 0) {
-              dynamicModules = enabledAuths.map(auth => {
-                const name = auth.page?.pageName || auth.page?.pageCode || `Module ${auth.pageId}`;
-                const upName = name.toUpperCase();
-                let modTasks = [];
-                let palette = 'indigo';
-                let icon = <DashboardRoundedIcon sx={{ fontSize: 28 }} />;
-
-                if (upName.includes('CHECK')) { modTasks = tasksByType['CHECKLIST']; palette = 'rose'; icon = <ChecklistRtlIcon sx={{ fontSize: 28 }} />; }
-                else if (upName.includes('MEET') || upName.includes('MOM')) { modTasks = tasksByType['MEETING']; palette = 'emerald'; icon = <GroupsIcon sx={{ fontSize: 28 }} />; }
-                else if (upName.includes('TICKET')) { modTasks = tasksByType['TICKET']; palette = 'sky'; icon = <ConfirmationNumberIcon sx={{ fontSize: 28 }} />; }
-                else if (upName.includes('AUDIT')) { modTasks = tasksByType['AUDIT']; palette = 'amber'; icon = <PolicyIcon sx={{ fontSize: 28 }} />; }
-
-                return { name, count: modTasks.length, paletteKey: palette, icon };
-              });
-            } else {
-              // Fallback structure to match the old dashboard exactly
-              dynamicModules = [
-                { name: 'CHECKLISTS', count: tasksByType['CHECKLIST'].length, paletteKey: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 28 }} /> },
-                { name: 'MEETINGS', count: tasksByType['MEETING'].length, paletteKey: 'emerald', icon: <GroupsIcon sx={{ fontSize: 28 }} /> },
-                { name: 'TICKETS', count: tasksByType['TICKET'].length, paletteKey: 'sky', icon: <ConfirmationNumberIcon sx={{ fontSize: 28 }} /> },
-                { name: 'AUDITS', count: tasksByType['AUDIT'].length, paletteKey: 'amber', icon: <PolicyIcon sx={{ fontSize: 28 }} /> },
-              ];
-            }
-
-            // Order by pending count ascending
-            dynamicModules.sort((a, b) => a.count - b.count);
-
-            // Append dynamic modules with incremented tab index
-            dynamicModules.forEach((mod, idx) => {
-              mod.tabIndex = idx + 1;
+            // Append dynamic modules
+            dynamicModules.forEach((mod) => {
               modulesToRender.push(mod);
             });
 
             return modulesToRender.map((mod, i) => (
-              <Grid item xs={12} sm={6} md={3} lg={2.4} key={mod.name + i}>
+              <Grid item xs={12} sm={6} md={3} lg={2.4} key={mod.name + i} sx={{ display: 'flex', flexDirection: 'column' }}>
                 <DashboardMetricCard
                   moduleName={mod.name}
                   count={mod.count}
@@ -1039,9 +1028,9 @@ export default function UserTaskQueue() {
                   paletteKey={mod.paletteKey}
                   theme={theme}
                   isDark={isDark}
-                  active={activeTab === mod.tabIndex}
+                  active={activeTab === mod.type}
                   index={i}
-                  onClick={() => setActiveTab(mod.tabIndex)}
+                  onClick={() => setActiveTab(mod.type)}
                 />
               </Grid>
             ));

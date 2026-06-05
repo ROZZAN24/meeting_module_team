@@ -23,6 +23,8 @@ public class MomActionSummaryDTO {
     private String processType;
     private String assignedBy;
     private String assignedTo;
+    private Long assignedToId;
+    private Long assignedById;
     private LocalDate targetDate;
     private LocalDate reviewDate;
     private String attachmentRequired;

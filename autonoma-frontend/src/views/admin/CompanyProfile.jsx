@@ -1,24 +1,29 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Box, Grid, Typography, TextField, Button, Divider, Snackbar, Alert,
-  CircularProgress, Avatar, Tooltip, MenuItem, Select, FormControl,
-  InputLabel, FormHelperText, Paper, Chip, Stack, Autocomplete,
-  InputAdornment, IconButton,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  List, ListItemIcon, ListItemText, ListItemButton
-} from '@mui/material';
+import { Box, Grid, Typography, Button, Divider, Snackbar, Alert, CircularProgress, Avatar, Tooltip, MenuItem, Select, FormControl, InputLabel, FormHelperText, Paper, Chip, Stack, Autocomplete, InputAdornment, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItemIcon, ListItemText, ListItemButton, Tabs, Tab } from '@mui/material';
 import {
   IconBuilding, IconUpload, IconDeviceFloppy, IconRefresh,
   IconPhoto, IconLogin, IconCheck, IconAlertCircle, IconFolderOpen,
   IconChevronRight, IconArrowLeft, IconFolder, IconDeviceFloppy as IconDrive,
-  IconUser, IconCalendar
+  IconUser, IconCalendar,
+  IconSettings2,
+  IconLicense,
+  IconBrandUnity,
+  IconMapPin,
+  IconExternalLink,
+  IconCurrentLocation
 } from '@tabler/icons-react';
+import { useTheme, alpha } from '@mui/material/styles';
+import { motion } from 'framer-motion';
+import { RMap, RMarker } from 'maplibre-react-components';
+import osm_bright from '../forms/map/map-data/osm_bright.json';
 import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
-const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://127.0.0.1:8081').replace(/\/+$/, '');
+const API_BASE = (import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_API_URL || window.location.origin).replace(/\/+$/, '');
 
 // ─── Static Geo Data ────────────────────────────────────────────────────────
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'AED'];
 const COUNTRIES = ['India', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 'Singapore', 'UAE'];
 
 const STATES_BY_COUNTRY = {
@@ -68,13 +73,15 @@ const emptyForm = {
   companyName: '', shortName: '', address: '',
   city: '', state: '', stateCode: '', country: '', pincode: '',
   gstIn: '', dbSourceName: '', licRenewalDate: '', licExpiryDate: '',
-  logoFileName: '', logInBgFileName: '', directoryPath: 'D:\\BOS_DOCUMENTS',
+  logoFileName: '', logInBgFileName: '', directoryPath: 'BOS_DOCUMENTS',
   licExpRemainderDays: 0,
   restoreEnableDays: 7,
-  createdBy: '',
-  createdDate: '',
-  updatedBy: '',
-  updatedDate: ''
+  inputCaseStyle: 'CUSTOM',
+  registrationNo: '', panNo: '', mobileNo: '', phoneNo: '', emailId: '', website: '', gmaplink: '',
+  decimalPlaces: 2, currencyCode: 'INR',
+  smtpHost: '', smtpPort: 587, smtpUsername: '', smtpPassword: '', smtpSslEnabled: false,
+  supportEmail: '', supportPhone: '', auditLogEnabled: false,
+  createdBy: '', createdDate: '', updatedBy: '', updatedDate: ''
 };
 
 // ─── Image Upload Card ───────────────────────────────────────────────────────
@@ -147,20 +154,32 @@ function ImageUploadCard({ label, icon: Icon, field, preview, onUpload, uploadin
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const CompanyProfile = () => {
+  const theme = useTheme();
+
+  console.log("CompanyProfile layout version: 6-3-3 active");
+
   const { user } = useAuth();
-  const isSuperUser = user?.isBosAdmin === 1;
+  const isSuperUser = user?.userLevel === 5;
 
   const perms = usePagePermissions(PAGE_CODES.AD_COMPANY_PROFILE);
 
   const [form, setForm] = useState(emptyForm);
+  const [activeTab, setActiveTab] = useState(0);
+  const [originalCaseStyle, setOriginalCaseStyle] = useState('UPPER_CASE');
   const [recordId, setRecordId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [casePromptOpen, setCasePromptOpen] = useState(false);
+  const [databaseUpdating, setDatabaseUpdating] = useState(false);
   const [uploading, setUploading] = useState({ logo: false, bg: false });
   const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
   const [errors, setErrors] = useState({});
   const [browserOpen, setBrowserOpen] = useState(false);
   const [browserData, setBrowserData] = useState({ currentPath: '', folders: [], roots: [], parentPath: null });
   const [browserLoading, setBrowserLoading] = useState(false);
+
+  // Map Picker State
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  const [mapMarker, setMapMarker] = useState({ latitude: 13.0827, longitude: 80.2707 });
 
   const citiesForState = CITIES_BY_STATE[form.state] || DEFAULT_CITIES;
   const statesForCountry = STATES_BY_COUNTRY[form.country] || [];
@@ -191,14 +210,18 @@ const CompanyProfile = () => {
             licExpiryDate: rec.licExpiryDate ? rec.licExpiryDate.slice(0, 10) : '',
             logoFileName: rec.logoFileName || '',
             logInBgFileName: rec.logInBgFileName || '',
-            directoryPath: rec.directoryPath || 'D:\\BOS_DOCUMENTS',
+            directoryPath: rec.directoryPath || 'BOS_DOCUMENTS',
             licExpRemainderDays: rec.licExpRemainderDays || 0,
             restoreEnableDays: rec.restoreEnableDays || 0,
+            inputCaseStyle: rec.inputCaseStyle || 'UPPER_CASE',
+            decimalPlaces: rec.decimalPlaces != null ? rec.decimalPlaces : 2,
+            currencyCode: rec.currencyCode || 'INR',
             createdBy: rec.createdBy || '',
             createdDate: rec.createdDate || '',
             updatedBy: rec.updatedBy || '',
             updatedDate: rec.updatedDate || ''
           });
+          setOriginalCaseStyle(rec.inputCaseStyle || 'UPPER_CASE');
         }
       })
       .catch(() => {/* silently ignore on first load */ });
@@ -217,9 +240,54 @@ const CompanyProfile = () => {
       if (name === 'country') { updated.state = ''; updated.city = ''; updated.stateCode = ''; }
       // Reset city if state changes
       if (name === 'state') { updated.city = ''; }
+      // Auto-update license renewal date to current date when expiry date changes
+      if (name === 'licExpiryDate') {
+        updated.licRenewalDate = new Date().toISOString().split('T')[0];
+      }
       return updated;
     });
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const handleMarkerDrag = (e) => {
+    const lngLat = e.target.getLngLat();
+    setMapMarker({ latitude: lngLat.lat, longitude: lngLat.lng });
+  };
+
+  const openMapDialog = () => {
+    let lat = 13.0827, lng = 80.2707;
+    if (form.gmaplink) {
+      const match = form.gmaplink.match(/q=([-+]?\d*\.?\d+),([-+]?\d*\.?\d+)/);
+      if (match) {
+        lat = parseFloat(match[1]);
+        lng = parseFloat(match[2]);
+      }
+    }
+    setMapMarker({ latitude: lat, longitude: lng });
+    setMapDialogOpen(true);
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapMarker({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+          showSnack('Location updated to current position!', 'success');
+        },
+        (error) => {
+          showSnack('Unable to retrieve your location.', 'error');
+        }
+      );
+    } else {
+      showSnack('Geolocation is not supported by this browser.', 'error');
+    }
+  };
+
+  const handleMapSave = () => {
+    handleChange({
+      target: { name: 'gmaplink', value: `https://maps.google.com/?q=${mapMarker.latitude},${mapMarker.longitude}` }
+    });
+    setMapDialogOpen(false);
   };
 
   // ── Validation ──
@@ -331,8 +399,18 @@ const CompanyProfile = () => {
   };
 
   // ── Save / Update ──
-  const handleSave = async () => {
+  const handleSaveClick = () => {
     if (!validate()) return;
+
+    // Intercept if case style changed (skip dialog if changing to CUSTOM)
+    if (form.inputCaseStyle !== originalCaseStyle && form.inputCaseStyle !== 'CUSTOM') {
+      setCasePromptOpen(true);
+    } else {
+      executeSave(false);
+    }
+  };
+
+  const executeSave = async (updateExistingDb) => {
     setLoading(true);
     try {
       const token = sessionStorage.getItem('serviceToken') || '';
@@ -341,6 +419,8 @@ const CompanyProfile = () => {
         stateCode: form.stateCode ? parseInt(form.stateCode) : null,
         licExpRemainderDays: form.licExpRemainderDays ? parseInt(form.licExpRemainderDays) : 0,
         restoreEnableDays: form.restoreEnableDays ? parseInt(form.restoreEnableDays) : 0,
+        decimalPlaces: form.decimalPlaces ? parseInt(form.decimalPlaces) : 2,
+        smtpPort: form.smtpPort ? parseInt(form.smtpPort) : 587,
         licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
         licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
         updatedBy: user?.id || 'SYSTEM'
@@ -370,9 +450,28 @@ const CompanyProfile = () => {
       if (!res.ok) throw new Error(await res.text());
       const saved = await res.json();
       setRecordId(saved.id);
-      showSnack(recordId ? 'Company profile updated successfully!' : 'Company profile saved successfully!', 'success');
+      setOriginalCaseStyle(form.inputCaseStyle);
+      window.localStorage.setItem('inputCaseStyle', form.inputCaseStyle);
+
+      if (updateExistingDb) {
+        setDatabaseUpdating(true);
+        try {
+          const dbRes = await fetch(`${API_BASE}/api/company-profile/update-database-case-style?style=${form.inputCaseStyle}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!dbRes.ok) throw new Error('Failed to update existing database records');
+          showSnack('Saved successfully and all existing database records have been transformed!', 'success');
+        } catch (e) {
+          showSnack('Profile saved, but failed to update existing database records.', 'warning');
+        } finally {
+          setDatabaseUpdating(false);
+        }
+      } else {
+        showSnack('Saved successfully!', 'success');
+      }
     } catch (err) {
-      showSnack('Error: ' + err.message, 'error');
+      showSnack(err.message || 'Failed to save', 'error');
     } finally {
       setLoading(false);
     }
@@ -388,34 +487,50 @@ const CompanyProfile = () => {
 
   // ─── Styles ───
   const sectionTitle = (title, Icon) => (
-    <Box display="flex" alignItems="center" gap={1} mb={2} mt={1}>
+    <Box display="flex" alignItems="center" gap={1.5} mb={2.5}>
       <Box sx={{
-        p: 0.75, borderRadius: 1.5,
-        background: 'linear-gradient(135deg,#5e72e4,#825ee4)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
+        p: 0.75, borderRadius: 2,
+        background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+        border: '1px solid #bfdbfe',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 2px 4px rgba(59,130,246,0.1)'
       }}>
-        <Icon size={16} color="#fff" stroke={2} />
+        <Icon size={18} color="#2563eb" stroke={2.5} />
       </Box>
-      <Typography variant="subtitle1" fontWeight={700} color="text.primary">
+      <Typography variant="subtitle1" fontWeight={800} color="#1e293b" sx={{ letterSpacing: '0.01em' }}>
         {title}
       </Typography>
     </Box>
   );
 
   const fieldProps = (name, label, extra = {}) => ({
-    name, label, value: form[name],
+    name, label, value: form[name] || '',
     onChange: handleChange,
     error: !!errors[name],
     helperText: errors[name] || '',
     size: 'small', fullWidth: true,
+    ...extra,
+    InputProps: {
+      style: { color: '#0f172a', fontWeight: 500 },
+      ...extra.InputProps
+    },
+    InputLabelProps: {
+      style: { color: '#64748b' },
+      ...extra.InputLabelProps
+    },
     sx: {
       '& .MuiOutlinedInput-root': {
         borderRadius: 2,
-        bgcolor: extra.InputProps?.readOnly ? 'action.hover' : 'background.paper',
-        '&:hover fieldset': { borderColor: 'primary.main' }
-      }
-    },
-    ...extra
+        bgcolor: extra.InputProps?.readOnly ? '#f1f5f9' : '#ffffff',
+        '& fieldset': { borderColor: '#cbd5e1' },
+        '&:hover fieldset': { borderColor: '#94a3b8' },
+        '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '2px' },
+        '& input': { py: 0.75, px: 1.5, fontSize: '0.85rem' },
+        '& textarea': { fontSize: '0.85rem' }
+      },
+      '& .MuiInputLabel-root': { fontSize: '0.85rem' },
+      ...(extra.sx || {})
+    }
   });
 
   const dropdownProps = (name, label, options, extra = {}) => ({
@@ -428,18 +543,18 @@ const CompanyProfile = () => {
     <Autocomplete
       fullWidth
       size="small"
-      sx={{ minWidth: 200 }}
+      sx={{
+        minWidth: 200,
+        '& .MuiOutlinedInput-root': { padding: '2px !important' },
+        '& .MuiAutocomplete-input': { padding: '4px 8px !important', fontSize: '0.85rem', color: '#0f172a', fontWeight: 500 },
+        '& .MuiInputLabel-root': { fontSize: '0.85rem', color: '#64748b' },
+        '& .MuiIconButton-root': { color: '#64748b' }
+      }}
       disabled={disabled}
       options={options}
       value={form[name] || null}
       onChange={(event, newValue) => {
-        const syntheticEvent = {
-          target: {
-            name: name,
-            value: newValue || ''
-          }
-        };
-        handleChange(syntheticEvent);
+        handleChange({ target: { name, value: newValue || '' } });
       }}
       isOptionEqualToValue={(option, value) => option === value || value === ""}
       renderInput={(params) => (
@@ -452,8 +567,10 @@ const CompanyProfile = () => {
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: 2,
-              bgcolor: disabled ? 'action.hover' : 'background.paper',
-              '&:hover fieldset': { borderColor: 'primary.main' }
+              bgcolor: disabled ? '#f1f5f9' : '#ffffff',
+              '& fieldset': { borderColor: '#cbd5e1' },
+              '&:hover fieldset': { borderColor: '#94a3b8' },
+              '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '2px' }
             }
           }}
         />
@@ -574,332 +691,446 @@ const CompanyProfile = () => {
     </Dialog>
   );
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  };
+
   return (
-    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: '100%', mx: 0 }}>
+    <Box sx={{ p: { xs: 1, md: 2 }, overflowX: 'hidden', minHeight: '100vh', background: '#f8fafc' }}>
       {/* ── Page Header ── */}
       <Box sx={{
-        background: 'linear-gradient(135deg,#5e72e4 0%,#825ee4 100%)',
-        borderRadius: 3, p: { xs: 2.5, md: 3.5 }, mb: 3,
-        color: '#fff', position: 'relative', overflow: 'hidden',
-        boxShadow: '0 8px 32px rgba(94,114,228,0.35)'
+        position: 'relative',
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '16px',
+        p: { xs: 1.5, md: 2 },
+        mb: 2,
+        color: '#0f172a',
+        overflow: 'hidden',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
       }}>
-        {/* decorative circles */}
+        {/* Decorative shapes (static) */}
         <Box sx={{
-          position: 'absolute', top: -40, right: -40, width: 180, height: 180,
-          borderRadius: '50%', background: 'rgba(255,255,255,0.07)'
+          position: 'absolute', top: -30, right: -30, width: 150, height: 150,
+          borderRadius: '50%', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.0))',
+          backdropFilter: 'blur(10px)'
         }} />
         <Box sx={{
-          position: 'absolute', bottom: -30, right: 80, width: 100, height: 100,
-          borderRadius: '50%', background: 'rgba(255,255,255,0.05)'
+          position: 'absolute', bottom: -40, right: 100, width: 120, height: 120,
+          borderRadius: '50%', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0))',
+          backdropFilter: 'blur(15px)'
         }} />
 
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Box sx={{ p: 1.5, borderRadius: 2, background: 'rgba(255,255,255,0.18)', display: 'flex' }}>
-            <IconBuilding size={28} stroke={1.5} />
+        <Stack direction="row" alignItems="center" spacing={2} sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
+          {/* Logo / Icon Container */}
+          <Box sx={{
+            p: 1.5,
+            borderRadius: '12px',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            color: '#2563eb'
+          }}>
+            <IconBuilding size={26} stroke={2} />
           </Box>
-          <Box>
-            <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h5" fontWeight={900} sx={{
+              lineHeight: 1.2,
+              color: '#0f172a',
+              letterSpacing: '-0.01em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
               Company Profile
             </Typography>
+
             {form.companyName ? (
-              <Typography variant="body1" sx={{ opacity: 1, mt: 0.4, fontWeight: 700, fontSize: '1.05rem', letterSpacing: 0.2 }}>
-                {form.companyName}
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.2 }}>
+                <Typography variant="body2" sx={{
+                  color: '#475569',
+                  fontWeight: 700,
+                  letterSpacing: '0.01em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5
+                }}>
+                  {form.companyName}
+                </Typography>
+              </Stack>
             ) : (
-              <Typography variant="body2" sx={{ opacity: 0.75, mt: 0.4 }}>
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
                 Manage your company credentials and branding assets
               </Typography>
             )}
           </Box>
-          {recordId && (
-            <Chip
-              label={`ID: ${recordId}`}
-              size="small"
-              sx={{ ml: 'auto', bgcolor: 'rgba(255,255,255,0.22)', color: '#fff', fontWeight: 700 }}
-            />
-          )}
-        </Stack>
-      </Box>
 
-      {/* ── Form Card ── */}
-      <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}>
-
-        {/* ── Section 1 – Company Info ── */}
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-          {sectionTitle('Company Information', IconBuilding)}
-          {/* Row 1: Names */}
-          <Grid container spacing={2.5} mb={2.5}>
-            <Grid item xs={12} md={6}>
-              <TextField {...fieldProps('companyName', 'Company Name *')} />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField {...fieldProps('shortName', 'Short Name')} />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                {...fieldProps('address', 'Address')}
-                multiline
-                rows={2}
-                fullWidth
-                sx={{ ...fieldProps('address', 'Address').sx, width: '440px' }}
-                inputProps={{ maxLength: 500 }}
-              />
-            </Grid>
-          </Grid>
-
-          {/* Row 3: Geo Selection */}
-          <Grid container spacing={2.5} mb={2.5}>
-            <Grid item xs={12} md={6}>
-              <DropdownField name="country" label="Country *" options={COUNTRIES} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <DropdownField
-                name="state" label="State *"
-                options={statesForCountry}
-                disabled={!form.country} fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <DropdownField
-                name="city" label="City *"
-                options={citiesForState}
-                disabled={!form.state} fullWidth
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField {...fieldProps('stateCode', 'State Code')}
-                InputProps={{ readOnly: true }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 10 }} />
-            </Grid>
-          </Grid>
-        </Box>
-
-        <Divider />
-
-        {/* ── Section 3 – Branding Assets ── */}
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-          {sectionTitle('Branding Assets', IconPhoto)}
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
-                Company Logo
-              </Typography>
-              <ImageUploadCard
-                label="Company Logo"
-                icon={IconPhoto}
-                field="logoFileName"
-                preview={form.logoFileName}
-                onUpload={handleImageUpload}
-                uploading={uploading.logo}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
-                Login Background Image
-              </Typography>
-              <ImageUploadCard
-                label="Login Background"
-                icon={IconLogin}
-                field="logInBgFileName"
-                preview={form.logInBgFileName}
-                onUpload={handleImageUpload}
-                uploading={uploading.bg}
-              />
-            </Grid>
-          </Grid>
-        </Box>
-
-        <Divider />
-        {/* ── Section 2 – License Info ── */}
-        <Box sx={{ p: { xs: 3, md: 3 } }}>
-          {sectionTitle('License Details', IconAlertCircle)}
-
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} md={4}>
-              <TextField {...fieldProps('dbSourceName', 'DB Source')} inputProps={{ maxLength: 10 }} disabled={!isSuperUser} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                {...fieldProps('licRenewalDate', 'License Renewal Date')}
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                disabled={!isSuperUser}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                {...fieldProps('licExpiryDate', 'License Expiry Date')}
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                disabled={!isSuperUser}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                {...fieldProps('licExpRemainderDays', 'Lic Exp Remainder Days')}
-                type="number"
-                disabled={!isSuperUser}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                {...fieldProps('restoreEnableDays', 'Restore Enable Days')}
-                type="number"
-                disabled={!isSuperUser}
-                helperText="Grace period (days) to restore deleted records"
-              />
-            </Grid>
-            <Grid item xs={12} sm={8}>
-              <TextField
-                {...fieldProps('directoryPath', 'Directory Path')}
-                disabled={!isSuperUser}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        color="primary"
-                        onClick={handleOpenBrowser}
-                        disabled={!isSuperUser}
-                        title="Browse Server Folders"
-                      >
-                        <IconFolderOpen size={20} />
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
-            </Grid>
-          </Grid>
-        </Box>
-
-        <FolderBrowserDialog />
-
-        <Divider />
-
-        {/* ── Section 4 – System Info ── */}
-        <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: 'rgba(0,0,0,0.01)' }}>
-          {sectionTitle('System Information', IconAlertCircle)}
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Created By"
-                value={form.createdBy}
-                fullWidth
-                size="small"
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <IconUser size={18} opacity={0.5} />
-                    </InputAdornment>
-                  )
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Created Date"
-                value={form.createdDate ? new Date(form.createdDate).toLocaleString() : ''}
-                fullWidth
-                size="small"
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <IconCalendar size={18} opacity={0.5} />
-                    </InputAdornment>
-                  )
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Updated By"
-                value={form.updatedBy}
-                fullWidth
-                size="small"
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <IconUser size={18} opacity={0.5} />
-                    </InputAdornment>
-                  )
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Updated Date"
-                value={form.updatedDate ? new Date(form.updatedDate).toLocaleString() : ''}
-                fullWidth
-                size="small"
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <IconCalendar size={18} opacity={0.5} />
-                    </InputAdornment>
-                  )
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
-              />
-            </Grid>
-          </Grid>
-        </Box>
-
-        <Divider />
-
-
-
-        <Divider />
-
-        {/* ── Action Buttons ── */}
-        <Box sx={{
-          p: { xs: 2, md: 3 },
-          bgcolor: 'action.hover',
-          display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap'
-        }}>
-          {/* <Tooltip title="Reset form">
-            <Button
-              variant="outlined"
-              startIcon={<IconRefresh size={18} />}
-              onClick={handleReset}
-              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-            >
-              Reset
-            </Button>
-          </Tooltip> */}
           {perms.write && (
             <Button
               variant="contained"
-              startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <IconDeviceFloppy size={18} />}
-              onClick={handleSave}
-              disabled={loading || !perms.write}
+              startIcon={loading || databaseUpdating ? <CircularProgress size={16} color="inherit" /> : <IconDeviceFloppy size={18} />}
+              onClick={handleSaveClick}
+              disabled={loading || databaseUpdating || !perms.write}
               sx={{
-                borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 4,
-                background: 'linear-gradient(135deg,#5e72e4,#825ee4)',
-                boxShadow: '0 4px 15px rgba(94,114,228,0.4)',
-                '&:hover': { background: 'linear-gradient(135deg,#4a5fd4,#6e48d4)', boxShadow: '0 6px 20px rgba(94,114,228,0.5)' }
+                borderRadius: '8px', textTransform: 'none', fontWeight: 600, px: 3,
+                background: '#2563eb',
+                boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)',
+                color: '#fff',
+                '&:hover': { background: '#1d4ed8' }
               }}
             >
               {loading ? 'Saving…' : recordId ? 'Update Profile' : 'Save Profile'}
             </Button>
           )}
-        </Box>
-      </Paper>
+          {recordId && (
+            <Box sx={{
+              px: 2, py: 0.75,
+              borderRadius: '8px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}>
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}>
+                ID
+              </Typography>
+              <Typography variant="subtitle2" sx={{ color: '#0f172a', fontWeight: 900 }}>
+                #{recordId}
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+      </Box>
+
+      {/* ── Main Profile Content ── */}
+      <Box sx={{ width: '100%', flexGrow: 1 }} component={motion.div} variants={containerVariants} initial="hidden" animate="show">
+        <Stack spacing={3}>
+
+          {/* Company Details Row (Always Visible at Top) */}
+          <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+            <Grid container spacing={2} columns={24}>
+              <Grid item xs={24} md={8}><TextField {...fieldProps('companyName', 'Company Name*')} sx={{ width: '400px' }} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('shortName', 'Short Name')} sx={{ width: '200px' }} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('registrationNo', 'Registration No')} sx={{ width: '200px' }} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('panNo', 'PAN No')} sx={{ width: '200px' }} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} sx={{ width: '200px' }} /></Grid>
+
+            </Grid>
+          </Paper>
+
+          {/* Main Layout (Tabs + Tab Content) */}
+          <Box sx={{ flexGrow: 1, display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
+
+            {/* Left Side: Vertical Tabs */}
+            <Paper elevation={0} sx={{
+              minWidth: { xs: '100%', md: 260 },
+              border: '1px solid #e2e8f0',
+              borderRadius: 4,
+              bgcolor: '#ffffff',
+              overflow: 'hidden',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+              height: 'fit-content'
+            }}>
+              <Tabs
+                orientation="vertical"
+                variant="scrollable"
+                value={activeTab}
+                onChange={(e, val) => setActiveTab(val)}
+                sx={{
+                  borderRight: 1, borderColor: 'divider',
+                  '& .MuiTab-root': {
+                    alignItems: 'flex-start',
+                    textAlign: 'left',
+                    py: 2.5, px: 3,
+                    fontWeight: 600,
+                    color: '#64748b',
+                    textTransform: 'none',
+                    fontSize: '0.95rem',
+                    borderBottom: '1px solid #f8fafc',
+                    minHeight: 64
+                  },
+                  '& .Mui-selected': {
+                    color: '#2563eb !important',
+                    bgcolor: '#eff6ff',
+                    fontWeight: 700
+                  }
+                }}
+              >
+                <Tab icon={<IconBuilding size={20} />} iconPosition="start" label="Contact & Web" />
+                <Tab icon={<IconPhoto size={20} />} iconPosition="start" label="Branding & Identity" />
+                <Tab icon={<IconSettings2 size={20} />} iconPosition="start" label="App Config" />
+                <Tab icon={<IconSettings2 size={20} />} iconPosition="start" label="SMTP Settings" />
+                <Tab icon={<IconLicense size={20} />} iconPosition="start" label="License Info" />
+                <Tab icon={<IconBrandUnity size={20} />} iconPosition="start" label="System Audit" />
+              </Tabs>
+            </Paper>
+
+
+            {/* Right Side: Tab Content */}
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Box component={motion.div} variants={containerVariants} initial="hidden" animate="show">
+
+                {/* Tab 0: Branding & Identity */}
+                {activeTab === 1 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('Branding & Identity', IconPhoto)}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <ImageUploadCard label="Company Logo" icon={IconPhoto} field="logoFileName" preview={form.logoFileName} onUpload={handleImageUpload} uploading={uploading.logo} />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <ImageUploadCard label="Login Background" icon={IconLogin} field="logInBgFileName" preview={form.logInBgFileName} onUpload={handleImageUpload} uploading={uploading.bg} />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 1: Contact & Web */}
+                {activeTab === 0 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('Contact & Web', IconBuilding)}
+                    <Grid container spacing={4} columns={12}>
+
+                      {/* Left Column: Address Details */}
+                      {/* Left Column: Address Details */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Address Details</Typography>
+                        <Stack spacing={2}>
+                          <TextField {...fieldProps('address', 'Address')} multiline rows={3} fullWidth inputProps={{ maxLength: 500 }} />
+                          <DropdownField name="country" label="Country *" options={COUNTRIES} sx={{ width: '250px' }} />
+                          <DropdownField name="state" label="State *" options={statesForCountry} disabled={!form.country} sx={{ width: '250px' }} />
+                          <DropdownField name="city" label="City *" options={citiesForState} disabled={!form.state} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 6 }} sx={{ width: '250px' }} />
+                        </Stack>
+                      </Grid>
+
+                      {/* Right Column: Other Details */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Contact Details</Typography>
+                        <Stack spacing={2}>
+                          <TextField {...fieldProps('mobileNo', 'Mobile No')} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('phoneNo', 'Phone No')} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('emailId', 'Email ID')} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('website', 'Website')} sx={{ width: '250px' }} />
+
+                        </Stack>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Support</Typography>
+                        <Stack spacing={2}>
+                          <TextField {...fieldProps('supportPhone', 'Support Phone')} sx={{ width: '250px' }} />
+                          <TextField {...fieldProps('supportEmail', 'Support Email')} sx={{ width: '250px' }} />
+                        </Stack>
+                      </Grid>
+
+                      {/* Quadrant 4: Location Map */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Location Map</Typography>
+                        <Stack spacing={2}>
+                          <TextField
+                            name="gmaplink"
+                            value={form.gmaplink}
+                            onChange={handleChange}
+                            placeholder="Google Maps Link"
+                            size="small"
+                            InputProps={{
+                              style: { color: '#0f172a', fontWeight: 500, paddingRight: '4px' },
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  {form.gmaplink && (
+                                    <Tooltip title="View Map">
+                                      <IconButton sx={{ color: '#0ea5e9' }} onClick={() => window.open(form.gmaplink, '_blank')} size="small">
+                                        <IconExternalLink size={20} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                  <Tooltip title="Pick Location">
+                                    <IconButton sx={{ color: '#2563eb' }} onClick={openMapDialog} size="small">
+                                      <IconMapPin size={20} />
+                                    </IconButton>
+                                  </Tooltip>
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              width: '100%',
+                              maxWidth: '350px',
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                                bgcolor: '#ffffff',
+                                '& fieldset': { borderColor: '#cbd5e1' },
+                                '&:hover fieldset': { borderColor: '#94a3b8' },
+                                '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '2px' }
+                              }
+                            }}
+                          />
+                        </Stack>
+                      </Grid>
+
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 2: SMTP Settings */}
+                {activeTab === 3 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('SMTP Settings', IconSettings2)}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('smtpHost', 'SMTP Host')} /></Grid>
+                      <Grid item xs={12} md={2}><TextField {...fieldProps('smtpPort', 'SMTP Port')} type="number" /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('smtpUsername', 'SMTP Username')} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('smtpPassword', 'SMTP Password')} type="password" /></Grid>
+                      <Grid item xs={12} md={1} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <input type="checkbox" id="smtpSslEnabled" checked={form.smtpSslEnabled} onChange={(e) => handleChange({ target: { name: 'smtpSslEnabled', value: e.target.checked } })} />
+                          <label htmlFor="smtpSslEnabled" style={{ fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600, color: '#0f172a' }}>SSL</label>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 3: License Info */}
+                {activeTab === 4 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('License Info', IconLicense)}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('dbSourceName', 'DB Source Name')} inputProps={{ maxLength: 10 }} disabled={!isSuperUser} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('licRenewalDate', 'Renewal Date')} type="date" InputLabelProps={{ shrink: true }} disabled={!isSuperUser} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('licExpiryDate', 'Expiry Date')} type="date" InputLabelProps={{ shrink: true }} disabled={!isSuperUser} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('licExpRemainderDays', 'Exp Remainder Days')} type="number" disabled={!isSuperUser} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('restoreEnableDays', 'Restore Enable Days')} type="number" disabled={!isSuperUser} helperText="Grace period" /></Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField {...fieldProps('directoryPath', 'Document Path')} disabled={!isSuperUser} InputProps={{ endAdornment: (<InputAdornment position="end"><IconButton sx={{ color: '#2563eb' }} onClick={handleOpenBrowser} disabled={!isSuperUser}><IconFolderOpen size={20} /></IconButton></InputAdornment>) }} />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 4: App Config */}
+                {activeTab === 2 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('App Config', IconSettings2)}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={4}><DropdownField name="inputCaseStyle" label="Default Input Case Style" options={['UPPER_CASE', 'PROPER_CASE', 'LOWER_CASE', 'CUSTOM']} fullWidth /></Grid>
+                      <Grid item xs={12} md={4}><TextField {...fieldProps('decimalPlaces', 'Decimal Places')} type="number" inputProps={{ min: 0, max: 10 }} /></Grid>
+                      <Grid item xs={12} md={4}><DropdownField name="currencyCode" label="Currency Code" options={CURRENCIES} fullWidth /></Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 5: System Audit */}
+                {activeTab === 5 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ minHeight: '450px', border: '1px solid #cbd5e1', borderRadius: 4, p: 3, background: '#f8fafc', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.02)' }}>
+                    {sectionTitle('System Audit', IconBrandUnity)}
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={2} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <input type="checkbox" id="auditLogEnabled" checked={form.auditLogEnabled} onChange={(e) => handleChange({ target: { name: 'auditLogEnabled', value: e.target.checked } })} />
+                          <label htmlFor="auditLogEnabled" style={{ fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600, color: '#0f172a' }}>Enable Audit Logs</label>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={2.5}><TextField label="Created By" value={form.createdBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser color="#64748b" size={16} /></InputAdornment> }} /></Grid>
+                      <Grid item xs={12} md={2.5}><TextField label="Created Date" value={form.createdDate ? new Date(form.createdDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar color="#64748b" size={16} /></InputAdornment> }} /></Grid>
+                      <Grid item xs={12} md={2.5}><TextField label="Updated By" value={form.updatedBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser color="#64748b" size={16} /></InputAdornment> }} /></Grid>
+                      <Grid item xs={12} md={2.5}><TextField label="Updated Date" value={form.updatedDate ? new Date(form.updatedDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar color="#64748b" size={16} /></InputAdornment> }} /></Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+              </Box>
+            </Box>
+          </Box>
+        </Stack>
+      </Box>
+
+      {/* Database Case Style Update Confirmation Dialog */}
+      <Dialog open={casePromptOpen} onClose={() => !databaseUpdating && setCasePromptOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Update Global Case Style</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body1" mb={2}>
+            You have changed the <strong>Default Input Case Style</strong> from {originalCaseStyle} to {form.inputCaseStyle}.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            How would you like this change to be applied?
+          </Typography>
+          <Box mt={2} pl={2} borderLeft="3px solid" borderColor="warning.main">
+            <Typography variant="body2" mb={1}>
+              <strong>Apply to future data only:</strong> The new case style will only affect new inputs. Existing data in the database will remain unchanged.
+            </Typography>
+            <Typography variant="body2" color="error.main">
+              <strong>Update existing database:</strong> This will retroactively update ALL text across the entire database to match the new case style. This operation may take several minutes.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setCasePromptOpen(false)} disabled={databaseUpdating || loading}>Cancel</Button>
+          <Button
+            variant="outlined"
+            onClick={() => { setCasePromptOpen(false); executeSave(false); }}
+            disabled={databaseUpdating || loading}
+          >
+            Future Data Only
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => { setCasePromptOpen(false); executeSave(true); }}
+            disabled={databaseUpdating || loading}
+            startIcon={databaseUpdating || loading ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {databaseUpdating ? 'Updating Database...' : 'Update Existing Database'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <FolderBrowserDialog />
+
+      {/* Map Picker Dialog */}
+      <Dialog open={mapDialogOpen} onClose={() => setMapDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Pick Location from Map</DialogTitle>
+        <DialogContent dividers sx={{ p: 0, height: 400 }}>
+          <RMap initialCenter={[mapMarker.longitude, mapMarker.latitude]} initialZoom={12} mapStyle={osm_bright}>
+            <RMarker
+              longitude={mapMarker.longitude}
+              latitude={mapMarker.latitude}
+              draggable={true}
+              initialAnchor="bottom"
+              onDrag={handleMarkerDrag}
+            />
+          </RMap>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            onClick={handleGetCurrentLocation}
+            color="secondary"
+            startIcon={<IconCurrentLocation size={18} />}
+            sx={{ mr: 'auto' }}
+          >
+            Live Location
+          </Button>
+          <Button onClick={() => setMapDialogOpen(false)} color="inherit">Cancel</Button>
+          <Button variant="contained" onClick={handleMapSave} startIcon={<IconMapPin size={18} />}>
+            Use this Location
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Snackbar ── */}
       <Snackbar

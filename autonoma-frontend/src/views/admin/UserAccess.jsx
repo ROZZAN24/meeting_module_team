@@ -1,29 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  MenuItem,
-  Button,
-  Checkbox,
-  Stack,
-  IconButton,
-  Tooltip,
-  useTheme,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Avatar,
-  Fade,
-  TextField,
-  TablePagination,
-  alpha,
-  CircularProgress
-} from '@mui/material';
+import { Box, Typography, Grid, MenuItem, Button, Checkbox, Stack, IconButton, Tooltip, useTheme, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Avatar, Fade, TablePagination, alpha, CircularProgress } from '@mui/material';
 import {
   IconDeviceFloppy,
   IconUser,
@@ -44,6 +21,7 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 import { getUserImageUrl } from 'utils/upload-helper';
 import { showAppAlert } from 'utils/alert';
+import useAuth from 'hooks/useAuth';
 
 const userAccessSearchConfig = [
   { id: 'module', label: 'Module', type: 'text', placeholder: 'Search Module...' },
@@ -58,6 +36,7 @@ const UserAccess = () => {
   const isDark = theme.palette.mode === 'dark';
 
   const perms = usePagePermissions(PAGE_CODES.AD_USER_ACCESS);
+  const { user: currentUser } = useAuth();
 
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('');
@@ -105,10 +84,14 @@ const UserAccess = () => {
 
   const handleUserChange = (e) => {
     const userId = e.target.value;
+    const u = users.find(user => user.userId === userId);
+    if (currentUser?.userLevel !== 5 && u?.userLevel === 5) {
+      dispatch(openSnackbar({ open: true, message: 'Admins cannot view or modify Boss Admin permissions', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     setSelectedUser(userId);
     fetchAuthData(userId);
-    const u = users.find(user => user.userId === userId);
-    if (u?.isBosAdmin === 1) {
+    if (u?.userLevel === 5) {
       dispatch(openSnackbar({
         open: true,
         message: 'Global Administrator permissions are permanently locked to active to prevent console lockout.',
@@ -218,8 +201,7 @@ const UserAccess = () => {
   };
 
   useKeyboardShortcuts({
-    'ctrl+s': (e) => {
-      e.preventDefault();
+    'ctrl+s': () => {
       if (selectedUser) handleSaveAll();
     }
   });
@@ -253,7 +235,7 @@ const UserAccess = () => {
     { id: 'manager', label: 'Manager', color: '#78909c' },
     { id: 'additional1', label: 'Add 1', color: '#b0bec5' },
     { id: 'additional2', label: 'Add 2', color: '#b0bec5' },
-    { id: 'addTaskEnable', label: 'Add Task', color: '#6e16a9' }
+    { id: 'addTaskEnable', label: 'Dashboard', color: '#6e16a9' }
   ];
 
   const PermissionHeaderCell = ({ header }) => (
@@ -272,7 +254,7 @@ const UserAccess = () => {
           indeterminate={isSomeChecked(header.id)}
           disabled={!perms.write}
           onChange={(e) => {
-            if (selectedUserInfo?.isBosAdmin === 1) {
+            if (selectedUserInfo?.userLevel === 5) {
               showAdminLockedAlert();
               return;
             }
@@ -358,7 +340,7 @@ const UserAccess = () => {
             variant="contained"
             startIcon={<IconDeviceFloppy size={20} />}
             onClick={() => {
-              if (selectedUserInfo?.isBosAdmin === 1) {
+              if (selectedUserInfo?.userLevel === 5) {
                 showAdminLockedAlert();
                 return;
               }
@@ -404,7 +386,7 @@ const UserAccess = () => {
             variant="outlined"
             startIcon={<IconCopy size={18} />}
             onClick={() => {
-              if (selectedUserInfo?.isBosAdmin === 1) {
+              if (selectedUserInfo?.userLevel === 5) {
                 showAdminLockedAlert();
                 return;
               }
@@ -423,7 +405,7 @@ const UserAccess = () => {
       {/* ── TABLE SECTION ── */}
       <Fade in={Boolean(selectedUser)}>
         <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, gap: 1.5 }}>
-          {selectedUserInfo?.isBosAdmin === 1 && (
+          {selectedUserInfo?.userLevel === 5 && (
             <Box sx={{
               p: '12px 20px',
               borderRadius: '8px',
@@ -451,159 +433,159 @@ const UserAccess = () => {
             bgcolor: isDark ? theme.palette.background.paper : 'white',
             minHeight: 0
           }}>
-          {/* Sub-toolbar inside Table Card for local search bar */}
-          <Box sx={{
-            p: '12px 16px',
-            borderBottom: '1px solid',
-            borderColor: theme.palette.divider,
-            display: 'flex',
-            alignItems: 'center',
-            bgcolor: isDark ? '#1e293b' : '#f8fafc',
-            flexShrink: 0
-          }}>
-            <Typography variant="subtitle1" fontWeight={700} color={theme.palette.text.primary}>
-              Authorization Matrix ({filteredData.length} Rows)
-            </Typography>
-          </Box>
+            {/* Sub-toolbar inside Table Card for local search bar */}
+            <Box sx={{
+              p: '12px 16px',
+              borderBottom: '1px solid',
+              borderColor: theme.palette.divider,
+              display: 'flex',
+              alignItems: 'center',
+              bgcolor: isDark ? '#1e293b' : '#f8fafc',
+              flexShrink: 0
+            }}>
+              <Typography variant="subtitle1" fontWeight={700} color={theme.palette.text.primary}>
+                Authorization Matrix ({filteredData.length} Rows)
+              </Typography>
+            </Box>
 
-          <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
-            <Table stickyHeader size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.secondary, fontSize: '0.65rem', py: 2, width: 40 }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Module / Submodule</TableCell>
-                  <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Page Name</TableCell>
-                  {/* Select All (Row toggle) column header */}
-                  <TableCell align="center" sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2, width: 50 }}>All</TableCell>
-                  {permissionHeaders.map(h => <PermissionHeaderCell key={h.id} header={h} />)}
-                  <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Updated By</TableCell>
-                  <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Updated Date</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
+            <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
+              <Table stickyHeader size="small">
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={14} align="center" sx={{ py: 10 }}>
-                      <CircularProgress size={30} sx={{ color: '#2196f3' }} />
-                      <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary', fontWeight: 600 }}>Retrieving Authorization Matrix...</Typography>
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.secondary, fontSize: '0.65rem', py: 2, width: 40 }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Module / Submodule</TableCell>
+                    <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Page Name</TableCell>
+                    {/* Select All (Row toggle) column header */}
+                    <TableCell align="center" sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2, width: 50 }}>All</TableCell>
+                    {permissionHeaders.map(h => <PermissionHeaderCell key={h.id} header={h} />)}
+                    <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Updated By</TableCell>
+                    <TableCell sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Updated Date</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 800, bgcolor: isDark ? '#1e293b' : '#f8fafc', color: theme.palette.text.primary, fontSize: '0.65rem', py: 2 }}>Action</TableCell>
                   </TableRow>
-                ) : paginatedData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={14} align="center" sx={{ py: 10 }}>
-                      <Typography variant="h5" color="textSecondary">No access rules found matching search criteria</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedData.map((row, idx) => {
-                    const globalIdx = authData.findIndex(item => item.pageId === row.pageId);
-                    return (
-                      <TableRow
-                        key={row.pageId}
-                        sx={{
-                          '& td': { py: 1.2, borderBottom: '1px solid', borderBottomColor: theme.palette.divider },
-                          '&:hover': { bgcolor: isDark ? '#334155 !important' : '#f1f5f9 !important' },
-                          bgcolor: idx % 2 === 0 ? (isDark ? '#0f172a' : 'white') : (isDark ? '#1e293b' : '#f9fbff')
-                        }}
-                      >
-                        <TableCell sx={{ fontWeight: 700, color: isDark ? theme.palette.text.secondary : '#d1d5db', fontSize: '0.7rem' }}>{page * rowsPerPage + idx + 1}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: theme.palette.text.primary, fontSize: '0.75rem', lineHeight: 1.2 }}>{row.page?.module?.modName}</Typography>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', fontSize: '0.6rem' }}>{row.page?.subModule?.subModName}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.page?.pageName}</Typography>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? theme.palette.text.secondary : '#a6b0cf', fontSize: '0.6rem' }}>ID: {row.pageId} | {row.page?.pageCode}</Typography>
-                        </TableCell>
+                </TableHead>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={14} align="center" sx={{ py: 10 }}>
+                        <CircularProgress size={30} sx={{ color: '#2196f3' }} />
+                        <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary', fontWeight: 600 }}>Retrieving Authorization Matrix...</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : paginatedData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={14} align="center" sx={{ py: 10 }}>
+                        <Typography variant="h5" color="textSecondary">No access rules found matching search criteria</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedData.map((row, idx) => {
+                      const globalIdx = authData.findIndex(item => item.pageId === row.pageId);
+                      return (
+                        <TableRow
+                          key={row.pageId}
+                          sx={{
+                            '& td': { py: 1.2, borderBottom: '1px solid', borderBottomColor: theme.palette.divider },
+                            '&:hover': { bgcolor: isDark ? '#334155 !important' : '#f1f5f9 !important' },
+                            bgcolor: idx % 2 === 0 ? (isDark ? '#0f172a' : 'white') : (isDark ? '#1e293b' : '#f9fbff')
+                          }}
+                        >
+                          <TableCell sx={{ fontWeight: 700, color: isDark ? theme.palette.text.secondary : '#d1d5db', fontSize: '0.7rem' }}>{page * rowsPerPage + idx + 1}</TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: theme.palette.text.primary, fontSize: '0.75rem', lineHeight: 1.2 }}>{row.page?.module?.modName}</Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', fontSize: '0.6rem' }}>{row.page?.subModule?.subModName}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.page?.pageName}</Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? theme.palette.text.secondary : '#a6b0cf', fontSize: '0.6rem' }}>ID: {row.pageId} | {row.page?.pageCode}</Typography>
+                          </TableCell>
 
-                        {/* Row-wise Select All Cell */}
-                        <TableCell align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
-                          <Checkbox
-                            size="small"
-                            checked={isRowAllChecked(row)}
-                            indeterminate={isRowSomeChecked(row)}
-                            disabled={!perms.write}
-                            onChange={(e) => {
-                              if (selectedUserInfo?.isBosAdmin === 1) {
-                                showAdminLockedAlert();
-                                return;
-                              }
-                              if (perms.write) {
-                                handleRowSelectAll(globalIdx, e.target.checked);
-                              }
-                            }}
-                            sx={{ color: '#78909c', '&.Mui-checked': { color: '#4caf50' } }}
-                          />
-                        </TableCell>
-
-                        {permissionHeaders.map(h => (
-                          <TableCell key={h.id} align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
+                          {/* Row-wise Select All Cell */}
+                          <TableCell align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
                             <Checkbox
-                              checked={row[h.id] === 1}
+                              size="small"
+                              checked={isRowAllChecked(row)}
+                              indeterminate={isRowSomeChecked(row)}
                               disabled={!perms.write}
-                              onChange={() => {
-                                if (selectedUserInfo?.isBosAdmin === 1) {
+                              onChange={(e) => {
+                                if (selectedUserInfo?.userLevel === 5) {
                                   showAdminLockedAlert();
                                   return;
                                 }
                                 if (perms.write) {
-                                  handleCheckboxChange(globalIdx, h.id);
+                                  handleRowSelectAll(globalIdx, e.target.checked);
                                 }
                               }}
-                              icon={<IconX size={16} color={isDark ? '#475569' : '#e5e7eb'} />}
-                              checkedIcon={<IconCheck size={16} color="#4caf50" stroke={3} />}
-                              sx={{ p: 0.2 }}
+                              sx={{ color: '#78909c', '&.Mui-checked': { color: '#4caf50' } }}
                             />
                           </TableCell>
-                        ))}
-                        <TableCell sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider, fontWeight: 700, color: theme.palette.text.secondary, fontSize: '0.7rem' }}>
-                          {row.updatedBy || '-'}
-                        </TableCell>
-                        <TableCell sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider, color: theme.palette.text.secondary, fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
-                          {row.updatedDate ? new Date(row.updatedDate).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
-                        </TableCell>
-                        <TableCell align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
-                          <Tooltip title="Save Permissions" arrow>
-                            <IconButton 
-                              onClick={() => {
-                                if (selectedUserInfo?.isBosAdmin === 1) {
-                                  showAdminLockedAlert();
-                                  return;
-                                }
-                                handleSaveRow(row);
-                              }} 
-                              disabled={!perms.write} 
-                              sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', borderRadius: '4px', p: 0.4, '&:hover': { bgcolor: '#2196f3', color: 'white' } }}
-                            >
-                              <IconDeviceFloppy size={18} />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[50, 100]}
-            component="div"
-            count={filteredData.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={(e, p) => setPage(p)}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-            sx={{
-              borderTop: '1px solid',
-              borderTopColor: theme.palette.divider,
-              bgcolor: isDark ? theme.palette.background.default : '#fff',
-              flexShrink: 0,
-              '& .MuiTablePagination-toolbar': { p: 0, minHeight: '40px !important' },
-              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { m: 0, fontSize: '0.75rem', color: theme.palette.text.secondary }
-            }}
-          />
-        </Box>
+
+                          {permissionHeaders.map(h => (
+                            <TableCell key={h.id} align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
+                              <Checkbox
+                                checked={row[h.id] === 1}
+                                disabled={!perms.write}
+                                onChange={() => {
+                                  if (selectedUserInfo?.userLevel === 5) {
+                                    showAdminLockedAlert();
+                                    return;
+                                  }
+                                  if (perms.write) {
+                                    handleCheckboxChange(globalIdx, h.id);
+                                  }
+                                }}
+                                icon={<IconX size={16} color={isDark ? '#475569' : '#e5e7eb'} />}
+                                checkedIcon={<IconCheck size={16} color="#4caf50" stroke={3} />}
+                                sx={{ p: 0.2 }}
+                              />
+                            </TableCell>
+                          ))}
+                          <TableCell sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider, fontWeight: 700, color: theme.palette.text.secondary, fontSize: '0.7rem' }}>
+                            {row.updatedBy || '-'}
+                          </TableCell>
+                          <TableCell sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider, color: theme.palette.text.secondary, fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
+                            {row.updatedDate ? new Date(row.updatedDate).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                          </TableCell>
+                          <TableCell align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
+                            <Tooltip title="Save Permissions" arrow>
+                              <IconButton
+                                onClick={() => {
+                                  if (selectedUserInfo?.userLevel === 5) {
+                                    showAdminLockedAlert();
+                                    return;
+                                  }
+                                  handleSaveRow(row);
+                                }}
+                                disabled={!perms.write}
+                                sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', borderRadius: '4px', p: 0.4, '&:hover': { bgcolor: '#2196f3', color: 'white' } }}
+                              >
+                                <IconDeviceFloppy size={18} />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[50, 100]}
+              component="div"
+              count={filteredData.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={(e, p) => setPage(p)}
+              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+              sx={{
+                borderTop: '1px solid',
+                borderTopColor: theme.palette.divider,
+                bgcolor: isDark ? theme.palette.background.default : '#fff',
+                flexShrink: 0,
+                '& .MuiTablePagination-toolbar': { p: 0, minHeight: '40px !important' },
+                '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { m: 0, fontSize: '0.75rem', color: theme.palette.text.secondary }
+              }}
+            />
+          </Box>
         </Box>
       </Fade>
     </Box>

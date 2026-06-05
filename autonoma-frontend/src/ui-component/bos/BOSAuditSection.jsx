@@ -1,6 +1,7 @@
+import TextField from 'ui-component/CustomTextField';
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Grid, TextField, InputAdornment } from '@mui/material';
+import { Grid, InputAdornment } from '@mui/material';
 import { IconUser, IconCalendar } from '@tabler/icons-react';
 import useAuth from 'hooks/useAuth';
 import BOSFormSection from './BOSFormSection';
@@ -32,7 +33,9 @@ export default function BOSAuditSection({ initialData, isCreate = false }) {
       const day = String(dateObj.getDate()).padStart(2, '0');
       const month = String(dateObj.getMonth() + 1).padStart(2, '0');
       const year = dateObj.getFullYear();
-      return `${day}/${month}/${year}`;
+      const hours = String(dateObj.getHours()).padStart(2, '0');
+      const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
     } catch {
       return '';
     }

@@ -198,7 +198,7 @@ public class QmsMomMasterController {
             return false;
         }
         UserCredential user = userOpt.get();
-        if (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1) {
+        if (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
             return true;
         }
         QmsMomMaster mom = service.getMomById(momId);

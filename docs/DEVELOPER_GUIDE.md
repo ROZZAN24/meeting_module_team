@@ -14,7 +14,7 @@ Autonoma ERP is built with a decoupled architecture containing a Spring Boot bac
 ERP/
 ├── docker-compose.yml       ← Shared database containers
 ├── autonoma-backend/        ← Spring Boot REST API (Port 8081)
-└── autonoma-frontend/       ← Vite + React UI (Port 3001)
+└── autonoma-frontend/       ← Vite + React UI (Port 3000)
 ```
 
 ### Starting the Stack
@@ -38,7 +38,7 @@ Open three separate terminal sessions to spin up the local development environme
    cd autonoma-frontend
    npm run dev
    ```
-   *The client web portal will run on http://localhost:3001 with Hot Module Replacement (HMR) enabled.*
+   *The client web portal will run on http://localhost:3000 with Hot Module Replacement (HMR) enabled.*
 
 ---
 
