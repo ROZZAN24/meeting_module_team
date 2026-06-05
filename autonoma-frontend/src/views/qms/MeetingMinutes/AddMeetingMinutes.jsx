@@ -1135,16 +1135,16 @@ export default function AddMeetingMinutes() {
                     </TableCell>
                     {/* Sticky Sl No Header */}
                     <TableCell sx={{ ...headerSx, width: '2.5%', textAlign: 'center', p: 0.5 }}>Sl No</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '6%', p: 0.5 }}>Min No</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '6%', p: 0.5 }}>Amend Min No</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '20%' }}>Discussed Point</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '4%', p: 0.5 }}>Type</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '12%', p: 0.5 }}>Material List</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '6%', textAlign: 'center', p: 0.5 }}>Min No</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '6%', textAlign: 'center', p: 0.5 }}>Amend Min No</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '20%', textAlign: 'center' }}>Discussed Point</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '4%', textAlign: 'center', p: 0.5 }}>Type</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '12%', textAlign: 'center', p: 0.5 }}>Material List</TableCell>
                     <TableCell sx={{ ...headerSx, width: '5%', textAlign: 'center', p: 0.5 }}>Process</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '9%', p: 0.5 }}>Assigned To</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '9%', p: 0.5 }}>Assigned By</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '7%', p: 0.5 }}>Target Date</TableCell>
-                    <TableCell sx={{ ...headerSx, width: '7%', p: 0.5 }}>Review Date</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '9%', textAlign: 'center', p: 0.5 }}>Assigned To</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '9%', textAlign: 'center', p: 0.5 }}>Assigned By</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '7%', textAlign: 'center', p: 0.5 }}>Target Date</TableCell>
+                    <TableCell sx={{ ...headerSx, width: '7%', textAlign: 'center', p: 0.5 }}>Review Date</TableCell>
                     <TableCell sx={{ ...headerSx, width: '4.5%', textAlign: 'center', p: 0.5 }}>Attachment Req</TableCell>
                     <TableCell
                       sx={{
