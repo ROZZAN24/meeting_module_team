@@ -35,7 +35,7 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
             currentUser = SecurityUtils.getCurrentUserId();
         }
         if (currentUser == null) {
-            currentUser = "admin"; // Fallback to Admin for default data/migrations if session is missing
+            currentUser = "Admin"; // Fallback to Admin for default data/migrations if session is missing
         }
 
         String[] propertyNames = event.getPersister().getPropertyNames();
@@ -72,7 +72,7 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
             currentUser = SecurityUtils.getCurrentUserId();
         }
         if (currentUser == null) {
-            currentUser = "System"; // Fallback
+            currentUser = "Admin"; // Fallback
         }
 
         setValue(propertyNames, state, "updatedUser", currentUser, event.getEntity());

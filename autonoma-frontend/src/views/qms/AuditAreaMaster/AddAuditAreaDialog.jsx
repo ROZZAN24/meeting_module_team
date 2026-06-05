@@ -27,7 +27,7 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { user } = useAuth();
-  const { errors, validate, clearErrors } = useBOSValidation();
+  const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const [formData, setFormData] = useState(INITIAL_STATE);
   const [isEditing, setIsEditing] = useState(false);
@@ -91,7 +91,7 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
         errMsg = error.message;
       }
       if (errMsg.toLowerCase().includes('already exists') || errMsg.toLowerCase().includes('duplicate')) {
-        setErrors({ description: errMsg });
+        setErrors({ description: 'Duplicate value! Please check.' });
       }
       dispatch(openSnackbar({ open: true, message: errMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     }

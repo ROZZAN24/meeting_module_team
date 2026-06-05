@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '@mui/material/styles';
 import { useColorScheme } from '@mui/material/styles';
 import { getInputStyles } from './BOSStyles';
 import { TextField, Popover, Box, Typography, IconButton, InputAdornment } from '@mui/material';
 import { IconClock } from '@tabler/icons-react';
+import { parse } from 'date-fns';
 
 const HOURS_12 = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -127,6 +128,21 @@ const parseTimeToMinutes = (timeStr) => {
   return h * 60 + m;
 };
 
+const parseTimeStringToDate = (timeStr) => {
+  if (!timeStr || timeStr === 'undefined' || timeStr === 'null' || typeof timeStr !== 'string') return null;
+  try {
+    const parsed = parse(timeStr.trim(), 'hh:mm a', new Date());
+    if (isNaN(parsed.getTime())) {
+      const fallbackParsed = parse(timeStr.trim(), 'HH:mm', new Date());
+      if (!isNaN(fallbackParsed.getTime())) return fallbackParsed;
+    }
+    return parsed;
+  } catch (e) {
+    console.error('Failed to parse time string:', timeStr, e);
+    return null;
+  }
+};
+
 const minutesToTimeParts12 = (totalMins) => {
   const h24 = Math.floor(totalMins / 60) % 24;
   const m = totalMins % 60;
@@ -171,6 +187,7 @@ export default function BOSTimePicker({
   label, value, onChange, disabled, required,
   error, helperText, minTime, maxTime, name,
   format24h = false,
+  onAccept,
   ...rest
 }) {
   const theme = useTheme();
@@ -311,6 +328,7 @@ export default function BOSTimePicker({
 
   // ── change handler ────────────────────────────────────────────────────────
   const handleTimePartChange = (part, newVal) => {
+    let formatted;
     if (format24h) {
       let { hour, minute } = parsedTime;
       if (part === 'hour') hour = newVal;
@@ -318,7 +336,8 @@ export default function BOSTimePicker({
       const rawMins = timeToMinutes24(hour, minute);
       const clampedMins = Math.max(finalMinMins, Math.min(finalMaxMins, rawMins));
       const p = minutesToTimeParts24(clampedMins);
-      onChange({ target: { name, value: `${p.hour}:${p.minute}` } });
+      formatted = `${p.hour}:${p.minute}`;
+      onChange({ target: { name, value: formatted } });
     } else {
       let { hour, minute, ampm } = parsedTime;
       if (part === 'hour') hour = newVal;
@@ -327,7 +346,15 @@ export default function BOSTimePicker({
       const rawMins = timeToMinutes12(hour, parseInt(minute, 10), ampm);
       const clampedMins = Math.max(finalMinMins, Math.min(finalMaxMins, rawMins));
       const p = minutesToTimeParts12(clampedMins);
-      onChange({ target: { name, value: `${String(p.hour).padStart(2, '0')}:${p.minute} ${p.ampm}` } });
+      formatted = `${String(p.hour).padStart(2, '0')}:${p.minute} ${p.ampm}`;
+      onChange({ target: { name, value: formatted } });
+    }
+
+    if (onAccept && formatted) {
+      const dateObj = parseTimeStringToDate(formatted);
+      if (dateObj && !isNaN(dateObj.getTime())) {
+        onAccept(dateObj);
+      }
     }
   };
 
@@ -487,5 +514,6 @@ BOSTimePicker.propTypes = {
   name: PropTypes.string,
   minTime: PropTypes.string,
   maxTime: PropTypes.string,
-  format24h: PropTypes.bool
+  format24h: PropTypes.bool,
+  onAccept: PropTypes.func
 };
