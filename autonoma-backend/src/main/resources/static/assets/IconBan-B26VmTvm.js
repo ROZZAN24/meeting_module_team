@@ -1,0 +1,2 @@
+import{d as a}from"./index-DHMPIE0D.js";const o=[["path",{d:"M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",key:"svg-0"}],["path",{d:"M5.7 5.7l12.6 12.6",key:"svg-1"}]],t=a("outline","ban","Ban",o);export{t as I};
+//# sourceMappingURL=IconBan-B26VmTvm.js.map
