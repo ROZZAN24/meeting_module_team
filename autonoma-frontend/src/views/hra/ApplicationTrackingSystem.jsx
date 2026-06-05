@@ -716,13 +716,7 @@ export default function ApplicationTrackingSystem() {
 
       const hhmm = parseToHHMM(callLetterData.interviewTime);
 
-      if (hhmm < '09:00') {
-        errs.interviewTime = 'Interview must be scheduled from 09:00 (9:00 AM).';
-      } else if (hhmm >= '17:00') {
-        errs.interviewTime = 'Interview must be scheduled before 17:00 (5:00 PM).';
-      }
-
-      if (!errs.interviewTime && callLetterData.interviewDate === todayStr) {
+      if (callLetterData.interviewDate === todayStr) {
         const now = new Date();
         const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         if (hhmm <= currentHHMM) {
@@ -762,9 +756,13 @@ export default function ApplicationTrackingSystem() {
 
     setLoading(true);
     try {
-      await axios.post('/api/hra/applicants/bulk-action', {
-        ids: selectedIds,
-        action: 'CALL'
+      await axios.post('/api/hra/applicants/send-call-letter', {
+        id: selectedIds[0],
+        interviewDate: callLetterData.interviewDate,
+        interviewTime: callLetterData.interviewTime,
+        fromEmail: callLetterData.from,
+        toEmail: callLetterData.to,
+        ccEmail: callLetterData.cc
       });
       dispatch(openSnackbar({
         open: true,
@@ -2707,11 +2705,9 @@ export default function ApplicationTrackingSystem() {
             <BOSTimePicker
               required
               format24h
-              label="Interview time (09:00 - 17:00):"
+              label="Interview time (24h):"
               name="interviewTime"
               value={callLetterData.interviewTime}
-              minTime="09:00"
-              maxTime="17:00"
               onChange={(e) => {
                 setCallLetterData(prev => ({ ...prev, interviewTime: e.target.value }));
                 if (callLetterErrors.interviewTime) {

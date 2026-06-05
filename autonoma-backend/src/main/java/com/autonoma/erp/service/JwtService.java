@@ -49,6 +49,20 @@ public class JwtService {
                 .before(new Date());
     }
 
+    public String generateApplicantToken(String applicantCode) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", "APPLICANT");
+        Key key = Keys.hmacShaKeyFor(secret.getBytes());
+        long twoHoursMillis = 7200000; // 2 hours in ms
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(applicantCode)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + twoHoursMillis))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     private String createToken(Map<String, Object> claims, String subject) {
         Key key = Keys.hmacShaKeyFor(secret.getBytes());
         return Jwts.builder()
