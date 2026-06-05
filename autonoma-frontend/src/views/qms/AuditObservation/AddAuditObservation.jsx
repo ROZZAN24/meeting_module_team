@@ -518,7 +518,7 @@ export default function AddAuditObservation() {
                     <BOSTimePicker
                       size="small"
                       value={cleanedOutTime}
-                      disabled={!perms.write}
+                      disabled={!perms.write || !isAuditorUser}
                       onChange={(e) => {
                         const val = e.target.value;
                         const updatedAttendance = attendance.map(item => 

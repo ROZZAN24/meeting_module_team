@@ -30,6 +30,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setQuery, setFilters, resetFilters, setFilterPreferences } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import { BOSDatePicker } from 'ui-component/bos';
+import useAuth from 'hooks/useAuth';
+import { filterMenuByPermissions } from '../../MenuList';
 
 // assets
 import { IconSearch, IconX, IconAdjustmentsHorizontal, IconFilter, IconCheck, IconPlus, IconRefresh, IconMicrophone } from '@tabler/icons-react';
@@ -127,7 +129,17 @@ const getAllPages = (items) => {
 export default function SearchSection() {
 
   const navigate = useNavigate();
-  const pages = useMemo(() => getAllPages(menuItems.items || []), []);
+  const { user } = useAuth();
+  const permMap = useSelector((state) => state.permissions.map);
+  const permStatus = useSelector((state) => state.permissions.status);
+
+  const pages = useMemo(() => {
+    if (permStatus !== 'loaded') return [];
+    
+    let currentItems = [...(menuItems.items || [])];
+    currentItems = filterMenuByPermissions(currentItems, permMap, user?.userLevel || 0);
+    return getAllPages(currentItems);
+  }, [permStatus, permMap, user?.userLevel]);
 
   const filterOptions = (options, { inputValue }) => {
     // ONLY show page-navigation dropdown when input starts with '#'

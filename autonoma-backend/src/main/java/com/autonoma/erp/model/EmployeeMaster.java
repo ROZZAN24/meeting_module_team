@@ -235,6 +235,15 @@ public class EmployeeMaster {
     @Column(name = "TASK_VERIFIER_FILE_INFO", columnDefinition = "NVARCHAR(MAX)")
     private String taskVerifierFileInfo;
 
+    @Column(name = "IS_TASK_TESTER", length = 10)
+    private String isTaskTester = "NO";
+
+    @Column(name = "TASK_TESTER_TYPE", length = 255)
+    private String taskTesterType;
+
+    @Column(name = "TASK_TESTER_FILE_INFO", columnDefinition = "NVARCHAR(MAX)")
+    private String taskTesterFileInfo;
+
     @Column(name = "IS_CHAIRED", length = 10)
     private String isChaired = "NO";
 
@@ -458,7 +467,7 @@ public class EmployeeMaster {
     private Boolean isActive = true;
 
     @Column(name = "CREATED_BY", nullable = false, length = 50)
-    private String createdBy;
+    private String createdBy = "admin";
 
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
@@ -491,7 +500,9 @@ public class EmployeeMaster {
         String currentUserId = null;
         try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
         this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
-        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+        if (this.createdBy == null || this.createdBy.trim().isEmpty()) {
+            this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        }
 
         updatedDate = new Date();
         if (firstName != null && lastName != null) {

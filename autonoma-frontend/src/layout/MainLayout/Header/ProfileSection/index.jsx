@@ -217,8 +217,8 @@ export default function ProfileSection() {
                           <Typography variant="h4" sx={{ color: '#f5d60bff', fontWeight: 600 }}>
                             {getGreeting()}
                           </Typography>
-                          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                            {user?.name}
+                          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main', textTransform: 'capitalize' }}>
+                            {user?.id || user?.name || 'User'}
                           </Typography>
                         </Stack>
                         <Typography variant="subtitle2" sx={{ mt: 0.5 }}>

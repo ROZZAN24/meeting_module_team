@@ -2,12 +2,14 @@ package com.autonoma.erp.model.admin;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import java.util.Date;
 
 @Entity
 @Table(name = "AD_USER_THEME_SETTING")
-@Data
+@Getter
+@Setter
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class UserThemeSetting {
 

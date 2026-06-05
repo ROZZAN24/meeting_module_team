@@ -117,7 +117,7 @@ export function JWTProvider({ children }) {
         try {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) localI18n = JSON.parse(stored)?.i18n || null;
-        } catch {}
+        } catch { }
 
         const mappedSettings = {
           menuOrientation: dbSettings.menuOrientation,
@@ -132,7 +132,7 @@ export function JWTProvider({ children }) {
           container: dbSettings.container,
           dashboardLayout: dbSettings.dashboardLayout || 'glass'
         };
-        
+
         setConfigState((prev) => ({
           ...prev,
           ...mappedSettings
@@ -196,12 +196,12 @@ export function JWTProvider({ children }) {
       localStorage.removeItem('theme-mode');
       localStorage.removeItem('berry-config-vite-js');
       localStorage.removeItem('lastActiveTime');
-    } catch (_) {}
+    } catch (_) { }
 
     // Clear all sessionStorage (tenantId, divisionId, companyName, divisionName, serviceToken)
     try {
       sessionStorage.clear();
-    } catch (_) {}
+    } catch (_) { }
 
     // Force a hard redirect to /login — this completely wipes all in-memory
     // React/Redux state (permissions, search filters, cached routes, etc.)
@@ -286,15 +286,12 @@ export function JWTProvider({ children }) {
           loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
-          
+
           // Fetch company config for global input case style
           try {
-            const profileRes = await axios.get('/api/company-profile/all');
-            if (Array.isArray(profileRes.data) && profileRes.data.length > 0) {
-              const profile = profileRes.data[0];
-              if (profile && profile.inputCaseStyle) {
-                window.localStorage.setItem('inputCaseStyle', profile.inputCaseStyle);
-              }
+            const profileRes = await axios.get('/api/CompanyProfile/profile', { skipGlobalAlert: true });
+            if (profileRes.data && profileRes.data.inputCaseStyle) {
+              window.localStorage.setItem('inputCaseStyle', profileRes.data.inputCaseStyle);
             }
           } catch (e) {
             console.error('Failed to load company profile config:', e);

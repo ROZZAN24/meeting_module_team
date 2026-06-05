@@ -527,6 +527,10 @@ const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, activ
         borderRadius: 4,
         p: 3,
         cursor: 'pointer',
+        flexGrow: 1,
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         bgcolor: isDark ? '#1E293B' : '#fff',
         boxShadow: active
           ? `0 12px 30px ${alpha(pal.solid, 0.4)}, 0 4px 10px ${alpha(pal.solid, 0.15)}`
@@ -582,12 +586,14 @@ const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, activ
           </Box>
         </Box>
       </Box>
-      <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5, fontSize: '2rem' }}>
-        {count || 0}
-      </Typography>
-      <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-        {moduleName}
-      </Typography>
+      <Box sx={{ mt: 'auto' }}>
+        <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5, fontSize: '2rem' }}>
+          {count || 0}
+        </Typography>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          {moduleName}
+        </Typography>
+      </Box>
     </Paper>
   );
 }
@@ -1009,7 +1015,7 @@ export default function UserTaskQueue() {
             });
 
             return modulesToRender.map((mod, i) => (
-              <Grid item xs={12} sm={6} md={3} lg={2.4} key={mod.name + i}>
+              <Grid item xs={12} sm={6} md={3} lg={2.4} key={mod.name + i} sx={{ display: 'flex', flexDirection: 'column' }}>
                 <DashboardMetricCard
                   moduleName={mod.name}
                   count={mod.count}

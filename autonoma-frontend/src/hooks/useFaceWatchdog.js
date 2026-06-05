@@ -160,7 +160,7 @@ export default function useFaceWatchdog() {
 
         if (videoRef.current && enabledRef.current && mountedRef.current) {
           detection = await faceapi
-            .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 }))
+            .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.85 }))
             .withFaceLandmarks()
             .withFaceDescriptor();
         }

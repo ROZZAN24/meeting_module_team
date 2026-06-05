@@ -37,7 +37,7 @@ import {
   IconCameraOff,
   IconFaceId,
   IconEye,
-  IconEyeOff
+  IconEyeOff, IconCheck
 } from '@tabler/icons-react';
 
 const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://127.0.0.1:8081').replace(/\/+$/, '');
@@ -73,9 +73,10 @@ const UserOverview = () => {
   // Camera States
   const [cameraActive, setCameraActive] = useState(false);
   const [showFaceImage, setShowFaceImage] = useState(false);
+  const [capturingPoses, setCapturingPoses] = useState(false);
+  const [poseCount, setPoseCount] = useState(0);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const autoCaptureIntervalRef = useRef(null);
 
   const startCamera = async (setFieldValue) => {
     try {
@@ -86,21 +87,6 @@ const UserOverview = () => {
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-
-          if (autoCaptureIntervalRef.current) clearInterval(autoCaptureIntervalRef.current);
-          autoCaptureIntervalRef.current = setInterval(async () => {
-            if (videoRef.current && videoRef.current.readyState === 4) {
-              try {
-                const descriptorArray = await getFaceDescriptor(videoRef.current);
-                if (descriptorArray) {
-                  clearInterval(autoCaptureIntervalRef.current);
-                  captureFace(setFieldValue, descriptorArray);
-                }
-              } catch (e) {
-                // Ignore detection errors during interval
-              }
-            }
-          }, 1000);
         }
       }, 100);
     } catch (err) {
@@ -111,41 +97,61 @@ const UserOverview = () => {
   };
 
   const stopCamera = () => {
-    if (autoCaptureIntervalRef.current) clearInterval(autoCaptureIntervalRef.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
     setCameraActive(false);
+    setCapturingPoses(false);
+    setPoseCount(0);
   };
 
-  const captureFace = async (setFieldValue, preFetchedDescriptor = null) => {
-    if (videoRef.current) {
-      try {
-        const descriptorArray = preFetchedDescriptor || await getFaceDescriptor(videoRef.current);
-        const faceDescriptor = descriptorArray ? JSON.stringify(descriptorArray) : null;
+  const captureMultiplePoses = async (setFieldValue) => {
+    if (!videoRef.current) return;
+    setCapturingPoses(true);
+    setPoseCount(0);
 
+    const descriptors = [];
+    let bestImage = null;
+
+    for (let i = 0; i < 3; i++) {
+      setPoseCount(i + 1);
+      // Wait for user to change pose
+      await new Promise(r => setTimeout(r, 1200));
+
+      const desc = await getFaceDescriptor(videoRef.current);
+      if (desc) {
+        descriptors.push(desc);
+      }
+
+      // Save the first frame as the display image
+      if (i === 0) {
         const canvas = document.createElement('canvas');
         canvas.width = 160;
         canvas.height = 160;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(videoRef.current, 0, 0, 160, 160);
-        const dataUrl = canvas.toDataURL('image/jpeg');
-
-        setFieldValue('faceImage', dataUrl);
-        setFieldValue('faceDescriptor', faceDescriptor || '');
-
-        stopCamera();
-        if (faceDescriptor) {
-          dispatch(openSnackbar({ open: true, message: 'Face snapshot & biometrics captured successfully', variant: 'alert', severity: 'success' }));
-        } else {
-          dispatch(openSnackbar({ open: true, message: 'Snapshot captured, but no face detected clearly.', variant: 'alert', severity: 'warning' }));
-        }
-      } catch (err) {
-        console.error("Error capturing face descriptor:", err);
-        dispatch(openSnackbar({ open: true, message: 'Failed to process face biometrics.', variant: 'alert', severity: 'error' }));
+        bestImage = canvas.toDataURL('image/jpeg');
       }
     }
+
+    if (descriptors.length > 0) {
+      // Average the descriptors
+      const avgDesc = new Array(128).fill(0);
+      for (let d of descriptors) {
+        for (let j = 0; j < 128; j++) avgDesc[j] += d[j];
+      }
+      for (let j = 0; j < 128; j++) avgDesc[j] /= descriptors.length;
+
+      setFieldValue('faceImage', bestImage);
+      setFieldValue('faceDescriptor', JSON.stringify(avgDesc));
+
+      dispatch(openSnackbar({ open: true, message: `Captured ${descriptors.length} poses successfully`, variant: 'alert', severity: 'success' }));
+    } else {
+      dispatch(openSnackbar({ open: true, message: 'Could not detect face in any pose. Please try again.', variant: 'alert', severity: 'error' }));
+    }
+
+    stopCamera();
   };
 
   useEffect(() => {
@@ -765,67 +771,76 @@ const UserOverview = () => {
                             </Stack>
                           </Box>
 
-                          <Box sx={{ mt: 3, p: 3, borderRadius: '14px', background: 'linear-gradient(145deg, #0a1128 0%, #030815 100%)', border: '1.5px solid rgba(0, 240, 255, 0.15)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
-                            <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '1px', color: '#00e676' }}>
+                          <Box sx={{ mt: 3, p: 3, borderRadius: '16px', bgcolor: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#673ab7', mb: 3, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '0.5px' }}>
                               FACE DETECTION & VERIFICATION
                             </Typography>
-                            <Grid container spacing={2} alignItems="center">
-                              <Grid item xs={12} sm={3} display="flex" justifyContent="center">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+                              <Box sx={{ flexShrink: 0 }}>
                                 {cameraActive ? (
-                                  <Box sx={{ position: 'relative', width: 100, height: 100, borderRadius: 2, overflow: 'hidden', border: '2px solid #00f0ff', boxShadow: '0 0 15px rgba(0,240,255,0.4)' }}>
+                                  <Box sx={{ position: 'relative', width: 120, height: 120, borderRadius: '16px', overflow: 'hidden', border: '2px solid #673ab7', bgcolor: '#000' }}>
                                     <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
                                   </Box>
                                 ) : values.faceImage ? (
-                                  <Box sx={{ position: 'relative', width: 100, height: 100, borderRadius: 2, overflow: 'hidden', border: '2px solid #00e676', bgcolor: '#040b17', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(0,230,118,0.4)' }}>
+                                  <Box sx={{ position: 'relative', width: 120, height: 120, borderRadius: '16px', overflow: 'hidden', border: '2px solid #10b981', bgcolor: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     {showFaceImage ? (
                                       <img src={values.faceImage} alt="Face" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
-                                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#00e676' }}>
-                                        <IconFaceId size={48} />
-                                        <IconCircleCheckFilled size={24} style={{ position: 'absolute', bottom: 4, right: 4, background: '#040b17', borderRadius: '50%', color: '#00e676' }} />
-                                      </Box>
+                                      <IconFaceId size={60} color="#10b981" stroke={2} />
                                     )}
+                                    <Box sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#10b981', borderRadius: '50%', p: 0.5, display: 'flex', color: '#fff', border: '3px solid #fff' }}>
+                                      <IconCheck size={20} stroke={3} />
+                                    </Box>
                                     <IconButton
                                       onClick={() => setShowFaceImage(!showFaceImage)}
-                                      sx={{ position: 'absolute', top: 2, right: 2, bgcolor: 'rgba(0,0,0,0.5)', p: 0.5, color: '#00f0ff', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}
+                                      sx={{ position: 'absolute', top: 6, right: 6, bgcolor: '#fff', p: 0.5, color: '#64748b', '&:hover': { bgcolor: '#f8fafc' }, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
                                     >
                                       {showFaceImage ? <IconEyeOff size={16} /> : <IconEye size={16} />}
                                     </IconButton>
                                   </Box>
                                 ) : (
-                                  <Box sx={{ width: 100, height: 100, borderRadius: 2, border: '2px dashed rgba(0, 240, 255, 0.4)', bgcolor: 'rgba(0, 240, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <IconFaceId size={40} color="rgba(0, 240, 255, 0.6)" />
+                                  <Box sx={{ width: 120, height: 120, borderRadius: '16px', border: '2px solid #cbd5e1', bgcolor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <IconFaceId size={50} color="#94a3b8" stroke={1.5} />
                                   </Box>
                                 )}
-                              </Grid>
-                              <Grid item xs={12} sm={9}>
-                                <Stack spacing={1.5}>
-                                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                                    {values.faceImage
-                                      ? 'Face biometric registered. You can use Face ID to sign in.'
-                                      : 'No face registered yet. Turn on the camera to scan and register.'}
-                                  </Typography>
-                                  <Stack direction="row" spacing={1}>
-                                    {cameraActive ? (
-                                      <Button size="small" variant="outlined" sx={{ color: '#ff5252', borderColor: '#ff5252', '&:hover': { borderColor: '#ff5252', bgcolor: 'rgba(255,82,82,0.1)' } }} type="button" onClick={stopCamera}>
-                                        Cancel Scanning
+                              </Box>
+
+                              <Box sx={{ flex: 1, minWidth: 250 }}>
+                                <Typography sx={{ color: '#334155', fontSize: '1.05rem', mb: 2 }}>
+                                  {values.faceImage
+                                    ? 'Face biometric registered. You can use Face ID to sign in.'
+                                    : 'No face registered yet. Turn on the camera to scan and register.'}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                  {cameraActive ? (
+                                    <>
+                                      <Button variant="contained" color="success" onClick={() => captureMultiplePoses(setFieldValue)} disabled={capturingPoses} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, boxShadow: 'none' }}>
+                                        {capturingPoses ? `Capturing Pose ${poseCount}/3...` : 'Start Multi-Pose Capture'}
                                       </Button>
-                                    ) : (
-                                      <>
-                                        <Button size="small" variant="contained" sx={{ bgcolor: '#00f0ff', color: '#040b17', fontWeight: 700, '&:hover': { bgcolor: '#00b8cc' } }} type="button" onClick={() => startCamera(setFieldValue)}>
-                                          {values.faceImage ? 'Re-Register Face' : 'Register Face'}
+                                      <Button variant="contained" color="error" onClick={stopCamera} disabled={capturingPoses} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, boxShadow: 'none' }}>
+                                        Cancel
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Button variant="contained" onClick={() => startCamera(setFieldValue)} sx={{
+                                        borderRadius: '8px', textTransform: 'none', fontWeight: 600,
+                                        bgcolor: '#673ab7', color: '#fff',
+                                        boxShadow: 'none',
+                                        '&:hover': { bgcolor: '#5e35b1', boxShadow: 'none' }
+                                      }}>
+                                        {values.faceImage ? 'Re-Register Face' : 'Register Face'}
+                                      </Button>
+                                      {values.faceImage && (
+                                        <Button variant="text" color="error" onClick={() => { setFieldValue('faceImage', ''); setFieldValue('faceDescriptor', ''); setShowFaceImage(false); }} sx={{ textTransform: 'none', fontWeight: 600 }}>
+                                          Clear
                                         </Button>
-                                        {values.faceImage && (
-                                          <Button size="small" variant="text" sx={{ color: '#ff5252' }} type="button" onClick={() => { setFieldValue('faceImage', ''); setFieldValue('faceDescriptor', ''); setShowFaceImage(false); }}>
-                                            Clear
-                                          </Button>
-                                        )}
-                                      </>
-                                    )}
-                                  </Stack>
-                                </Stack>
-                              </Grid>
-                            </Grid>
+                                      )}
+                                    </>
+                                  )}
+                                </Box>
+                              </Box>
+                            </Box>
                           </Box>
 
 

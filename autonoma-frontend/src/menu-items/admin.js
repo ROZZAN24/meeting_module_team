@@ -2,7 +2,8 @@
 import {
   IconUserPlus, IconUsers, IconShieldLock, IconSettings, IconBuildingSkyscraper,
   IconAccessPoint, IconHistory, IconLayoutColumns, IconTimeline,
-  IconFingerprint, IconActivity, IconUserShield, IconCategory, IconFileAnalytics, IconDatabaseExport
+  IconFingerprint, IconActivity, IconUserShield, IconCategory, IconFileAnalytics,
+  IconDatabaseExport, IconAccessibleFilled, IconAccessible
 } from '@tabler/icons-react';
 
 // constant
@@ -21,7 +22,7 @@ const icons = {
   IconUserShield,
   IconCategory,
   IconFileAnalytics,
-  IconDatabaseExport
+  IconDatabaseExport, IconAccessibleFilled, IconAccessible
 };
 
 // ==============================|| MENU ITEMS - ADMIN ||============================== //
@@ -61,7 +62,7 @@ const admin = {
           title: 'User Credentials',
           type: 'item',
           url: '/admin/user-credentials',
-          icon: icons.IconUsers,
+          icon: icons.IconFingerprint,
           breadcrumbs: true,
           pageCode: 'AD1130'
         },
@@ -70,7 +71,7 @@ const admin = {
           title: 'User Access',
           type: 'item',
           url: '/admin/user-access',
-          icon: icons.IconFingerprint,
+          icon: icons.IconAccessible,
           breadcrumbs: true,
           pageCode: 'AD1140'
         },
@@ -102,13 +103,22 @@ const admin = {
           pageCode: 'AD1170'
         },
         {
-          id: 'data-migration',
-          title: 'Old Data Migration',
+          id: 'prefix-credentials',
+          title: 'Prefix/Suffix Credentials',
           type: 'item',
-          url: '/admin/data-migration',
-          icon: icons.IconDatabaseExport,
+          url: '/admin/prefix-credentials',
+          icon: icons.IconSettings,
           breadcrumbs: true,
-          pageCode: 'AD1180'
+          pageCode: 'AD1230'
+        },
+        {
+          id: 'session-monitoring',
+          title: 'Session Monitoring',
+          type: 'item',
+          url: '/admin/session-monitoring',
+          icon: icons.IconActivity,
+          breadcrumbs: true,
+          pageCode: 'AD1240'
         },
         {
           id: 'organization-chart',
@@ -146,22 +156,13 @@ const admin = {
           pageCode: 'AD1220'
         },
         {
-          id: 'prefix-credentials',
-          title: 'Prefix/Suffix Credentials',
+          id: 'data-migration',
+          title: 'Old Data Migration',
           type: 'item',
-          url: '/admin/prefix-credentials',
-          icon: icons.IconSettings,
+          url: '/admin/data-migration',
+          icon: icons.IconDatabaseExport,
           breadcrumbs: true,
-          pageCode: 'AD1230'
-        },
-        {
-          id: 'session-monitoring',
-          title: 'Session Monitoring',
-          type: 'item',
-          url: '/admin/session-monitoring',
-          icon: icons.IconActivity,
-          breadcrumbs: true,
-          pageCode: 'AD1240'
+          pageCode: 'AD1180'
         }
       ]
     }
