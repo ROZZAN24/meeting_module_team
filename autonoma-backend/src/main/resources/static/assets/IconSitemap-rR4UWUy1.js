@@ -1,2 +1,0 @@
-import{d as a}from"./index-DHMPIE0D.js";const t=[["path",{d:"M3 15m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z",key:"svg-0"}],["path",{d:"M15 15m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z",key:"svg-1"}],["path",{d:"M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z",key:"svg-2"}],["path",{d:"M6 15v-1a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v1",key:"svg-3"}],["path",{d:"M12 9l0 3",key:"svg-4"}]],h=a("outline","sitemap","Sitemap",t);export{h as I};
-//# sourceMappingURL=IconSitemap-rR4UWUy1.js.map

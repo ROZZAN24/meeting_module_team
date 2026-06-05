@@ -8,6 +8,6 @@ public class WebController {
 
     @RequestMapping(value = "/{path:[^\\.]*}")
     public String redirect() {
-        return "forward:/";
+        return "forward:/index.html";
     }
 }
