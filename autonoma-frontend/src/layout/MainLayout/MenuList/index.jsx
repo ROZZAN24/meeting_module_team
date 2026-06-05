@@ -89,7 +89,9 @@ function MenuList() {
     let currentItems = [...menuItem.items];
 
     // Apply permission filtering only when permissions are loaded, except for BOS Admin (userLevel === 5)
-    if (permStatus === 'loaded' && user?.userLevel !== 5) {
+    if (user?.userLevel === 5) {
+      // BOS Admin (SuperUser) sees everything unconditionally
+    } else if (permStatus === 'loaded') {
       currentItems = filterMenuByPermissions(currentItems, permMap);
     } else {
       currentItems = filterMenuByPermissions(currentItems, {});
