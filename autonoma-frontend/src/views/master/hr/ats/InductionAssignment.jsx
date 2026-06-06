@@ -14,7 +14,7 @@ import {
 // BOS Components
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, btnNew, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, BOSDatePicker } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, btnNew, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, BOSDatePicker, BOSTimePicker } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -43,9 +43,13 @@ const getCurrentDateString = () => {
 
 const getCurrentTimeString = () => {
   const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
+  let hours = now.getHours();
   const minutes = String(now.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const strHours = String(hours).padStart(2, '0');
+  return `${strHours}:${minutes} ${ampm}`;
 };
 
 const INITIAL_STATE = {
@@ -60,7 +64,7 @@ const INITIAL_STATE = {
       screeningLevel: 'Level 1',
       inductionRound: '',
       inductionDate: new Date().toISOString().split('T')[0],
-      inductionTime: '09:00',
+      inductionTime: '09:00 AM',
       trainerName: '',
       trainerEmpCode: '',
       currentStatus: 'PENDING',
@@ -134,19 +138,35 @@ const normalizeScreeningLevel = (level) => {
   return trimmed;
 };
 
-const normalizeInductionTime = (time) => {
-  if (!time) return '';
-  const trimmed = time.trim();
+const formatTime12h = (timeStr) => {
+  if (!timeStr) return '';
+  const trimmed = timeStr.trim();
   if (trimmed === '-' || trimmed === '') return '';
-  
-  const match = trimmed.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
-  if (match) {
-    const formatted = `${match[1]}:${match[2]}`;
-    if (TIME_OPTIONS.some(option => option.value === formatted)) {
-      return formatted;
+  if (/(am|pm)/i.test(trimmed)) {
+    const parts = trimmed.split(/\s+/);
+    const timePart = parts[0];
+    const ampm = parts[1].toUpperCase();
+    const tParts = timePart.split(':');
+    if (tParts.length >= 2) {
+      return `${tParts[0].padStart(2, '0')}:${tParts[1]} ${ampm}`;
     }
+    return trimmed;
   }
-  return '';
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const strHours = String(hours).padStart(2, '0');
+    return `${strHours}:${minutes} ${ampm}`;
+  }
+  return trimmed;
+};
+
+const normalizeInductionTime = (time) => {
+  return formatTime12h(time);
 };
 
 
@@ -154,7 +174,6 @@ const InductionAssignment = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
 
-  const { departments = [], designationLevels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATION_LEVELS']);
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -170,6 +189,26 @@ const InductionAssignment = () => {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
+
+  const { departments = [], designationLevels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATION_LEVELS']);
+
+  const levelObj = useMemo(() => {
+    if (!formData?.empLevelId || !designationLevels) return null;
+    return designationLevels.find(l => String(l.rowId || l.id) === String(formData.empLevelId));
+  }, [formData?.empLevelId, designationLevels]);
+
+  const levelName = levelObj ? (levelObj.level || levelObj.levelName || '-') : '-';
+  const screenLevelLimit = levelObj ? (levelObj.screeningLevel || '-') : '-';
+
+  const completedLevelsCount = useMemo(() => {
+    return history.filter(h => h.currentStatus === 'COMPLETED').length;
+  }, [history]);
+
+  const isAllLevelsCompleted = useMemo(() => {
+    if (!screenLevelLimit || screenLevelLimit === '-') return false;
+    const limit = parseInt(screenLevelLimit, 10);
+    return completedLevelsCount >= limit;
+  }, [completedLevelsCount, screenLevelLimit]);
 
   const formatDateDDMMYYYY = (dateStr) => {
     if (!dateStr) return '-';
@@ -192,16 +231,30 @@ const InductionAssignment = () => {
     }
   };
 
-  const topTwoLevels = useMemo(() => {
+  const sortedLevels = useMemo(() => {
     if (!designationLevels || designationLevels.length === 0) return [];
-    const activeSorted = [...designationLevels]
+    const getLevelNumber = (lvlStr) => {
+      if (!lvlStr) return 0;
+      const digits = lvlStr.match(/\d+/);
+      return digits ? parseInt(digits[0], 10) : 0;
+    };
+    return [...designationLevels]
       .filter(l => l.isActive !== false)
-      .sort((a, b) => (a.screeningLevel || 0) - (b.screeningLevel || 0));
-    if (activeSorted.length < 2) {
-      return activeSorted.map(l => l.rowId);
-    }
-    return activeSorted.slice(-2).map(l => l.rowId);
+      .sort((a, b) => getLevelNumber(a.level) - getLevelNumber(b.level));
   }, [designationLevels]);
+
+  const topTwoLevelObjs = useMemo(() => {
+    if (sortedLevels.length < 2) return sortedLevels;
+    return sortedLevels.slice(-2);
+  }, [sortedLevels]);
+
+  const topTwoLevelIds = useMemo(() => {
+    return topTwoLevelObjs.map(l => String(l.rowId || l.id));
+  }, [topTwoLevelObjs]);
+
+  const topTwoLevelNames = useMemo(() => {
+    return topTwoLevelObjs.map(l => (l.level || l.levelName || '').trim().toUpperCase());
+  }, [topTwoLevelObjs]);
 
   const isReassignmentOrReschedule = useCallback((level) => {
     if (!level.id) return false;
@@ -231,9 +284,11 @@ const InductionAssignment = () => {
         options: [
           { value: 'ALL', label: 'ALL' },
           { value: 'PENDING', label: 'PENDING' },
+          { value: 'ACTIVE', label: 'ACTIVE' },
+          { value: 'IN ACTIVE', label: 'IN ACTIVE' },
           { value: 'COMPLETED', label: 'COMPLETED' }
         ],
-        defaultValue: 'PENDING',
+        defaultValue: 'ALL',
         isStarred: true
       },
       {
@@ -296,6 +351,8 @@ const InductionAssignment = () => {
       cleanData.department = typeof row.department === 'object' ? row.department?.departmentName : (row.department || '');
       cleanData.designation = typeof row.designation === 'object' ? row.designation?.designationName : (row.designation || '');
       
+      cleanData.empLevelId = row.empLevelId || '';
+
       const isResolved = row.isVirtual || row.currentStatus === 'COMPLETED' || row.currentStatus === 'REJECTED';
       cleanData.levels = [
         {
@@ -303,7 +360,7 @@ const InductionAssignment = () => {
           screeningLevel: isResolved ? `Level ${normalizedHistory.length + 1}` : normalizeScreeningLevel(row.screeningLevel),
           inductionRound: isResolved ? '' : (row.inductionRound && row.inductionRound !== '-' ? row.inductionRound : ''),
           inductionDate: isResolved ? new Date().toISOString().split('T')[0] : defaultDate,
-          inductionTime: isResolved ? '09:00' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00'),
+          inductionTime: isResolved ? '09:00 AM' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00 AM'),
           trainerName: isResolved ? '' : (row.trainerName && row.trainerName !== '-' ? row.trainerName : ''),
           trainerEmpCode: isResolved ? '' : (row.trainerEmpCode && row.trainerEmpCode !== '-' ? row.trainerEmpCode : ''),
           currentStatus: isResolved ? 'PENDING' : (row.currentStatus || 'PENDING'),
@@ -327,13 +384,14 @@ const InductionAssignment = () => {
         department: row.department,
         designation: row.designation,
         oldEmpCode: row.oldEmpCode,
+        empLevelId: row.empLevelId || '',
         levels: [
           {
             id: isResolved ? null : row.id,
             screeningLevel: isResolved ? 'Level 1' : normalizeScreeningLevel(row.screeningLevel),
             inductionRound: isResolved ? '' : (row.inductionRound && row.inductionRound !== '-' ? row.inductionRound : ''),
             inductionDate: isResolved ? new Date().toISOString().split('T')[0] : defaultDate,
-            inductionTime: isResolved ? '09:00' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00'),
+            inductionTime: isResolved ? '09:00 AM' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00 AM'),
             trainerName: isResolved ? '' : (row.trainerName && row.trainerName !== '-' ? row.trainerName : ''),
             trainerEmpCode: isResolved ? '' : (row.trainerEmpCode && row.trainerEmpCode !== '-' ? row.trainerEmpCode : ''),
             currentStatus: isResolved ? 'PENDING' : (row.currentStatus || 'PENDING'),
@@ -503,6 +561,7 @@ const InductionAssignment = () => {
             screeningLevel: normalizeScreeningLevel(activeAssign.screeningLevel),
             inductionTime: normalizeInductionTime(activeAssign.inductionTime),
             isVirtual: false,
+            inductionStatus: emp.inductionStatus || 'PENDING',
             updatedUser: combinedEditors,
             updatedBy: combinedEditors
           });
@@ -615,7 +674,7 @@ const InductionAssignment = () => {
           screeningLevel: `Level ${nextLevelNum}`,
           inductionRound: '',
           inductionDate: new Date().toISOString().split('T')[0],
-          inductionTime: '09:00',
+          inductionTime: '09:00 AM',
           trainerName: '',
           trainerEmpCode: '',
           currentStatus: 'PENDING',
@@ -742,9 +801,9 @@ const InductionAssignment = () => {
         validationFailed = true;
       }
       if (level.inductionRound === 'MANAGEMENT') {
-        const levelCode = (formData.gradeCode || '').trim().toUpperCase();
-        if (levelCode !== 'L6' && levelCode !== 'L7') {
-          newErrors[`level_${index}_inductionRound`] = 'Management round is only applicable for Level L6 & L7 trainees';
+        const traineeLevelCode = (levelName || '').trim().toUpperCase();
+        if (!topTwoLevelNames.includes(traineeLevelCode)) {
+          newErrors[`level_${index}_inductionRound`] = `Management round is only applicable for the top two levels (${topTwoLevelNames.join(', ')}) trainees`;
           validationFailed = true;
         }
       }
@@ -853,6 +912,123 @@ const InductionAssignment = () => {
     }));
   }, [rows, globalFilters, globalQuery]);
 
+  const renderProgressionStepper = () => {
+    const maxLevels = parseInt(screenLevelLimit, 10) || 3;
+    const steps = [];
+    
+    for (let i = 1; i <= maxLevels; i++) {
+      const lvlName = `Level ${i}`;
+      const histItem = history.find(h => normalizeScreeningLevel(h.screeningLevel) === lvlName);
+      const isCurrentForm = formData.levels && formData.levels.some(l => normalizeScreeningLevel(l.screeningLevel) === lvlName);
+      
+      let stepStatus = 'LOCKED';
+      let trainerName = '';
+      
+      if (histItem) {
+        if (histItem.currentStatus === 'COMPLETED') {
+          stepStatus = 'COMPLETED';
+        } else if (histItem.currentStatus === 'REJECTED') {
+          stepStatus = 'REJECTED';
+        } else {
+          stepStatus = 'ACTIVE';
+        }
+        trainerName = histItem.trainerName;
+      } else if (isCurrentForm) {
+        stepStatus = 'CURRENT';
+        trainerName = formData.levels[0].trainerName;
+      } else {
+        const allPrevCompleted = Array.from({ length: i - 1 }, (_, idx) => `Level ${idx + 1}`)
+          .every(prevLvlName => history.some(h => normalizeScreeningLevel(h.screeningLevel) === prevLvlName && h.currentStatus === 'COMPLETED'));
+        
+        if (allPrevCompleted) {
+          stepStatus = 'READY';
+        } else {
+          stepStatus = 'LOCKED';
+        }
+      }
+      
+      steps.push({ levelNum: i, lvlName, status: stepStatus, trainerName });
+    }
+
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}>Induction Progression Status</Typography>
+        <Stack direction="row" spacing={2} sx={{ width: '100%', overflowX: 'auto', pb: 1 }}>
+          {steps.map((step) => {
+            let bgcolor = 'grey.100';
+            let bordercolor = 'grey.300';
+            let color = 'text.secondary';
+            let label = 'Locked';
+            
+            if (step.status === 'COMPLETED') {
+              bgcolor = 'success.lighter';
+              bordercolor = 'success.main';
+              color = 'success.dark';
+              label = 'Completed';
+            } else if (step.status === 'REJECTED') {
+              bgcolor = 'error.lighter';
+              bordercolor = 'error.main';
+              color = 'error.dark';
+              label = 'Rejected';
+            } else if (step.status === 'ACTIVE') {
+              bgcolor = 'warning.lighter';
+              bordercolor = 'warning.main';
+              color = 'warning.dark';
+              label = 'Active Training';
+            } else if (step.status === 'CURRENT') {
+              bgcolor = 'primary.lighter';
+              bordercolor = 'primary.main';
+              color = 'primary.dark';
+              label = 'Assigning Now';
+            } else if (step.status === 'READY') {
+              bgcolor = 'info.lighter';
+              bordercolor = 'info.main';
+              color = 'info.dark';
+              label = 'Ready to Assign';
+            }
+            
+            return (
+              <Box
+                key={step.levelNum}
+                sx={{
+                  flex: 1,
+                  minWidth: '160px',
+                  p: 2,
+                  borderRadius: '12px',
+                  border: '2px solid',
+                  borderColor: bordercolor,
+                  bgcolor: bgcolor,
+                  color: color,
+                  textAlign: 'center',
+                  boxShadow: step.status === 'CURRENT' ? '0 4px 12px rgba(33, 150, 243, 0.2)' : 'none',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>Level {step.levelNum}</Typography>
+                <Chip
+                  label={label}
+                  size="small"
+                  sx={{
+                    bgcolor: bordercolor,
+                    color: step.status === 'LOCKED' ? 'text.secondary' : 'common.white',
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                    mb: 1
+                  }}
+                />
+                {step.trainerName && (
+                  <Typography variant="caption" display="block" sx={{ mt: 0.5, fontStyle: 'italic', color: 'text.secondary' }}>
+                    Trainer: {step.trainerName}
+                  </Typography>
+                )}
+              </Box>
+            );
+          })}
+        </Stack>
+      </Box>
+    );
+  };
+
   if (perms.loading) {
     return null;
   }
@@ -886,7 +1062,7 @@ const InductionAssignment = () => {
         title={formData.id ? 'Update Induction Process' : 'Assign Induction Process'}
         fullWidth
         maxWidth="md"
-        onSave={perms.write ? handleSave : null}
+        onSave={perms.write && !isAllLevelsCompleted ? handleSave : null}
         onClear={perms.write ? () => {
           setFormData(prev => ({
             ...prev,
@@ -896,7 +1072,7 @@ const InductionAssignment = () => {
                 screeningLevel: 'Level 1',
                 inductionRound: '',
                 inductionDate: new Date().toISOString().split('T')[0],
-                inductionTime: '09:00',
+                inductionTime: '09:00 AM',
                 trainerName: '',
                 trainerEmpCode: '',
                 currentStatus: 'PENDING',
@@ -912,11 +1088,19 @@ const InductionAssignment = () => {
         <Box sx={{ bgcolor: 'primary.light', p: 2, borderRadius: 2, mb: 3, display: 'flex', flexWrap: 'wrap', gap: 4, border: '1px solid', borderColor: 'primary.main' }}>
           <Box><Typography variant="caption" color="textSecondary">DEPARTMENT</Typography><Typography variant="subtitle1" fontWeight={700}>{formData.department || '-'}</Typography></Box>
           <Box><Typography variant="caption" color="textSecondary">POSITION</Typography><Typography variant="subtitle1" fontWeight={700}>{formData.designation || '-'}</Typography></Box>
-          <Box><Typography variant="caption" color="textSecondary">LEVEL</Typography><Typography variant="subtitle1" fontWeight={700}>{formData.gradeCode || '-'}</Typography></Box>
-          <Box><Typography variant="caption" color="textSecondary">SCREEN LEVEL</Typography><Typography variant="subtitle1" fontWeight={700}>{history.length + 1}</Typography></Box>
+          <Box><Typography variant="caption" color="textSecondary">LEVEL</Typography><Typography variant="subtitle1" fontWeight={700}>{levelName}</Typography></Box>
+          <Box><Typography variant="caption" color="textSecondary">SCREEN LEVEL</Typography><Typography variant="subtitle1" fontWeight={700}>{screenLevelLimit}</Typography></Box>
         </Box>
 
-        <BOSFormSection title="Assign Induction Process">
+        {renderProgressionStepper()}
+
+        {isAllLevelsCompleted ? (
+          <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'success.light', borderRadius: 2, border: '1px solid', borderColor: 'success.main', mb: 3 }}>
+            <Typography variant="h4" color="success.dark" fontWeight={700} sx={{ mb: 1 }}>Induction Fully Completed</Typography>
+            <Typography variant="body1" color="success.dark">All configured screening levels ({screenLevelLimit}) have been successfully completed for this employee.</Typography>
+          </Box>
+        ) : (
+          <BOSFormSection title="Assign Induction Process">
           {(formData.levels || []).map((level, index) => (
             <Box key={index} sx={{ mb: index < formData.levels.length - 1 ? 4 : 0 }}>
               {index > 0 ? (
@@ -985,8 +1169,8 @@ const InductionAssignment = () => {
                     {roundOptions
                       .filter(r => {
                         if (r === 'MANAGEMENT') {
-                          const levelCode = (formData.gradeCode || '').trim().toUpperCase();
-                          return levelCode === 'L6' || levelCode === 'L7';
+                          const traineeLevelCode = (levelName || '').trim().toUpperCase();
+                          return topTwoLevelNames.includes(traineeLevelCode);
                         }
                         return true;
                       })
@@ -1011,8 +1195,7 @@ const InductionAssignment = () => {
                   />
                 </Box>
                 <Box sx={{ flex: 1 }}>
-                  <BOSTextField
-                    select
+                  <BOSTimePicker
                     name="inductionTime"
                     label="INDUCTION TIME"
                     value={normalizeInductionTime(level.inductionTime)}
@@ -1021,13 +1204,7 @@ const InductionAssignment = () => {
                     disabled={!perms.write}
                     error={!!errors[`level_${index}_inductionTime`]}
                     helperText={errors[`level_${index}_inductionTime`]}
-                    sx={errorStyle(!!errors[`level_${index}_inductionTime`])}
-                  >
-                    <MenuItem value="">-SELECT-</MenuItem>
-                    {TIME_OPTIONS.map(t => (
-                      <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-                    ))}
-                  </BOSTextField>
+                  />
                 </Box>
               </Box>
               <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
@@ -1081,7 +1258,7 @@ const InductionAssignment = () => {
                             return empDept?.toLowerCase() === formData.department?.toLowerCase();
                           }
                           if (round === 'MANAGEMENT') {
-                            return topTwoLevels.includes(Number(emp.empLevelId));
+                            return topTwoLevelIds.includes(String(emp.empLevelId));
                           }
                           return true;
                         })
@@ -1129,6 +1306,7 @@ const InductionAssignment = () => {
             </Box>
           )}
         </BOSFormSection>
+        )}
 
         {/* History Table */}
         <Box sx={{ mt: 4 }}>
@@ -1173,7 +1351,7 @@ const InductionAssignment = () => {
                         <TableCell align="center">{i + 1}</TableCell>
                         <TableCell>{h.screeningLevel || '-'}</TableCell>
                         <TableCell>{h.inductionRound || '-'}</TableCell>
-                        <TableCell>{h.inductionDate ? `${formatDateDDMMYYYY(h.inductionDate)} ${h.inductionTime || ''}` : '-'}</TableCell>
+                        <TableCell>{h.inductionDate ? `${formatDateDDMMYYYY(h.inductionDate)} ${formatTime12h(h.inductionTime)}` : '-'}</TableCell>
                         <TableCell>{h.trainerName || '-'}</TableCell>
                         <TableCell>
                           <Chip
