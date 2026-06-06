@@ -2287,27 +2287,45 @@ export default function TaskDashboard() {
         tasksList.forEach((t) => {
           const st = String(t._status).toLowerCase();
           const isDone = ['completed', 'verified', 'approved', 'closed', 'resolved'].includes(st);
-          const isToBeTested = ['to be tested', 'testing', 'ready for testing'].includes(st);
-          const isDevDone = isDone || isToBeTested;
+          const isToBeVerified = ['to be verified'].includes(st);
+          const isDevDone = isDone || isToBeVerified;
           const hrs = t._hrs ? (parseDurationToMinutes(t._hrs) / 60) || 8 : 8;
           const uName = t._user || 'Unknown';
           if (filterUserScope(uName)) {
             if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
-            devHoursMap[uName].assignedHrs += hrs;
-            devHoursMap[uName].takenHrs += t._takenHrs || 0;
-            devHoursMap[uName].reworkHrs += t._reworkHrs || 0;
-            if (isDevDone) devHoursMap[uName].completedHrs += hrs;
             
-            if (!isDevDone && t._dueDate) {
+            let t_takenHrs = t._takenHrs || 0;
+            let t_reworkHrs = t._reworkHrs || 0;
+            let t_delayHrs = 0;
+            let isPastDue = false;
+
+            if (t._dueDate) {
               const dueDate = new Date(t._dueDate);
               dueDate.setHours(18, 0, 0, 0); // Assuming EOD is 6 PM
               const now = new Date();
-              if (now > dueDate) {
+              isPastDue = now > dueDate;
+              if (!isDevDone && isPastDue) {
                  const delayMs = calculateWorkingMs(dueDate, now);
-                 console.log("Delay calc:", { uName, id: t._id, dueDate: dueDate.toString(), now: now.toString(), delayMs });
-                 devHoursMap[uName].delayHrs += (delayMs / (1000 * 60 * 60));
+                 t_delayHrs = delayMs / (1000 * 60 * 60);
+                 devHoursMap[uName].delayHrs += t_delayHrs;
               }
             }
+
+            devHoursMap[uName].takenHrs += t_takenHrs;
+            devHoursMap[uName].reworkHrs += t_reworkHrs;
+
+            if (isDevDone || isPastDue) {
+              devHoursMap[uName].assignedHrs += hrs;
+              
+              let t_completedHrs = 0;
+              if (t_takenHrs > 0 || t_reworkHrs > 0) {
+                t_completedHrs = t_takenHrs + t_reworkHrs + t_delayHrs;
+              } else {
+                t_completedHrs = hrs + t_delayHrs; // Task Time + Delay Hrs
+              }
+              devHoursMap[uName].completedHrs += t_completedHrs;
+            }
+
             if (!isDevDone) {
               if (!workloadMap[uName]) workloadMap[uName] = { user: uName, hours: 0, tasks: 0 };
               workloadMap[uName].tasks += 1;
@@ -2317,7 +2335,7 @@ export default function TaskDashboard() {
           if (isDone) stats.completed++;
           if (['open', 'new', 'pending'].includes(st)) stats.open++;
           else if (['in progress', 'wip', 'assigned', 'rework'].includes(st)) stats.inProgress++;
-          else if (isToBeTested) stats.toBeTested++;
+          else if (isToBeVerified) stats.toBeTested++;
           else if (['reopened', 're-opened'].includes(st)) stats.reopened++;
           else if (!isDone) stats.open++;
           if (t._dueDate) {
@@ -2360,7 +2378,7 @@ export default function TaskDashboard() {
             let reworkHrs = d.reworkHrs || 0;
             let delayHrs = d.delayHrs || 0;
             
-            const completedHrs = takenHrs + reworkHrs + delayHrs;
+            const completedHrs = d.completedHrs || 0;
 
             // Performance
             const performance = completedHrs > 0 ? (assignedHrs / completedHrs) * 100 : 100;
