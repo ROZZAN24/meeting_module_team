@@ -39,15 +39,17 @@ public class AuditScheduleService {
             String auditeeCode = extractEmployeeCode(schedule.getAuditee());
             String auditorCode = extractEmployeeCode(schedule.getAuditor());
 
+            java.util.Set<String> recipientCodes = new java.util.HashSet<>();
             if (auditeeCode != null && !auditeeCode.trim().isEmpty()) {
-                employeeMasterRepository.findByEmpCode(auditeeCode.trim()).ifPresent(auditeeEmp -> {
-                    notificationService.notifyUserAboutAudit(auditeeEmp, schedule, actionType);
-                });
+                recipientCodes.add(auditeeCode.trim().toLowerCase());
+            }
+            if (auditorCode != null && !auditorCode.trim().isEmpty()) {
+                recipientCodes.add(auditorCode.trim().toLowerCase());
             }
 
-            if (auditorCode != null && !auditorCode.trim().isEmpty()) {
-                employeeMasterRepository.findByEmpCode(auditorCode.trim()).ifPresent(auditorEmp -> {
-                    notificationService.notifyUserAboutAudit(auditorEmp, schedule, actionType);
+            for (String code : recipientCodes) {
+                employeeMasterRepository.findByEmpCode(code).ifPresent(emp -> {
+                    notificationService.notifyUserAboutAudit(emp, schedule, actionType);
                 });
             }
         } catch (Exception e) {

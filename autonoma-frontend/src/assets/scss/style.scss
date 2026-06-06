@@ -291,6 +291,11 @@ html[data-color-scheme='dark'] {
   }
 }
 
+.SnackbarContainer-topRight,
+[class*="SnackbarContainer-topRight"] {
+  top: 74px !important;
+}
+
 .custom-data-grid.MuiDataGrid-root {
   .MuiDataGrid-columnHeader,
   .MuiDataGrid-cell {

@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -11,12 +12,13 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import Collapse from '@mui/material/Collapse';
 
 // project imports
 import { withAlpha } from 'utils/colorUtils';
 
 // assets
-import { IconBell, IconX } from '@tabler/icons-react';
+import { IconBell, IconX, IconInfoCircle } from '@tabler/icons-react';
 
 function ListItemWrapper({ children, isRead, onClick }) {
   const theme = useTheme();
@@ -65,7 +67,16 @@ const formatTime = (dateStr) => {
 
 export default function NotificationList({ notifications = [], onNotifClick, onNotifDismiss }) {
   const theme = useTheme();
-  const containerSX = { gap: 1, pl: 7 };
+  const [expandedIds, setExpandedIds] = useState({});
+  const containerSX = { gap: 1, pl: '44px', pb: 1 };
+
+  const toggleExpand = (id, e) => {
+    e.stopPropagation();
+    setExpandedIds((prev) => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   if (!notifications || notifications.length === 0) {
     return (
@@ -77,65 +88,82 @@ export default function NotificationList({ notifications = [], onNotifClick, onN
 
   return (
     <List sx={{ width: '100%', maxWidth: { xs: 300, md: 330 }, py: 0 }}>
-      {notifications.map((notif, index) => (
-        <ListItemWrapper key={notif.id || index} isRead={notif.isRead} onClick={() => onNotifClick && onNotifClick(notif)}>
-          <ListItem
-            alignItems="flex-start"
-            disablePadding
-            secondaryAction={
-              <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
-                <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                  {formatTime(notif.createdAt)}
-                </Typography>
-                {!notif.isRead && (
+      {notifications.map((notif, index) => {
+        const isExpanded = !!expandedIds[notif.id];
+        return (
+          <ListItemWrapper key={notif.id || index} isRead={notif.isRead} onClick={() => onNotifClick && onNotifClick(notif)}>
+            <ListItem
+              alignItems="flex-start"
+              disablePadding
+              secondaryAction={
+                <Stack direction="row" sx={{ alignItems: 'center', gap: 0.25 }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap', mr: 0.5 }}>
+                    {formatTime(notif.createdAt)}
+                  </Typography>
                   <IconButton
                     size="small"
-                    color="error"
-                    onClick={(e) => onNotifDismiss && onNotifDismiss(notif, e)}
-                    sx={{ p: 0.25 }}
+                    color="primary"
+                    onClick={(e) => toggleExpand(notif.id, e)}
+                    sx={{
+                      p: 0.25,
+                      color: isExpanded ? 'primary.main' : 'text.secondary',
+                      '&:hover': { bgcolor: 'primary.lighter' }
+                    }}
                   >
-                    <IconX size={14} />
+                    <IconInfoCircle size={16} />
                   </IconButton>
-                )}
-              </Stack>
-            }
-          >
-            <ListItemAvatar sx={{ minWidth: 44 }}>
-              <Avatar 
-                variant="rounded"
-                sx={{ 
-                  width: 32, 
-                  height: 32, 
-                  bgcolor: notif.isRead ? 'grey.300' : 'primary.light',
-                  color: notif.isRead ? 'grey.600' : 'primary.main' 
-                }}
-              >
-                <IconBell size={18} />
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText 
-              primary={
-                <Typography variant="subtitle2" sx={{ fontWeight: notif.isRead ? 500 : 700, pr: 4 }}>
-                  {notif.title}
-                </Typography>
-              } 
-            />
-          </ListItem>
-          <Stack sx={containerSX}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: 'text.secondary', 
-                whiteSpace: 'pre-line',
-                fontSize: '0.8rem',
-                lineHeight: 1.4
-              }}
+                  {!notif.isRead && (
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={(e) => onNotifDismiss && onNotifDismiss(notif, e)}
+                      sx={{ p: 0.25 }}
+                    >
+                      <IconX size={16} />
+                    </IconButton>
+                  )}
+                </Stack>
+              }
             >
-              {notif.message}
-            </Typography>
-          </Stack>
-        </ListItemWrapper>
-      ))}
+              <ListItemAvatar sx={{ minWidth: 44 }}>
+                <Avatar 
+                  variant="rounded"
+                  sx={{ 
+                    width: 32, 
+                    height: 32, 
+                    bgcolor: notif.isRead ? 'grey.300' : 'primary.light',
+                    color: notif.isRead ? 'grey.600' : 'primary.main' 
+                  }}
+                >
+                  <IconBell size={18} />
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText 
+                primary={
+                  <Typography variant="subtitle2" sx={{ fontWeight: notif.isRead ? 500 : 700, pr: '110px' }}>
+                    {notif.title}
+                  </Typography>
+                } 
+              />
+            </ListItem>
+            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+              <Stack sx={containerSX}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: 'text.secondary', 
+                    whiteSpace: 'pre-line',
+                    fontSize: '0.8rem',
+                    lineHeight: 1.4
+                  }}
+                >
+                  {notif.message}
+                </Typography>
+              </Stack>
+            </Collapse>
+          </ListItemWrapper>
+        );
+      })}
     </List>
   );
 }
