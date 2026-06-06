@@ -23,7 +23,7 @@ import IconButton from '@mui/material/IconButton';
 
 import axiosServices from 'utils/axios';
 
-import { useSnackbar, SnackbarContent } from 'notistack';
+import { useSnackbar, SnackbarContent, closeSnackbar } from 'notistack';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
@@ -155,7 +155,7 @@ const AuditNotificationToast = forwardRef(({ id, notif, onClose, onClick }, ref)
 export default function NotificationSection() {
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
 
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
