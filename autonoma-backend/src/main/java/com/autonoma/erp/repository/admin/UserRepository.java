@@ -10,4 +10,7 @@ public interface UserRepository extends JpaRepository<UserCredential, String> {
     Optional<UserCredential> findByUserId(String userId);
     boolean existsByEmpId(Long empId);
     void deleteByEmpId(Long empId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT u.empId FROM UserCredential u WHERE u.empId IS NOT NULL")
+    java.util.Set<Long> findAllEmpIdsWithCredentials();
 }

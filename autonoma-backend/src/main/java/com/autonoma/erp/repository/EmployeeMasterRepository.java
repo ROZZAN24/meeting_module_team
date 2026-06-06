@@ -13,4 +13,8 @@ public interface EmployeeMasterRepository extends JpaRepository<EmployeeMaster, 
     java.util.Optional<EmployeeMaster> findByEmpCode(String empCode);
     java.util.List<EmployeeMaster> findByIsInductionEligibleAndStatus(String isInductionEligible, String status);
     java.util.List<EmployeeMaster> findByEmpCodeStartingWith(String prefix);
+    boolean existsByVerticalHeadIgnoreCase(String verticalHead);
+
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM EmployeeMaster e WHERE LOWER(e.empCode) = LOWER(:assignedTo) OR LOWER(e.employeeName) = LOWER(:assignedTo) OR LOWER(CONCAT(e.firstName, ' ', e.lastName)) = LOWER(:assignedTo)")
+    java.util.Optional<EmployeeMaster> findByEmpCodeOrName(@org.springframework.data.repository.query.Param("assignedTo") String assignedTo);
 }

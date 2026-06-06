@@ -539,6 +539,10 @@ export default function TicketManagement({ viewType }) {
       return;
     }
 
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      dispatch(openSnackbar({ open: true, message: 'Audio recording is not supported in this browser or context (requires HTTPS)', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];

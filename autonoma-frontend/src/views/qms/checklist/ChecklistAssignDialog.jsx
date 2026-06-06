@@ -61,14 +61,15 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   const theme = useTheme();
   const dispatch = useDispatch();
   const { user } = useAuth();
-  const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS', 'USERS']);
+  const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS', 'USERS', 'DESIGNATION_LEVELS']);
   
   // Get allowed department names for this checklist
   const allowedDeptNames = (initialData?.departments || []).map(d => d.departmentName);
   const userEmpIds = (lookups.users || []).map(u => Number(u.empId));
+  const allowedLevels = initialData?.levelIds ? initialData.levelIds.split(',').map(s => s.trim()).filter(Boolean) : [];
   
   // Filter employees whose department matches one of the checklist's departments,
-  // and who are active and have credentials created.
+  // and who match configured checklist levels, are active and have credentials created.
   let filteredEmployees = (lookups.employees || []).filter(emp => {
     // 1. Same department (if checklist has allowed departments)
     if (allowedDeptNames.length > 0) {
@@ -85,10 +86,34 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     if (!userEmpIds.includes(Number(emp.id))) {
       return false;
     }
+    // 4. Level integration: matches configured levels (if checklist has configured levels)
+    if (allowedLevels.length > 0) {
+      const foundLevel = (lookups.designationLevels || []).find(l => String(l.rowId || l.id) === String(emp.empLevelId));
+      const empLevelName = foundLevel ? (foundLevel.level || foundLevel.levelName) : '';
+      if (!empLevelName || !allowedLevels.includes(empLevelName)) {
+        return false;
+      }
+    }
     return true;
   });
 
-  // Fallback: If no employees match the checklist's department, show all employees who are active and credentialed.
+  // Fallback 1: If no employees match the department + level criteria, try filtering only by level.
+  if (filteredEmployees.length === 0) {
+    filteredEmployees = (lookups.employees || []).filter(emp => {
+      if (emp.status !== 'Active') return false;
+      if (!userEmpIds.includes(Number(emp.id))) return false;
+      if (allowedLevels.length > 0) {
+        const foundLevel = (lookups.designationLevels || []).find(l => String(l.rowId || l.id) === String(emp.empLevelId));
+        const empLevelName = foundLevel ? (foundLevel.level || foundLevel.levelName) : '';
+        if (!empLevelName || !allowedLevels.includes(empLevelName)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  // Fallback 2: If still empty (e.g., no matching level employees exist), show all active and credentialed employees.
   if (filteredEmployees.length === 0) {
     filteredEmployees = (lookups.employees || []).filter(emp => {
       return emp.status === 'Active' && 
@@ -223,8 +248,6 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     { id: 'assignDate',    label: 'Assign Date',    minWidth: 110 },
     { id: 'createdUser',   label: 'Created By',     minWidth: 120 },
     { id: 'createdDate',   label: 'Created Date',    minWidth: 140 },
-    { id: 'updatedUser',   label: 'Updated By',      minWidth: 120 },
-    { id: 'updatedDate',   label: 'Update Date & Time',   minWidth: 160 },
     { id: 'status',        label: 'Task Status',     minWidth: 100 }
   ];
 

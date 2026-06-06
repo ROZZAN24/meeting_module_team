@@ -96,7 +96,6 @@ const columns = [
   { id: 'dualCheck',    label: 'Dual Check',      minWidth: 110 },
   { id: 'verificationRequired', label: 'Verification Req.', minWidth: 140 },
   { id: 'carryForward', label: 'Carry Forward',   minWidth: 120 },
-  { id: 'levelIds',     label: 'Level',           minWidth: 120 },
   { id: 'assignTo',     label: 'Assign To',       minWidth: 130 },
   { 
     id: 'status',       

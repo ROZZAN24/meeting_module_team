@@ -40,7 +40,7 @@ import {
   IconEyeOff, IconCheck
 } from '@tabler/icons-react';
 
-const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://127.0.0.1:8081').replace(/\/+$/, '');
+const API_BASE = (import.meta.env.VITE_APP_API_URL || window.location.origin).replace(/\/+$/, '');
 
 // ==============================|| ADMIN - USER CREDENTIALS ||============================== //
 
@@ -79,6 +79,10 @@ const UserOverview = () => {
   const streamRef = useRef(null);
 
   const startCamera = async (setFieldValue) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      dispatch(openSnackbar({ open: true, message: 'Webcam access is not supported in this browser or context (requires HTTPS)', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     try {
       setCameraActive(true);
       setShowFaceImage(false);

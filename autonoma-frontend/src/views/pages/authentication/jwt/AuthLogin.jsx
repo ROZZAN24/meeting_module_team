@@ -84,6 +84,10 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
 
   const startWebcam = async () => {
     setWebcamError(null);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setWebcamError('Webcam access is not supported in this browser or context (requires HTTPS)');
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 320, height: 240, facingMode: 'user' }

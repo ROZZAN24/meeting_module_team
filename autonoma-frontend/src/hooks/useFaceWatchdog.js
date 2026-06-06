@@ -113,6 +113,11 @@ export default function useFaceWatchdog() {
 
         // Initialize camera stream & video DOM element if they don't exist yet
         if (!streamRef.current) {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.warn('[FaceWatchdog] Media devices/getUserMedia not supported in this browser context.');
+            setEnabledState(false);
+            return;
+          }
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'user', width: 320, height: 240 }
           });

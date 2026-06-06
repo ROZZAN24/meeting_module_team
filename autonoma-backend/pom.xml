@@ -299,6 +299,28 @@
 				<npm.executable>npm.cmd</npm.executable>
 			</properties>
 		</profile>
+		<profile>
+			<id>unix-build</id>
+			<activation>
+				<os>
+					<family>unix</family>
+				</os>
+			</activation>
+			<properties>
+				<npm.executable>npm</npm.executable>
+			</properties>
+		</profile>
+		<profile>
+			<id>mac-build</id>
+			<activation>
+				<os>
+					<family>mac</family>
+				</os>
+			</activation>
+			<properties>
+				<npm.executable>npm</npm.executable>
+			</properties>
+		</profile>
 	</profiles>
-
+	
 </project>

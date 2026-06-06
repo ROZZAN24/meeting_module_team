@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.*;
 import com.autonoma.erp.repository.admin.UserRepository;
 import com.autonoma.erp.repository.admin.PrefixCredentialRepository;
 import com.autonoma.erp.model.admin.UserCredential;
+import com.autonoma.erp.repository.admin.BosUserPageAuthRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +39,12 @@ public class TicketTraceabilityCenterController {
 
     @Autowired
     private PrefixCredentialRepository prefixCredentialRepository;
+
+    @Autowired
+    private BosUserPageAuthRepository bosUserPageAuthRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.admin.BosPageRepository bosPageRepository;
 
     @Autowired
     private FileService fileService;
@@ -121,6 +128,38 @@ public class TicketTraceabilityCenterController {
                     if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
                     if ("YES".equalsIgnoreCase(emp.getPermissionToggle())) {
                         isAdmin = true;
+                    }
+                    if ("YES".equalsIgnoreCase(emp.getIsTaskTester()) && "To Be Tested".equalsIgnoreCase(ticket.getTicketStatus())) {
+                        isAdmin = true;
+                    }
+                    if ("YES".equalsIgnoreCase(emp.getIsTaskVerifier()) && "To Be Verified".equalsIgnoreCase(ticket.getTicketStatus())) {
+                        isAdmin = true;
+                    }
+                    if ("Yet To Deploy".equalsIgnoreCase(ticket.getTicketStatus())) {
+                        boolean isTeamHead = false;
+                        if (currentUserName != null) {
+                            isTeamHead = employeeMasterRepository.existsByVerticalHeadIgnoreCase(currentUserName);
+                        }
+                        if (!isTeamHead && currentUserId != null) {
+                            isTeamHead = employeeMasterRepository.existsByVerticalHeadIgnoreCase(currentUserId);
+                        }
+                        boolean hasCompanyPerm = false;
+                        
+                        Integer pageId1 = bosPageRepository.findByPageCode("S1110").map(com.autonoma.erp.model.admin.BosPage::getPageId).orElse(-1);
+                        Integer pageId2 = bosPageRepository.findByPageCode("S1120").map(com.autonoma.erp.model.admin.BosPage::getPageId).orElse(-1);
+
+                        List<com.autonoma.erp.model.admin.BosUserPageAuth> auths = bosUserPageAuthRepository.findByUserId(currentUserId);
+                        for (com.autonoma.erp.model.admin.BosUserPageAuth auth : auths) {
+                            if (auth.getPageId() != null && (auth.getPageId().equals(pageId1) || auth.getPageId().equals(pageId2))) {
+                                if (auth.getAdditional2() != null && auth.getAdditional2() == 1) {
+                                    hasCompanyPerm = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (isTeamHead || hasCompanyPerm) {
+                            isAdmin = true;
+                        }
                     }
                 }
             }
@@ -246,6 +285,38 @@ public class TicketTraceabilityCenterController {
                     if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
                     if ("YES".equalsIgnoreCase(emp.getPermissionToggle())) {
                         isAdmin = true;
+                    }
+                    if ("YES".equalsIgnoreCase(emp.getIsTaskTester()) && "To Be Tested".equalsIgnoreCase(existingTicket.getTicketStatus())) {
+                        isAdmin = true;
+                    }
+                    if ("YES".equalsIgnoreCase(emp.getIsTaskVerifier()) && "To Be Verified".equalsIgnoreCase(existingTicket.getTicketStatus())) {
+                        isAdmin = true;
+                    }
+                    if ("Yet To Deploy".equalsIgnoreCase(ticketDetails.getTicketStatus())) {
+                        boolean isTeamHead = false;
+                        if (currentUserName != null) {
+                            isTeamHead = employeeMasterRepository.existsByVerticalHeadIgnoreCase(currentUserName);
+                        }
+                        if (!isTeamHead && currentUserId != null) {
+                            isTeamHead = employeeMasterRepository.existsByVerticalHeadIgnoreCase(currentUserId);
+                        }
+                        boolean hasCompanyPerm = false;
+                        
+                        Integer pageId1 = bosPageRepository.findByPageCode("S1110").map(com.autonoma.erp.model.admin.BosPage::getPageId).orElse(-1);
+                        Integer pageId2 = bosPageRepository.findByPageCode("S1120").map(com.autonoma.erp.model.admin.BosPage::getPageId).orElse(-1);
+
+                        List<com.autonoma.erp.model.admin.BosUserPageAuth> auths = bosUserPageAuthRepository.findByUserId(currentUserId);
+                        for (com.autonoma.erp.model.admin.BosUserPageAuth auth : auths) {
+                            if (auth.getPageId() != null && (auth.getPageId().equals(pageId1) || auth.getPageId().equals(pageId2))) {
+                                if (auth.getAdditional2() != null && auth.getAdditional2() == 1) {
+                                    hasCompanyPerm = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (isTeamHead || hasCompanyPerm) {
+                            isAdmin = true;
+                        }
                     }
                 }
             }

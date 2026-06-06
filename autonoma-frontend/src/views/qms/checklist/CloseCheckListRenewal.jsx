@@ -319,23 +319,11 @@ export default function CloseCheckListRenewal() {
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_CLOSE);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, searchBy: false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
   const [departmentsList, setDepartmentsList] = useState([]);
-
-  // Auto-set fromDate to today when the filter drawer opens (only if not already set)
-  useEffect(() => {
-    if (drawerOpen && !filters.fromDate) {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      setFilters((prev) => ({ ...prev, fromDate: `${yyyy}-${mm}-${dd}` }));
-    }
-  }, [drawerOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     axios.get('/api/master/hr/departments')
@@ -548,25 +536,12 @@ export default function CloseCheckListRenewal() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          
           exportFilename="Close_Checklist"
           hasExportPermission={perms.export}
-          onCompleteTask={canEditSelected ? () => setDialogOpen(true) : null}
-          completeTaskDisabled={!selectedRowId}
-         columns={columns} />
+          columns={columns} />
       }
     >
-      {activeCount > 0 && (
-        <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mr: 0.5 }}>Filters:</Typography>
-          {filters.taskType !== 'Mine' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType', 'Mine')} />}
-          {filters.fromDate && <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate', '')} />}
-          {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate', '')} />}
-          {filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate', 'All')} />}
-          {filters.statuses.map((s) => <Chip key={s} label={`Status: ${s}`} size="small" color="warning" onDelete={() => toggleStatus(s)} />)}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml: 1 }}>Clear All</Button>
-        </Box>
-      )}
+
 
       {/* ── Cursor-following 'Double tap' label ── */}
       {showDoubleTap && (
@@ -752,94 +727,7 @@ export default function CloseCheckListRenewal() {
 
 
 
-      {/* FILTER DRAWER */}
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: 320 } }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Filters</Typography>
-          <IconButton size="small" onClick={() => setDrawerOpen(false)}><IconX size={20} /></IconButton>
-        </Box>
-        <Box sx={{ overflowY: 'auto', flex: 1 }}>
-          <FilterSection title="Task Type" open={openSections.taskType} onToggle={() => toggleSection('taskType')}>
-            <FormControl><RadioGroup value={filters.taskType} onChange={(e) => setFilter('taskType', e.target.value)}>
-              {['All', 'Mine', 'Team', 'Company'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
-            <Box sx={{ mb: 1.5 }}>
-              <BOSDatePicker label="From" value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} />
-            </Box>
-            <Box>
-              <BOSDatePicker label="To" value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} />
-            </Box>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Consider Date?" open={openSections.considerDate} onToggle={() => toggleSection('considerDate')}>
-            <FormControl><RadioGroup value={filters.considerDate} onChange={(e) => {
-              const val = e.target.value;
-              setFilter('considerDate', val);
-              if (val === 'Yes') {
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const dd = String(today.getDate()).padStart(2, '0');
-                const todayStr = `${yyyy}-${mm}-${dd}`;
-                setFilter('considerDateValue', todayStr);
-                setFilter('fromDate', todayStr);
-              }
-            }}>
-              {['All', 'Yes', 'No'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
-            </RadioGroup></FormControl>
-            {filters.considerDate === 'Yes' && (
-              <Box sx={{ mt: 1.5 }}>
-                <Box sx={{ mb: 1.5 }}>
-                  <BOSDatePicker label="Consider Date" value={filters.considerDateValue || ''} onChange={(e) => {
-                    const val = e.target.value;
-                    setFilter('considerDateValue', val);
-                    if (val) {
-                      setFilter('fromDate', val);
-                    }
-                  }} />
-                </Box>
-                {filters.considerDateValue && (
-                  (() => {
-                    const considerVal = new Date(filters.considerDateValue);
-                    const fromVal = filters.fromDate ? new Date(filters.fromDate) : null;
-                    const toVal = filters.toDate ? new Date(filters.toDate) : null;
-                    let isInvalid = false;
-                    if (fromVal && considerVal < fromVal) isInvalid = true;
-                    if (toVal && considerVal > toVal) isInvalid = true;
-                    if (isInvalid) {
-                      return (
-                        <Typography variant="caption" color="error" sx={{ fontWeight: 600, display: 'block', mt: 0.5 }}>
-                          Consider Date must fall within Created Date From and Created Date To range
-                        </Typography>
-                      );
-                    }
-                    return null;
-                  })()
-                )}
-              </Box>
-            )}
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <Box>
-              {STATUS_OPTIONS.map((s) => <FormControlLabel key={s} sx={{ display: 'flex', ml: 0, mr: 0, py: 0.2 }} control={<Checkbox size="small" checked={filters.statuses.includes(s)} onChange={() => toggleStatus(s)} sx={{ p: 0.5 }} />} label={<Typography variant="body2">{s}</Typography>} />)}
-            </Box>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
-            <FormControl fullWidth><RadioGroup value={filters.searchBy} onChange={(e) => setFilter('searchBy', e.target.value)}>
-              {SEARCH_BY_OPTIONS.map((opt) => <FormControlLabel key={opt.key} value={opt.key} control={<Radio size="small" />} label={<Typography variant="body2">{opt.label}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-        </Box>
-        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', gap: 1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
-          <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
-        </Box>
-      </Drawer>
+
       <ExecutionVerifyDialog
         open={dialogOpen}
         handleClose={() => setDialogOpen(false)}

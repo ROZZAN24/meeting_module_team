@@ -20,7 +20,7 @@ import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8081').replace(/\/+$/, '');
+const API_BASE = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/+$/, '');
 
 // ==============================|| PREMIUM STAT CARD ||============================== //
 

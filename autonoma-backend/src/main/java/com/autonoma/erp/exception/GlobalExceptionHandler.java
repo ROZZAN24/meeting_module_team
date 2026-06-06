@@ -95,6 +95,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Object> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException ex, WebRequest request) {
+        String txId = LogContextHolder.getTransactionId();
+        log.warn("Access denied exception. TX: {} | Reason: {}", txId, ex.getMessage());
+        logException(ex, request, HttpStatus.FORBIDDEN);
+
+        Map<String, Object> body = createErrorBody(ex.getMessage() != null ? ex.getMessage() : "Access Denied.", request, txId);
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Object> handleRuntimeException(RuntimeException ex, WebRequest request) {
         String txId = LogContextHolder.getTransactionId();
