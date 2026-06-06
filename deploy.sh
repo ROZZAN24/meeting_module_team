@@ -42,7 +42,7 @@ cd ..
 
 # 4. Upload backend JAR
 echo "📤 Uploading package to EC2 with compression (Rsync)..."
-rsync -avz -e "ssh -o StrictHostKeyChecking=no -i \"$PEM_KEY\"" autonoma-backend/target/erp-backend-0.0.1-SNAPSHOT.jar "${REMOTE_HOST}:/home/ubuntu/autonoma-backend.jar"
+rsync -avz -e "ssh -o StrictHostKeyChecking=no -i \"$PEM_KEY\"" autonoma-backend/target/erp-backend-0.0.1-SNAPSHOT.jar "${REMOTE_HOST}:/home/ubuntu/autonoma-backend-new.jar"
 
 # Write Nginx configuration to upload
 echo "📝 Generating Nginx configuration..."
@@ -89,6 +89,9 @@ ssh -o StrictHostKeyChecking=no -i "$PEM_KEY" "$REMOTE_HOST" << 'EOF'
             sudo kill -9 $PID2
         fi
     fi
+    
+    echo "⚙️ Moving new backend JAR version..."
+    mv /home/ubuntu/autonoma-backend-new.jar /home/ubuntu/autonoma-backend.jar
     
     echo "Starting new backend instance with RDS datasource overrides..."
     nohup java -Dspring.datasource.url="jdbc:sqlserver://autonoma-db.c274kqgw8lfr.us-east-1.rds.amazonaws.com:1433;databaseName=AUTONOMA;loginTimeout=5;trustServerCertificate=true;sendStringParametersAsUnicode=true;responseBuffering=adaptive;encrypt=true" -Dspring.datasource.username="sa" -Dspring.datasource.password="Eashwar2005" -Dspring.datasource.hikari.connection-timeout=5000 -jar /home/ubuntu/autonoma-backend.jar > /home/ubuntu/erp-backend.log 2>&1 &
