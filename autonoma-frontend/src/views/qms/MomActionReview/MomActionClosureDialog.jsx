@@ -130,7 +130,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
         )}
         {item.status === 'PENDING FOR APPROVAL' && (
           <Typography variant="subtitle2" sx={{ px: 2, py: 1, bgcolor: 'warning.light', color: '#000000', fontWeight: 800, borderRadius: 2, border: '1px solid', borderColor: 'warning.main' }}>
-            ⏳ Awaiting Approver Action
+            ⏳ Awaiting Verifier Action
           </Typography>
         )}
         {item.status === 'CLOSED' && (
@@ -258,7 +258,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
             <Stack direction="row" spacing={2}>
               <BOSTextField
                 label="Status"
-                value={item?.status || ''}
+                value={item?.status === 'PENDING FOR APPROVAL' ? 'PENDING FOR VERIFY' : (item?.status || '')}
                 InputProps={{ readOnly: true }}
                 sx={{ 
                   bgcolor: item?.status === 'OPEN' ? 'error.lighter' : 'grey.50',
@@ -283,7 +283,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
               <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 2, border: '1px solid', borderColor: 'info.main', display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <IconClock size={20} />
                 <Typography variant="body2" color="info.dark" fontWeight={700}>
-                  Closure submitted successfully. Waiting for approver to review and take action from the <b>MOM Approval</b> page.
+                  Closure submitted successfully. Waiting for verifier to review and take action from the <b>MOM Verify / Approval</b> page.
                 </Typography>
               </Box>
             )}

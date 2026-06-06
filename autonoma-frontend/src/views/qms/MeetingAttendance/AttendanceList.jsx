@@ -15,9 +15,9 @@ import AttendanceEntryDialog from './AttendanceEntryDialog';
 import { isMobile } from 'react-device-detect';
 
 const columns = [
-  { id: 'index', label: 'Sl No', minWidth: 60, align: 'center' },
-  { id: 'scheduleNo', label: 'Meeting Sch No', minWidth: 200, bold: true },
-  { id: 'participantName', label: 'Meeting Participant', minWidth: 180 },
+  { id: 'index', label: 'NO', minWidth: 60, align: 'center' },
+  { id: 'scheduleNo', label: 'Meeting Sch No', minWidth: 200, align: 'center', bold: true },
+  { id: 'participantName', label: 'Meeting Participant', minWidth: 180, align: 'center' },
   { id: 'inTime', label: 'In Time', minWidth: 100, align: 'center' },
   { id: 'outTime', label: 'Out Time', minWidth: 100, align: 'center' },
   { id: 'status', label: 'Status', minWidth: 120, align: 'center' }

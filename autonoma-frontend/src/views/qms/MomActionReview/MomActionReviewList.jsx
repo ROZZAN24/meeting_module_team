@@ -23,7 +23,7 @@ const getActionStatusChipSx = (status) => {
     case 'UNRESOLVED': return { bgcolor: 'warning.lighter', color: 'warning.dark', fontWeight: 800, border: '1px solid', borderColor: 'warning.main' };
     case 'OVERDUE': return { bgcolor: 'error.main', color: 'white', fontWeight: 800, border: '1px solid', borderColor: 'error.dark' };
     case 'CANCELLED': return { bgcolor: 'grey.300', color: 'grey.700', fontWeight: 800, border: '1px solid', borderColor: 'grey.500' };
-    case 'PENDING FOR APPROVAL': return { bgcolor: 'warning.light', color: '#000000', fontWeight: 800, border: '1px solid', borderColor: 'warning.main' };
+    case 'PENDING FOR VERIFY': return { bgcolor: 'warning.light', color: '#000000', fontWeight: 800, border: '1px solid', borderColor: 'warning.main' };
     default: return getStatusChipSx('PENDING');
   }
 };
@@ -141,7 +141,9 @@ export default function MomActionReviewList() {
         if (row.targetDate && row.targetDate < today && row.status !== 'CLOSED' && row.status !== 'PENDING FOR APPROVAL') {
           return { ...row, displayStatus: 'OVERDUE' };
         }
-        return { ...row, displayStatus: row.status };
+        let disp = row.status;
+        if (disp === 'PENDING FOR APPROVAL') disp = 'PENDING FOR VERIFY';
+        return { ...row, displayStatus: disp };
       });
       
       setRows(data);

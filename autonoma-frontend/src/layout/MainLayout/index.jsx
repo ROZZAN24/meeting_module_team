@@ -34,6 +34,7 @@ import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { RibbonProvider, useRibbon } from 'contexts/RibbonContext';
 import { IconAlertCircle } from '@tabler/icons-react';
 import FaceWatchdogGuard from 'ui-component/FaceWatchdogGuard';
+import FloatingVoiceAssistant from 'ui-component/ai/FloatingVoiceAssistant';
 
 // ==============================|| MAIN LAYOUT ||============================== //
 
@@ -302,6 +303,7 @@ function MainLayoutInner() {
           <Footer />
         </Container>
       </MainContentStyled>
+      <FloatingVoiceAssistant />
       <Customization />
     </Box>
     </FaceWatchdogGuard>

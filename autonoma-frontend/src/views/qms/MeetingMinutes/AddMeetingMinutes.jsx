@@ -90,6 +90,11 @@ const to12h = (timeVal) => {
   return `${String(h12).padStart(2, '0')}:${parts[1].substring(0, 2)} ${ampm}`;
 };
 
+const getCurrent24hTime = () => {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+};
+
 const INITIAL_FORM = {
   momNo: 'AUTO-GENERATE',
   momDate: TODAY,
@@ -379,7 +384,7 @@ export default function AddMeetingMinutes() {
           updatedAttendanceList.push({
             employee: hostEmployee,
             inTime: '',
-            outTime: '',
+            outTime: getCurrent24hTime(),
             attendanceStatus: 'ABSENT'
           });
           attendanceUpdated = true;
@@ -430,8 +435,8 @@ export default function AddMeetingMinutes() {
         if (record) {
           return {
             employee: p.employee,
-            inTime: formatTo24hString(record.inTime) || formatTo24hString(val.startTime) || '09:00',
-            outTime: formatTo24hString(record.outTime) || '',
+            inTime: formatTo24hString(record.inTime) || formatTo24hString(val.startTime) || getCurrent24hTime(),
+            outTime: formatTo24hString(record.outTime) || getCurrent24hTime(),
             attendanceStatus: record.status ? record.status.toUpperCase() : 'PRESENT'
           };
         } else {
@@ -439,7 +444,7 @@ export default function AddMeetingMinutes() {
           return {
             employee: p.employee,
             inTime: '',
-            outTime: '',
+            outTime: getCurrent24hTime(),
             attendanceStatus: 'ABSENT'
           };
         }
@@ -464,7 +469,7 @@ export default function AddMeetingMinutes() {
       const fallbackParticipants = listToMap.map((p) => ({
         employee: p.employee,
         inTime: '',
-        outTime: '',
+        outTime: getCurrent24hTime(),
         attendanceStatus: 'ABSENT'
       }));
 
@@ -1427,83 +1432,7 @@ export default function AddMeetingMinutes() {
       >
         {detailDialog.form && (
           <Stack spacing={3} sx={{ mt: 1 }}>
-            {/* Header Readonly Info */}
-            <Box
-              sx={{
-                py: 2,
-                px: 3,
-                bgcolor: 'primary.lighter',
-                borderRadius: 3,
-                border: '1px solid',
-                borderColor: 'primary.light',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}
-            >
-              <Grid container justifyContent="space-between" alignItems="center" sx={{ width: '100%' }}>
-                <Grid item xs={4} sx={{ textAlign: 'left' }}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      fontWeight: 600,
-                      display: 'block',
-                      mb: 0.5,
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      fontSize: '0.7rem'
-                    }}
-                  >
-                    Minutes Number
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, fontSize: '0.95rem' }} color="primary.main">
-                    {detailDialog.form.meetNo || 'Auto-generated'}
-                  </Typography>
-                </Grid>
-                <Grid item xs={4} sx={{ textAlign: 'center' }}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      fontWeight: 600,
-                      display: 'block',
-                      mb: 0.5,
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      fontSize: '0.7rem'
-                    }}
-                  >
-                    Amend Minutes Number
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, fontSize: '0.95rem' }} color="text.primary">
-                    {detailDialog.form.amendMeetNo || 'N/A'}
-                  </Typography>
-                </Grid>
-                <Grid item xs={4} sx={{ textAlign: 'right' }}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      fontWeight: 600,
-                      display: 'block',
-                      mb: 0.5,
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      fontSize: '0.7rem'
-                    }}
-                  >
-                    Status
-                  </Typography>
-                  <Typography
-                    variant="subtitle1"
-                    sx={{ fontWeight: 800, fontSize: '0.95rem' }}
-                    color={detailDialog.form.status === 'OPEN' ? 'error.main' : 'success.main'}
-                  >
-                    {detailDialog.form.status}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Box>
+
 
             {/* Discussed Point */}
             <BOSTextField
@@ -1578,7 +1507,7 @@ export default function AddMeetingMinutes() {
                   }));
                 }}
               >
-                <MenuItem value="" sx={{ display: 'none' }}></MenuItem>
+                <MenuItem value=""><em>Select</em></MenuItem>
                 <MenuItem value="RM">RM</MenuItem>
                 <MenuItem value="PRODUCT">PRODUCT</MenuItem>
               </BOSTextField>
@@ -1640,7 +1569,7 @@ export default function AddMeetingMinutes() {
 
               {/* Assigned To */}
               <BOSAutocomplete
-                options={meetingUsers}
+                options={meetingUsers.filter(u => !detailDialog.form.assignedBy || u.id !== detailDialog.form.assignedBy.id)}
                 getOptionLabel={(option) => option.employeeName || ''}
                 value={detailDialog.form.assignedTo}
                 onChange={(val) =>
@@ -1656,7 +1585,7 @@ export default function AddMeetingMinutes() {
 
               {/* Assigned By */}
               <BOSAutocomplete
-                options={meetingUsers}
+                options={meetingUsers.filter(u => !detailDialog.form.assignedTo || u.id !== detailDialog.form.assignedTo.id)}
                 getOptionLabel={(option) => option.employeeName || ''}
                 value={detailDialog.form.assignedBy}
                 onChange={(val) =>
@@ -1718,6 +1647,43 @@ export default function AddMeetingMinutes() {
           </Stack>
         )}
       </BOSFormDialog>
+
+      {/* Static Action Buttons at Bottom */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, pr: 8 }}>
+        <Stack direction="row" spacing={1.5}>
+          <Tooltip title={shortcutTooltip('Back', 'Esc')}>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<IconArrowLeft size={18} />}
+              onClick={() => navigate('/qms/minutesofmeeting')}
+              sx={btnCancel}
+            >
+              Back
+            </Button>
+          </Tooltip>
+          {canSave && (
+            <>
+              <Tooltip title={shortcutTooltip('Clear Form', 'Ctrl + Backspace')}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<IconEraser size={18} />}
+                  onClick={() => setForm(INITIAL_FORM)}
+                  sx={btnClear}
+                >
+                  Clear
+                </Button>
+              </Tooltip>
+              <Tooltip title={shortcutTooltip('Save', 'Ctrl + S')}>
+                <Button variant="contained" color="secondary" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>
+                  Save
+                </Button>
+              </Tooltip>
+            </>
+          )}
+        </Stack>
+      </Box>
     </MainCard>
   );
 }

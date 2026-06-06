@@ -19,25 +19,25 @@ import { isMobile } from 'react-device-detect';
 import useAuth from 'hooks/useAuth';
 
 const columns = [
-  { id: 'index', label: '#', minWidth: 50 },
-  { id: 'momNo', label: 'Meeting Min No', minWidth: 200, bold: true },
-  { id: 'meetingType', label: 'Type', minWidth: 100 },
-  { id: 'momDate', label: 'Meeting Date', minWidth: 120 },
-  { id: 'scheduleNo', label: 'Meeting Sch No', minWidth: 180 },
-  { id: 'minNo', label: 'Min No', minWidth: 200 },
-  { id: 'discussedPoint', label: 'Discussed Point', minWidth: 300 },
-  { id: 'materialList', label: 'Material List', minWidth: 120 },
-  { id: 'processType', label: 'Process', minWidth: 100 },
-  { id: 'assignedTo', label: 'Assigned To', minWidth: 130 },
-  { id: 'assignedBy', label: 'Assigned By', minWidth: 130 },
-  { id: 'detailStatus', label: 'Status', minWidth: 120 },
-  { id: 'targetDate', label: 'Target Date', minWidth: 120 },
-  { id: 'reviewDate', label: 'Review Date', minWidth: 120 },
+  { id: 'index', label: '#', minWidth: 50, align: 'center' },
+  { id: 'momNo', label: 'Meeting Min No', minWidth: 200, bold: true, align: 'center' },
+  { id: 'meetingType', label: 'Type', minWidth: 100, align: 'center' },
+  { id: 'momDate', label: 'Meeting Date', minWidth: 120, align: 'center' },
+  { id: 'scheduleNo', label: 'Meeting Sch No', minWidth: 180, align: 'center' },
+  { id: 'minNo', label: 'Min No', minWidth: 200, align: 'center' },
+  { id: 'discussedPoint', label: 'Discussed Point', minWidth: 300, align: 'center' },
+  { id: 'materialList', label: 'Material List', minWidth: 120, align: 'center' },
+  { id: 'processType', label: 'Process', minWidth: 100, align: 'center' },
+  { id: 'assignedTo', label: 'Assigned To', minWidth: 130, align: 'center' },
+  { id: 'assignedBy', label: 'Assigned By', minWidth: 130, align: 'center' },
+  { id: 'detailStatus', label: 'Status', minWidth: 120, align: 'center' },
+  { id: 'targetDate', label: 'Target Date', minWidth: 120, align: 'center' },
+  { id: 'reviewDate', label: 'Review Date', minWidth: 120, align: 'center' },
   { id: 'pdf', label: 'PDF', minWidth: 80, align: 'center' },
-  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
-  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
-  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
-  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120, align: 'center' },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150, align: 'center' },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120, align: 'center' },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150, align: 'center' }
 ];
 
 const formatDateTime = (dateVal) => {

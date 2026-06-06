@@ -86,7 +86,7 @@ export default function MomApprovalList() {
       {
         id: 'status', label: 'Status', type: 'select', isStarred: true,
         options: [
-          { value: 'PENDING FOR APPROVAL', label: 'PENDING FOR APPROVAL' },
+          { value: 'PENDING FOR APPROVAL', label: 'PENDING FOR VERIFY' },
           { value: 'APPROVED', label: 'APPROVED' },
           { value: 'REJECTED', label: 'REJECTED' },
           { value: 'All', label: 'All' }
@@ -190,10 +190,11 @@ export default function MomApprovalList() {
       val = formatDateTime(row._updatedAt);
     } else if (col.id === 'status') {
       const s = row.status || 'PENDING FOR APPROVAL';
+      const displayStatus = s === 'PENDING FOR APPROVAL' ? 'PENDING FOR VERIFY' : s;
       let chipStatus = 'PENDING';
       if (s === 'APPROVED' || s === 'CLOSED') chipStatus = 'ACTIVE';
       if (s === 'REJECTED') chipStatus = 'INACTIVE';
-      val = <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+      val = <Chip label={displayStatus} size="small" sx={getStatusChipSx(chipStatus)} />;
     } else {
       val = row[col.id] || '-';
     }

@@ -1036,9 +1036,6 @@ export default function AddMeetingSchedule() {
           </Stack>
         </BOSFormSection>
 
-        <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px dashed', borderColor: 'divider', textAlign: 'center' }}>
-          <Typography variant="caption" color="text.secondary">All fields marked with * are mandatory for compliance.</Typography>
-        </Box>
 
         <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
           <Tooltip title={shortcutTooltip('Back', 'Esc')}>
