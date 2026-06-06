@@ -428,20 +428,28 @@ public class EmployeeMasterController {
     @GetMapping("/manager-mapping/eligible-managers")
     @Operation(summary = "Get eligible managers based on designation level criteria")
     public ResponseEntity<List<EmployeeMaster>> getEligibleManagers(@RequestParam(required = false) Long empId) {
+        java.util.List<DesignationLevel> allDesignationLevels = designationLevelRepository.findAll();
+        java.util.Map<Long, Integer> designationLevelValMap = new java.util.HashMap<>();
+        for (DesignationLevel dl : allDesignationLevels) {
+            if (dl.getRowId() != null) {
+                designationLevelValMap.put(dl.getRowId(), parseLevelNumber(dl.getLevel()));
+            }
+        }
+
         int empLevelVal = 0;
         if (empId != null) {
             EmployeeMaster emp = service.getEmployeeById(empId);
             if (emp != null && emp.getEmpLevelId() != null) {
-                DesignationLevel dLevel = designationLevelRepository.findById(emp.getEmpLevelId()).orElse(null);
-                if (dLevel != null) {
-                    empLevelVal = parseLevelNumber(dLevel.getLevel());
+                Integer cachedVal = designationLevelValMap.get(emp.getEmpLevelId());
+                if (cachedVal != null) {
+                    empLevelVal = cachedVal;
                 }
             }
         }
 
+        java.util.Set<Long> empIdsWithCreds = userRepository.findAllEmpIdsWithCredentials();
         List<EmployeeMaster> active = service.getActiveEmployees();
         List<EmployeeMaster> eligible = new java.util.ArrayList<>();
-        // Cache level values for sorting
         java.util.Map<Long, Integer> levelCache = new java.util.HashMap<>();
 
         for (EmployeeMaster candidate : active) {
@@ -450,7 +458,7 @@ public class EmployeeMasterController {
                 continue;
             }
             // 1. User credentials created
-            if (!userRepository.existsByEmpId(candidate.getId())) {
+            if (!empIdsWithCreds.contains(candidate.getId())) {
                 continue;
             }
             // 2. Induction completed
@@ -459,13 +467,10 @@ public class EmployeeMasterController {
             }
             // 3. Level condition: candidateLevelVal must be STRICTLY GREATER than empLevelVal
             if (candidate.getEmpLevelId() != null) {
-                DesignationLevel candLevelObj = designationLevelRepository.findById(candidate.getEmpLevelId()).orElse(null);
-                if (candLevelObj != null) {
-                    int candLevelVal = parseLevelNumber(candLevelObj.getLevel());
-                    if (candLevelVal > empLevelVal) {
-                        eligible.add(candidate);
-                        levelCache.put(candidate.getId(), candLevelVal);
-                    }
+                Integer candLevelVal = designationLevelValMap.get(candidate.getEmpLevelId());
+                if (candLevelVal != null && candLevelVal > empLevelVal) {
+                    eligible.add(candidate);
+                    levelCache.put(candidate.getId(), candLevelVal);
                 }
             }
         }

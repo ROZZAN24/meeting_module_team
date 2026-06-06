@@ -46,6 +46,9 @@ public class ChecklistService {
     @Autowired
     private EmployeeMasterRepository employeeMasterRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.EmployeeManagerMappingRepository managerMappingRepository;
+
     // --- Master Checklist ---
 
     public String getNextSequenceNumber() {
@@ -759,6 +762,57 @@ public class ChecklistService {
         ChecklistAssignment assignment = assignRepo.findById(assignmentId).orElseThrow();
         MasterChecklist master = assignment.getChecklist();
 
+        boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
+                userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
+                .orElse(false);
+
+        if (!isUserAdmin) {
+            String verifierUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+            Long verifierEmpId = null;
+            if (verifierUserId != null) {
+                verifierEmpId = userRepository.findByUserId(verifierUserId)
+                    .map(com.autonoma.erp.model.admin.UserCredential::getEmpId)
+                    .orElse(null);
+            }
+            if (verifierEmpId == null && verifiedBy != null) {
+                verifierEmpId = userRepository.findByUserId(verifiedBy)
+                    .map(com.autonoma.erp.model.admin.UserCredential::getEmpId)
+                    .orElse(null);
+            }
+
+            String verifierEmpCode = null;
+            if (verifierEmpId != null) {
+                verifierEmpCode = employeeMasterRepository.findById(verifierEmpId)
+                    .map(EmployeeMaster::getEmpCode)
+                    .orElse(null);
+            }
+
+            if ("Completed".equalsIgnoreCase(statusName) || "Started".equalsIgnoreCase(statusName)) {
+                if (verifierEmpCode == null || !verifierEmpCode.equalsIgnoreCase(assignment.getAssignedTo())) {
+                    throw new org.springframework.security.access.AccessDeniedException("Access Denied: You cannot submit or modify this task as you are not the assigned employee.");
+                }
+            } else {
+                EmployeeMaster assignee = employeeMasterRepository.findByEmpCode(assignment.getAssignedTo()).orElse(null);
+                if (assignee != null && verifierEmpId != null) {
+                    EmployeeManagerMapping mapping = managerMappingRepository.findByEmpIdAndStatus(assignee.getId(), "Active").orElse(null);
+                    boolean isManager = false;
+                    if (mapping != null) {
+                        isManager = verifierEmpId.equals(mapping.getHomeManagerId()) ||
+                                    verifierEmpId.equals(mapping.getHomeManagerId()) || // home manager checks
+                                    verifierEmpId.equals(mapping.getBusinessManagerId()) ||
+                                    verifierEmpId.equals(mapping.getVerticalHeadId()) ||
+                                    verifierEmpId.equals(mapping.getHrId());
+                    }
+                    if (!isManager) {
+                        throw new org.springframework.security.access.AccessDeniedException("Access Denied: You are not authorized to verify this task because you are not mapped as this employee's manager.");
+                    }
+                } else {
+                    throw new org.springframework.security.access.AccessDeniedException("Access Denied: You are not authorized to verify this task.");
+                }
+            }
+        }
+
         // ── USER REWORK COMPLETION WORKFLOW ──────────────────────────────────
         if ("Completed".equalsIgnoreCase(statusName) && assignment.getStatus() != null
                 && ("Pending".equalsIgnoreCase(assignment.getStatus().getName())
@@ -783,10 +837,7 @@ public class ChecklistService {
 
             if (oldRejected != null) {
                 // Determine the target status for A
-                boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
-                        userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
-                        .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
-                        .orElse(false);
+
 
                 String nextStatusName;
                 if (!isUserAdmin) {
@@ -829,10 +880,7 @@ public class ChecklistService {
         // DUAL CHECK & WORKFLOW MAPPING LOGIC:
         String finalStatusName = statusName;
         if ("Completed".equalsIgnoreCase(statusName)) {
-            boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
-                    userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
-                    .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
-                    .orElse(false);
+
             
             if (!isUserAdmin) {
                 finalStatusName = "Pending for Verified";

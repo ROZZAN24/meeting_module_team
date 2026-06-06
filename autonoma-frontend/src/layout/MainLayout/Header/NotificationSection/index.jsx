@@ -116,6 +116,8 @@ export default function NotificationSection() {
 
   useEffect(() => {
     const fetchChannels = async () => {
+      const token = sessionStorage.getItem('serviceToken');
+      if (!token) return;
       try {
         const res = await axiosServices.get('/api/chat/channels');
         const currentChannels = channelsRef.current;

@@ -21,7 +21,7 @@ export const useWebRTC = (currentUserId, onIncomingCall, onCallEnded) => {
       return;
     }
 
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8081';
+    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
     const client = new Client({
       webSocketFactory: () => new SockJS(`${baseUrl}/ws/signaling`),
       connectHeaders: {
@@ -82,6 +82,10 @@ export const useWebRTC = (currentUserId, onIncomingCall, onCallEnded) => {
   };
 
   const startLocalMedia = async (video = true) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.warn('Media devices or getUserMedia not supported in this browser context.');
+      return null;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video, audio: true });
       setLocalStream(stream);

@@ -461,6 +461,27 @@ public class SqlMigrationRunner implements CommandLineRunner {
             return true;
         }
 
+        // Custom rename mapping for duplicates resolved
+        java.util.Map<String, String> renameMapping = new java.util.HashMap<>();
+        renameMapping.put("20260604_V78.1__Add_Missing_IsActive_To_Checklist_Assignment.sql", "20260604_V78.0__Add_Missing_IsActive_To_Checklist_Assignment.sql");
+        renameMapping.put("20260528_V55.1__Add_Task_Prefix_To_Prefix_Credentials.sql", "20260528_V55.0__Add_Task_Prefix_To_Prefix_Credentials.sql");
+        renameMapping.put("20260528_V56.1__Rename_Support_Ticket_To_Task_Management.sql", "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql");
+        renameMapping.put("20260604_V79.1__Fix_Qms_Audit_Type_Renaming.sql", "20260604_V79.0__Fix_Qms_Audit_Type_Renaming.sql");
+
+        if (renameMapping.containsKey(fileName)) {
+            String oldName = renameMapping.get(fileName);
+            Integer oldCount = targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM ERP_EXECUTED_SCRIPTS WHERE SCRIPT_NAME = ?",
+                    Integer.class,
+                    oldName);
+            if (oldCount != null && oldCount > 0) {
+                try {
+                    markAsExecuted(targetJdbcTemplate, fileName);
+                } catch (Exception e) {}
+                return true;
+            }
+        }
+
         // Backward compatibility: If the file is date-prefixed (e.g. 20260512_V3.4_1__...),
         // check if it has already been executed under its old unprefixed name.
         if (fileName != null && fileName.matches("^\\d{8}_.*")) {

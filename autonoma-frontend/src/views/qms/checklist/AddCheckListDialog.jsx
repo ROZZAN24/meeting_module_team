@@ -139,6 +139,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [carryForward, setCarryForward] = useState('');
   const [amendmentReason, setAmendmentReason] = useState('');
   const [levelIds, setLevelIds] = useState([]);
+  const [levelOptions, setLevelOptions] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const isViewOnly = false;
@@ -244,6 +245,27 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         .catch(err => {
           console.error("Failed to load departments from master", err);
         });
+
+      axios.get('/api/master/hr/designation-levels')
+        .then(res => {
+          const list = (res.data || [])
+            .filter(d => d.isActive !== false)
+            .map(d => d.level)
+            .filter(Boolean);
+          // Sort levels numerically/alphabetically: e.g. L1, L2, L3...
+          const sorted = [...new Set(list)].sort((a, b) => {
+            const numA = parseInt(a.replace(/\D/g, ''), 10);
+            const numB = parseInt(b.replace(/\D/g, ''), 10);
+            if (!isNaN(numA) && !isNaN(numB)) {
+              return numA - numB;
+            }
+            return a.localeCompare(b);
+          });
+          setLevelOptions(sorted);
+        })
+        .catch(err => {
+          console.error("Failed to load designation levels from master", err);
+        });
     }
   }, [open]);
 
@@ -304,6 +326,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       if (!renewalPoint) missing.push('Renewal Point');
       if (!description) missing.push('Descriptions/SOP');
       if (department.length === 0) missing.push('Department');
+      if (levelIds.length === 0) missing.push('Level');
       if (!stockLink) missing.push('Stock Link');
       if (!photoRequired) missing.push('Photo Required');
       if (!dualCheck) missing.push('Verification Required');
@@ -311,6 +334,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       if (!renewalPoint) missing.push('Checking Point');
       if (!description) missing.push('Descriptions/SOP');
       if (department.length === 0) missing.push('Department');
+      if (levelIds.length === 0) missing.push('Level');
       if (!effectiveFrom) missing.push('Effective From');
       if (!frequency) missing.push('Frequency');
       if (!stockLink) missing.push('Stock Link');
@@ -413,7 +437,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           onChange={(files) => setScannedFiles(files)}
           module="MASTER_QMS_CHECKLIST_CHECK_LIST_MASTER"
           multiple={true}
-          accept="image/*"
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
           disabled={isViewOnly}
           label="Scan & Upload"
         />
@@ -586,7 +610,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           icon={<IconSettings size={22} color={theme.palette.primary.main} />}
           title="Execution & Frequency Controls"
         >
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 3 }}>
             <BOSTextField
               select
               label="Department"
@@ -624,6 +648,47 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 <MenuItem key={dept} value={dept}>
                   <Checkbox checked={department.includes(dept)} size="small" disabled={isViewOnly} />
                   <ListItemText primary={dept} />
+                </MenuItem>
+              ))}
+            </BOSTextField>
+
+            <BOSTextField
+              select
+              label="Level"
+              value={levelIds}
+              disabled={isViewOnly}
+              SelectProps={{
+                multiple: true,
+                renderValue: sel => sel.length === 0 ? '-Select-' : sel.length === levelOptions.length ? 'All Levels' : sel.join(', '),
+                onChange: e => {
+                  const val = e.target.value;
+                  if (val.includes('Select All')) {
+                    setLevelIds(prev => prev.length === levelOptions.length ? [] : levelOptions);
+                  } else {
+                    setLevelIds(prev => {
+                      const next = typeof val === 'string' ? val.split(',') : val;
+                      if (prev.length === next.length && prev.every((v, i) => v === next[i])) return prev;
+                      return next;
+                    });
+                  }
+                }
+              }}
+              required
+            >
+              <MenuItem value="Select All">
+                <Checkbox 
+                  checked={levelIds.length === levelOptions.length} 
+                  indeterminate={levelIds.length > 0 && levelIds.length < levelOptions.length} 
+                  size="small" 
+                  disabled={isViewOnly}
+                />
+                <ListItemText primary="Select All" primaryTypographyProps={{ fontWeight: 700 }} />
+              </MenuItem>
+              <Divider />
+              {levelOptions.map(lvl => (
+                <MenuItem key={lvl} value={lvl}>
+                  <Checkbox checked={levelIds.includes(lvl)} size="small" disabled={isViewOnly} />
+                  <ListItemText primary={lvl} />
                 </MenuItem>
               ))}
             </BOSTextField>

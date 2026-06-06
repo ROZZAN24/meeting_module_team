@@ -29,6 +29,7 @@ public class ChecklistController {
     private com.autonoma.erp.service.ChecklistSchedulerService schedulerService;
 
     @GetMapping
+    @RequirePagePermission(pageCode = "QM1110", action = "read")
     @Operation(summary = "Get All Master Checklists", description = "Retrieves a paginated list of master checklists with comprehensive filtering options including category, department, dual check flag, and verification status.")
     public ResponseEntity<Page<MasterChecklist>> getAllChecklists(
             @RequestParam(required = false) String status,
@@ -76,12 +77,14 @@ public class ChecklistController {
     }
 
     @GetMapping("/next-sequence")
+    @RequirePagePermission(pageCode = "M1210", action = "read")
     @Operation(summary = "Get Next Sequence Number", description = "Calculates the next available sequence number for a new checklist")
     public ResponseEntity<Map<String, String>> getNextSequence() {
         return ResponseEntity.ok(Map.of("nextSeqNo", checklistService.getNextSequenceNumber()));
     }
 
     @GetMapping("/assignments")
+    @RequirePagePermission(pageCode = "QM1110", action = "read")
     @Operation(summary = "Get Checklist Assignments", description = "Fetches a paginated list of checklist assignments")
     public ResponseEntity<Page<ChecklistAssignment>> getAssignments(
             @RequestParam(required = false) String status,
@@ -107,6 +110,7 @@ public class ChecklistController {
     }
 
     @PostMapping("/assign")
+    @RequirePagePermission(pageCode = "QM1110", action = "write")
     @Operation(summary = "Assign Checklist to User", description = "Creates a new assignment for a specific checklist and user")
     public ResponseEntity<ChecklistAssignment> assignTask(@RequestBody Map<String, Object> payload) {
         Long id = payload.get("id") != null ? Long.valueOf(payload.get("id").toString()) : null;
@@ -118,6 +122,7 @@ public class ChecklistController {
     }
 
     @DeleteMapping("/assignment/{id}")
+    @RequirePagePermission(pageCode = "QM1110", action = "delete")
     @Operation(summary = "Delete Assignment", description = "Deletes a specific checklist assignment")
     public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
         checklistService.deleteAssignment(id);
@@ -125,12 +130,16 @@ public class ChecklistController {
     }
 
     @PostMapping("/verify")
+    @RequirePagePermission(pageCode = "QM1110", action = "approval")
     @Operation(summary = "Verify Checklist Task", description = "Verifies a specific checklist assignment")
     public ResponseEntity<ChecklistVerification> verifyTask(@RequestBody Map<String, Object> payload) {
+        if (payload == null || !payload.containsKey("assignmentId") || payload.get("assignmentId") == null) {
+            throw new IllegalArgumentException("Assignment ID is required and cannot be null");
+        }
         Long assignmentId = Long.valueOf(payload.get("assignmentId").toString());
-        String verifiedBy = payload.get("verifiedBy").toString();
-        String status = payload.get("status").toString();
-        String remarks = payload.getOrDefault("remarks", "").toString();
+        String verifiedBy = payload.get("verifiedBy") != null ? payload.get("verifiedBy").toString() : "";
+        String status = payload.get("status") != null ? payload.get("status").toString() : "";
+        String remarks = payload.getOrDefault("remarks", "") != null ? payload.getOrDefault("remarks", "").toString() : "";
         @SuppressWarnings("unchecked")
         List<String> actualFiles = (List<String>) payload.get("actualFiles");
         return ResponseEntity.ok(checklistService.verifyTask(assignmentId, verifiedBy, status, remarks, actualFiles));
@@ -140,15 +149,18 @@ public class ChecklistController {
     @RequirePagePermission(pageCode = "QM1110", action = "approval")
     @Operation(summary = "Verify Master Checklist", description = "Approves or rejects a Master Checklist definition")
     public ResponseEntity<MasterChecklist> verifyMaster(@RequestBody Map<String, Object> payload) {
+        if (payload == null || !payload.containsKey("checklistId") || payload.get("checklistId") == null) {
+            throw new IllegalArgumentException("Checklist ID is required and cannot be null");
+        }
         Long checklistId = Long.valueOf(payload.get("checklistId").toString());
-        String verifiedBy = payload.get("verifiedBy").toString();
-        String status = payload.get("status").toString();
-        String remarks = payload.getOrDefault("remarks", "").toString();
+        String verifiedBy = payload.get("verifiedBy") != null ? payload.get("verifiedBy").toString() : "";
+        String status = payload.get("status") != null ? payload.get("status").toString() : "";
+        String remarks = payload.getOrDefault("remarks", "") != null ? payload.getOrDefault("remarks", "").toString() : "";
         return ResponseEntity.ok(checklistService.verifyMasterChecklist(checklistId, verifiedBy, status, remarks));
     }
 
     @PostMapping("/trigger-scheduler")
-
+    @RequirePagePermission(pageCode = "QM1110", action = "write")
     @Operation(summary = "Manual Scheduler Trigger", description = "Manually triggers the recurring checklist generation (for testing/maintenance)")
     public ResponseEntity<String> triggerScheduler() {
         schedulerService.generateRecurringAssignments();
