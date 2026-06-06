@@ -89,7 +89,7 @@ const INITIAL = {
   isTaskTester: 'NO', taskTesterType: '', taskTesterFileInfo: '',
   isChaired: 'NO', chairedType: '', chairedFileInfo: '',
   isHost: 'NO', hostType: '', hostFileInfo: '',
-  isParticipants: 'YES', participantsType: '', participantsFileInfo: '',
+  isParticipants: 'NO', participantsType: '', participantsFileInfo: '',
   segment: '', subSegment: '',
   isFirstAid: 'NO', firstAidFileInfo: '',
   isFireFighter: 'NO', fireFighterFileInfo: '',
@@ -875,6 +875,15 @@ export default function EmployeeMaster() {
         </BOSFormSection>
 
       </Stack>
+
+      <Divider sx={{ my: 3 }} />
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, pb: 1 }}>
+        <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hr/employee/master')} sx={{ ...btnCancel, px: 2.2, py: 0.75 }}>Back</Button></Tooltip>
+        {employeeId && <Tooltip title="Delete"><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={{ ...btnDelete, px: 2.2, py: 0.75 }}>Delete</Button></Tooltip>}
+        <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); navigate('/hr/employee/master/create', { replace: true }); }} sx={{ ...btnClear, px: 2.2, py: 0.75 }}>Clear</Button></Tooltip>
+        <Tooltip title="Save"><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={{ ...btnSave, px: 2.2, py: 0.75 }}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>
+      </Box>
 
       <ConfirmDeleteDialog 
         open={deleteOpen} 

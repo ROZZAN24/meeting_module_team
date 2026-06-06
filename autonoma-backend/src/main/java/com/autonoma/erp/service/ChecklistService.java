@@ -466,9 +466,27 @@ public class ChecklistService {
                 Predicate pendingVerification = mineStatusJoin.get("name").in("Pending for Verified", "Pending for Accepted");
                 predicates.add(cb.or(assignedToMe, pendingVerification));
             } else if ("Team".equalsIgnoreCase(taskType)) {
-                // For simplicity, we assume 'Team' means tasks for the user's department.
-                // This would normally involve joining with Employee departments.
-                // For now, we allow the UI to pass specific 'assignedTo' names for the team.
+                if (assignedTo == null || assignedTo.trim().isEmpty()) {
+                    List<EmployeeMaster> reports = getMyTeamEmployees(currentUser);
+                    if (reports.isEmpty()) {
+                        predicates.add(cb.or()); // Force empty result set
+                    } else {
+                        List<Predicate> orUserPreds = new ArrayList<>();
+                        for (EmployeeMaster report : reports) {
+                            if (report.getEmployeeName() != null) {
+                                orUserPreds.add(cb.equal(cb.lower(root.get("assignedTo")), report.getEmployeeName().toLowerCase()));
+                            }
+                            if (report.getEmpCode() != null) {
+                                orUserPreds.add(cb.equal(cb.lower(root.get("assignedTo")), report.getEmpCode().toLowerCase()));
+                            }
+                        }
+                        if (orUserPreds.isEmpty()) {
+                            predicates.add(cb.or());
+                        } else {
+                            predicates.add(cb.or(orUserPreds.toArray(new Predicate[0])));
+                        }
+                    }
+                }
             }
 
             if (status != null && !status.equals("All") && !status.isEmpty()) {
@@ -497,11 +515,11 @@ public class ChecklistService {
 
             if (assignedTo != null && !assignedTo.isEmpty()) {
                 if (assignedTo.contains(",")) {
-                    // Multi-select support
+                    // Multi-select support (case-insensitive)
                     String[] users = assignedTo.split(",");
                     List<Predicate> orUserPreds = new ArrayList<>();
                     for (String user : users) {
-                        orUserPreds.add(cb.equal(root.get("assignedTo"), user.trim()));
+                        orUserPreds.add(cb.equal(cb.lower(root.get("assignedTo")), user.trim().toLowerCase()));
                     }
                     predicates.add(cb.or(orUserPreds.toArray(new Predicate[0])));
                 } else {
@@ -611,6 +629,25 @@ public class ChecklistService {
             // distinct(true) removed to avoid dense_rank order by on TEXT/NVARCHAR(MAX) columns in SQL Server
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
+    }
+
+    public List<EmployeeMaster> getMyTeamEmployees(String currentUser) {
+        if (currentUser == null || currentUser.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        String name = currentUser;
+        String code = currentUser;
+        Optional<EmployeeMaster> verifierOpt = employeeMasterRepository.findByEmpCodeOrName(currentUser);
+        if (verifierOpt.isPresent()) {
+            EmployeeMaster verifier = verifierOpt.get();
+            if (verifier.getEmployeeName() != null) {
+                name = verifier.getEmployeeName();
+            }
+            if (verifier.getEmpCode() != null) {
+                code = verifier.getEmpCode();
+            }
+        }
+        return employeeMasterRepository.findActiveReportsByVerticalHead(name, code, currentUser);
     }
 
     @Transactional

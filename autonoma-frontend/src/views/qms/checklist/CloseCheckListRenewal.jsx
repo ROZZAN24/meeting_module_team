@@ -33,6 +33,7 @@ import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, BOSDateP
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import useLookups from 'hooks/useLookups';
 
 const columns = [
   '#',
@@ -73,7 +74,7 @@ const DEFAULT_FILTERS = {
   considerDateValue: '',
   statuses: [],
   searchBy: 'All',
-  departments: [],
+  assignedTo: [],
 
   // Add-on filter support
   seqNo: '',
@@ -173,63 +174,7 @@ const exportColumns = [
   }}
 ];
 
-const getFilterConfig = (departments) => [{
-    id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'Mine', label: 'Mine' },
-      { value: 'Team', label: 'Team' },
-      { value: 'Company', label: 'Company' }
-    ]
-  },
-  { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
-  { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
-  {
-    id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, defaultValue: 'No', options: [
-      { value: 'All', label: 'All' },
-      { value: 'Yes', label: 'Yes' },
-      { value: 'No', label: 'No' }
-    ]
-  },
-  { id: 'statuses', label: 'Status', type: 'autocomplete', multiple: true, isStarred: true, options: STATUS_OPTIONS.map(s => ({ value: s, label: s })) },
-  { id: 'departments', label: 'Department', type: 'autocomplete', multiple: true, isStarred: true, options: departments.map(d => ({ value: d, label: d })) },
-  {
-    id: 'searchBy', label: 'Search by', type: 'select', isStarred: true, defaultValue: 'All', options: [
-      { value: 'All', label: 'Global Search' },
-      { value: 'checkingPoint', label: 'Checking Point' },
-      { value: 'seqNo', label: 'Seq.No' }
-    ]
-  },
-
-  // The remaining fields in the table can be added by the "Add Filter" option (isStarred: false)
-  { id: 'seqNo', label: 'Sequence No', type: 'text', isStarred: false },
-  { id: 'checkingPoint', label: 'Checking Point', type: 'text', isStarred: false },
-  {
-    id: 'category', label: 'Category', type: 'select', isStarred: false, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'RENEWAL', label: 'RENEWAL' },
-      { value: 'CHECK LIST', label: 'CHECK LIST' }
-    ]
-  },
-  {
-    id: 'frequency', label: 'Frequency', type: 'select', isStarred: false, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'DAILY', label: 'DAILY' },
-      { value: 'WEEKLY', label: 'WEEKLY' },
-      { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' },
-      { value: 'MONTHLY', label: 'MONTHLY' },
-      { value: 'QUARTERLY', label: 'QUARTERLY' },
-      { value: 'HALF YEARLY', label: 'HALF YEARLY' },
-      { value: 'YEARLY', label: 'YEARLY' }
-    ]
-  },
-  {
-    id: 'stockLink', label: 'Stock Link', type: 'select', isStarred: false, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'YES', label: 'YES' },
-      { value: 'NO', label: 'NO' }
-    ]
-  },
-  ...getCommonDateFilters('createdDate', 'updatedDate')];
+// getFilterConfig removed. Replaced by dynamic useEffect setup inside the component.
 
 function FilterSection({ title, open, onToggle, children }) {
   return (
@@ -305,6 +250,9 @@ function StatusChip({ status }) {
 export default function CloseCheckListRenewal() {
   const { user } = useAuth();
   const dispatch = useDispatch();
+  const { employees = [] } = useLookups(['EMPLOYEES']);
+  const [myTeamEmployees, setMyTeamEmployees] = useState([]);
+  const [myTeamLoaded, setMyTeamLoaded] = useState(false);
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -323,30 +271,170 @@ export default function CloseCheckListRenewal() {
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, searchBy: false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
-  const [departmentsList, setDepartmentsList] = useState([]);
-
+  // Load reporting employees on mount
   useEffect(() => {
-    axios.get('/api/master/hr/departments')
+    if (user?.name || user?.id) {
+      axios.get('/api/qms/checklist/my-team-employees', {
+        params: { currentUser: user?.name || user?.id }
+      })
       .then(res => {
-        const list = (res.data || [])
-          .filter(d => d.status?.toLowerCase() === 'active' || d.status === null)
-          .map(d => d.departmentName);
-        setDepartmentsList(list);
+        setMyTeamEmployees(res.data || []);
+        setMyTeamLoaded(true);
       })
       .catch(err => {
-        console.error("Failed to load departments from master", err);
+        console.error("Failed to load team employees", err);
+        setMyTeamLoaded(true);
       });
-  }, []);
+    }
+  }, [user]);
 
-  // Configure global search bar filters on mount
+  const isVerticalHead = myTeamEmployees && myTeamEmployees.length > 0;
+
+  // Configure dynamic global search bar filters based on hierarchy and permissions
   useEffect(() => {
-    dispatch(setFilterConfig(getFilterConfig(departmentsList)));
+    if (perms.loading) return;
+
+    const taskTypeOptions = [
+      { value: 'All', label: 'All' },
+      { value: 'Mine', label: 'Mine' }
+    ];
+    if (isVerticalHead) {
+      taskTypeOptions.push({ value: 'Team', label: 'My Team' });
+    }
+    if (perms.additional1) {
+      taskTypeOptions.push({ value: 'Company', label: 'My Company' });
+    }
+
+    const baseConfig = [
+      {
+        id: 'taskType',
+        label: 'Task Type',
+        type: 'select',
+        isStarred: true,
+        defaultValue: 'Mine',
+        options: taskTypeOptions
+      },
+      { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
+      { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
+      {
+        id: 'considerDate',
+        label: 'Consider Date?',
+        type: 'select',
+        isStarred: true,
+        defaultValue: 'No',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'Yes', label: 'Yes' },
+          { value: 'No', label: 'No' }
+        ]
+      },
+      {
+        id: 'statuses',
+        label: 'Status',
+        type: 'autocomplete',
+        multiple: true,
+        isStarred: true,
+        options: STATUS_OPTIONS.map((s) => ({ value: s, label: s }))
+      }
+    ];
+
+    if (filters.taskType === 'Team' && isVerticalHead) {
+      const empOptions = myTeamEmployees.map((e) => ({
+        value: e.employeeName,
+        label: e.employeeName
+      }));
+      baseConfig.push({
+        id: 'assignedTo',
+        label: 'Employee',
+        type: 'autocomplete',
+        multiple: true,
+        isStarred: true,
+        options: empOptions
+      });
+    } else if (filters.taskType === 'Company' && perms.additional1) {
+      const empOptions = (employees || [])
+        .filter((e) => e.status === 'Active' || e.status === null)
+        .map((e) => ({
+          value: e.employeeName,
+          label: e.employeeName
+        }));
+      baseConfig.push({
+        id: 'assignedTo',
+        label: 'Employee',
+        type: 'autocomplete',
+        multiple: true,
+        isStarred: true,
+        options: empOptions
+      });
+    }
+
+    baseConfig.push(
+      {
+        id: 'searchBy',
+        label: 'Search by',
+        type: 'select',
+        isStarred: true,
+        defaultValue: 'All',
+        options: [
+          { value: 'All', label: 'Global Search' },
+          { value: 'checkingPoint', label: 'Checking Point' },
+          { value: 'seqNo', label: 'Seq.No' }
+        ]
+      },
+      { id: 'seqNo', label: 'Sequence No', type: 'text', isStarred: false },
+      { id: 'checkingPoint', label: 'Checking Point', type: 'text', isStarred: false },
+      {
+        id: 'category',
+        label: 'Category',
+        type: 'select',
+        isStarred: false,
+        defaultValue: 'All',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'RENEWAL', label: 'RENEWAL' },
+          { value: 'CHECK LIST', label: 'CHECK LIST' }
+        ]
+      },
+      {
+        id: 'frequency',
+        label: 'Frequency',
+        type: 'select',
+        isStarred: false,
+        defaultValue: 'All',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'DAILY', label: 'DAILY' },
+          { value: 'WEEKLY', label: 'WEEKLY' },
+          { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' },
+          { value: 'MONTHLY', label: 'MONTHLY' },
+          { value: 'QUARTERLY', label: 'QUARTERLY' },
+          { value: 'HALF YEARLY', label: 'HALF YEARLY' },
+          { value: 'YEARLY', label: 'YEARLY' }
+        ]
+      },
+      {
+        id: 'stockLink',
+        label: 'Stock Link',
+        type: 'select',
+        isStarred: false,
+        defaultValue: 'All',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'YES', label: 'YES' },
+          { value: 'NO', label: 'NO' }
+        ]
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')
+    );
+
+    dispatch(setFilterConfig(baseConfig));
     dispatch(setTableConfig(tableCols));
+
     return () => {
       dispatch(setFilterConfig(null));
       dispatch(setTableConfig(null));
     };
-  }, [dispatch, departmentsList]);
+  }, [dispatch, isVerticalHead, myTeamEmployees, perms.additional1, perms.loading, employees, filters.taskType]);
 
   // Sync global search filters with local filters
   useEffect(() => {
@@ -357,7 +445,7 @@ export default function CloseCheckListRenewal() {
 
         const filterKeys = [
           'taskType', 'fromDate', 'toDate', 'considerDate', 'considerDateValue', 'statuses',
-          'searchBy', 'departments', 'seqNo', 'checkingPoint', 'category',
+          'searchBy', 'assignedTo', 'seqNo', 'checkingPoint', 'category',
           'frequency', 'stockLink'
         ];
 
@@ -376,7 +464,6 @@ export default function CloseCheckListRenewal() {
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
     try {
-      const depts = filters.departments || [];
       const considerDate = globalFilters.createdDateConsider || filters.considerDate || 'No';
       const params = {
         page,
@@ -388,13 +475,15 @@ export default function CloseCheckListRenewal() {
         considerDateValue: (String(considerDate).trim().toUpperCase() === 'YES' && (globalFilters.createdDateConsiderValue || filters.considerDateValue)) ? (globalFilters.createdDateConsiderValue || filters.considerDateValue) : undefined,
         searchValue: searchQuery || undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
-        department: depts.length > 0 ? depts[0] : undefined,
 
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
         currentUser: user?.id || user?.name || undefined,
         excludeCompleted: true,
         excludePending: false,
+
+        // Assigned To Multi-select parameter mapping
+        assignedTo: (filters.assignedTo && filters.assignedTo.length > 0) ? filters.assignedTo.join(',') : undefined,
 
         // Add-on filters
         seqNo: filters.seqNo || undefined,
@@ -517,7 +606,7 @@ export default function CloseCheckListRenewal() {
     }
   };
 
-  const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
+  const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignedTo?.length || 0);
 
   const canEditSelected = perms.write || (activeRow && activeRow.assignedTo && (
     activeRow.assignedTo.toLowerCase() === user?.id?.toLowerCase() ||

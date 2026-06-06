@@ -83,6 +83,13 @@ public class ChecklistController {
         return ResponseEntity.ok(Map.of("nextSeqNo", checklistService.getNextSequenceNumber()));
     }
 
+    @GetMapping("/my-team-employees")
+    @RequirePagePermission(pageCode = "QM1120", action = "read")
+    @Operation(summary = "Get Reporting Employees", description = "Fetches active employees reporting to the logged-in user as Vertical Head")
+    public ResponseEntity<List<EmployeeMaster>> getMyTeamEmployees(@RequestParam String currentUser) {
+        return ResponseEntity.ok(checklistService.getMyTeamEmployees(currentUser));
+    }
+
     @GetMapping("/assignments")
     @RequirePagePermission(pageCode = "QM1110", action = "read")
     @Operation(summary = "Get Checklist Assignments", description = "Fetches a paginated list of checklist assignments")
