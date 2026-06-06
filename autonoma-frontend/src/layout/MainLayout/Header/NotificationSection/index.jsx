@@ -1,6 +1,6 @@
 import TextField from 'ui-component/CustomTextField';
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -18,6 +18,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Badge from '@mui/material/Badge';
+import IconButton from '@mui/material/IconButton';
 
 import axiosServices from 'utils/axios';
 
@@ -27,9 +28,10 @@ import { useSnackbar } from 'notistack';
 import MainCard from 'ui-component/cards/MainCard';
 import Transitions from 'ui-component/extended/Transitions';
 import NotificationList from './NotificationList';
+import useAuth from 'hooks/useAuth';
 
 // assets
-import { IconBell } from '@tabler/icons-react';
+import { IconBell, IconX } from '@tabler/icons-react';
 
 // notification status options
 const status = [
@@ -111,8 +113,44 @@ export default function NotificationSection() {
     event?.target.value && setValue(event?.target.value);
   };
 
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [channels, setChannels] = useState([]);
   const channelsRef = useRef([]);
+  const [notifications, setNotifications] = useState([]);
+  const notifsRef = useRef([]);
+
+  const fetchNotifications = async () => {
+    if (!user || !user.empId) return;
+    try {
+      const res = await axiosServices.get(`/api/notifications/all/${user.empId}`);
+      const currentNotifs = notifsRef.current;
+      if (currentNotifs.length > 0) {
+        res.data.forEach(newNotif => {
+          if (!newNotif.isRead) {
+            const oldNotif = currentNotifs.find(n => n.id === newNotif.id);
+            if (!oldNotif) {
+              enqueueSnackbar(newNotif.title, {
+                variant: 'info',
+                anchorOrigin: { vertical: 'top', horizontal: 'right' },
+                persist: true,
+                action: (key) => (
+                  <IconButton size="small" onClick={() => closeSnackbar(key)} sx={{ color: 'white' }}>
+                    <IconX size={16} />
+                  </IconButton>
+                )
+              });
+              playNotificationSound();
+            }
+          }
+        });
+      }
+      setNotifications(res.data);
+      notifsRef.current = res.data;
+    } catch (e) {
+      console.error('Failed to fetch notifications', e);
+    }
+  };
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -139,8 +177,68 @@ export default function NotificationSection() {
     return () => clearInterval(interval);
   }, [enqueueSnackbar]);
 
-  const unreadChannels = channels.filter(c => c.unreadCount > 0).sort((a,b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
-  const totalUnread = unreadChannels.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+  useEffect(() => {
+    if (!user || !user.empId) return;
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [user, enqueueSnackbar]);
+
+  const handleNotifClick = async (notif) => {
+    try {
+      if (!notif.isRead) {
+        await axiosServices.put(`/api/notifications/${notif.id}/read`);
+      }
+      setOpen(false);
+      fetchNotifications();
+      if (notif.linkUrl) {
+        navigate(notif.linkUrl);
+      }
+    } catch (e) {
+      console.error('Failed to handle notification click', e);
+    }
+  };
+
+  const handleNotifDismiss = async (notif, event) => {
+    if (event) event.stopPropagation();
+    try {
+      await axiosServices.put(`/api/notifications/${notif.id}/read`);
+      fetchNotifications();
+    } catch (e) {
+      console.error('Failed to dismiss notification', e);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    if (!user || !user.empId) return;
+    try {
+      await axiosServices.put(`/api/notifications/read-all/${user.empId}`);
+      fetchNotifications();
+    } catch (e) {
+      console.error('Failed to mark all as read', e);
+    }
+  };
+
+  const chatUnread = useMemo(() => {
+    const unreadChannels = channels.filter(c => c.unreadCount > 0);
+    return unreadChannels.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+  }, [channels]);
+
+  const appUnread = useMemo(() => {
+    return notifications.filter(n => !n.isRead).length;
+  }, [notifications]);
+
+  const totalUnread = chatUnread + appUnread;
+
+  const filteredNotifications = useMemo(() => {
+    if (value === 'unread' || value === 'new') {
+      return notifications.filter(n => !n.isRead);
+    }
+    if (value === 'other') {
+      return notifications.filter(n => n.isRead);
+    }
+    return notifications; // 'all'
+  }, [notifications, value]);
 
   return (
     <>
@@ -198,14 +296,18 @@ export default function NotificationSection() {
                           <Chip size="small" label={totalUnread} variant="filled" sx={{ color: 'background.default', bgcolor: 'warning.dark' }} />
                         )}
                       </Stack>
-                      <Typography component={Link} to="/chat" variant="subtitle2" sx={{ color: 'primary.main' }}>
+                      <Typography 
+                        variant="subtitle2" 
+                        onClick={handleMarkAllRead} 
+                        sx={{ color: 'primary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                      >
                         Mark as all read
                       </Typography>
                     </Stack>
                     <Box sx={{ height: 1, maxHeight: 'calc(100vh - 205px)', overflowX: 'hidden', '&::-webkit-scrollbar': { width: 5 } }}>
                       <Box sx={{ px: 2, pt: 0.25 }}>
                         <TextField
-                          id="outlined-select-currency-native"
+                           id="outlined-select-currency-native"
                           select
                           fullWidth
                           value={value}
@@ -220,7 +322,11 @@ export default function NotificationSection() {
                         </TextField>
                       </Box>
                       <Divider sx={{ mt: 2 }} />
-                      <NotificationList notifications={unreadChannels} />
+                      <NotificationList 
+                        notifications={filteredNotifications} 
+                        onNotifClick={handleNotifClick} 
+                        onNotifDismiss={handleNotifDismiss} 
+                      />
                     </Box>
                   </Stack>
                   <CardActions sx={{ p: 1.25, justifyContent: 'center' }}>

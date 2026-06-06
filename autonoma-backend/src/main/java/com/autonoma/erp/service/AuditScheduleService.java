@@ -27,6 +27,34 @@ public class AuditScheduleService {
     @Autowired
     private com.autonoma.erp.repository.AuditObservationRepository auditObservationRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.EmployeeMasterRepository employeeMasterRepository;
+
+    @Autowired
+    private com.autonoma.erp.service.NotificationService notificationService;
+
+    private void sendAuditNotifications(AuditSchedule schedule, String actionType) {
+        try {
+            logger.info("Sending notifications for Audit Schedule: {}, action: {}", schedule.getScheduleNo(), actionType);
+            String auditeeCode = extractEmployeeCode(schedule.getAuditee());
+            String auditorCode = extractEmployeeCode(schedule.getAuditor());
+
+            if (auditeeCode != null && !auditeeCode.trim().isEmpty()) {
+                employeeMasterRepository.findByEmpCode(auditeeCode.trim()).ifPresent(auditeeEmp -> {
+                    notificationService.notifyUserAboutAudit(auditeeEmp, schedule, actionType);
+                });
+            }
+
+            if (auditorCode != null && !auditorCode.trim().isEmpty()) {
+                employeeMasterRepository.findByEmpCode(auditorCode.trim()).ifPresent(auditorEmp -> {
+                    notificationService.notifyUserAboutAudit(auditorEmp, schedule, actionType);
+                });
+            }
+        } catch (Exception e) {
+            logger.error("Failed to send audit notifications for schedule {}: {}", schedule.getScheduleNo(), e.getMessage(), e);
+        }
+    }
+
     public List<AuditSchedule> getAllAuditSchedules() {
         List<AuditSchedule> list = repository.findAll().stream().filter(a -> !a.isDeleted()).toList();
         for (AuditSchedule schedule : list) {
@@ -67,7 +95,9 @@ public class AuditScheduleService {
                 criteria.setAuditSchedule(auditSchedule);
             }
         }
-        return repository.save(auditSchedule);
+        AuditSchedule saved = repository.save(auditSchedule);
+        sendAuditNotifications(saved, "CREATE");
+        return saved;
     }
 
     public AuditSchedule updateAuditSchedule(Long id, AuditSchedule updatedAuditSchedule) {
@@ -77,6 +107,30 @@ public class AuditScheduleService {
             boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(existing.getScheduleNo()).isEmpty();
             if (exists) {
                 throw new RuntimeException("Cannot reschedule or edit this audit schedule because employee attendance has already been recorded.");
+            }
+
+            boolean dateOrTimeChanged = false;
+            if (existing.getAuditDate() != null && updatedAuditSchedule.getAuditDate() != null 
+                    && !existing.getAuditDate().equals(updatedAuditSchedule.getAuditDate())) {
+                dateOrTimeChanged = true;
+            }
+            if (existing.getStartTime() != null && updatedAuditSchedule.getStartTime() != null 
+                    && !existing.getStartTime().equals(updatedAuditSchedule.getStartTime())) {
+                dateOrTimeChanged = true;
+            }
+            if (existing.getEndTime() != null && updatedAuditSchedule.getEndTime() != null 
+                    && !existing.getEndTime().equals(updatedAuditSchedule.getEndTime())) {
+                dateOrTimeChanged = true;
+            }
+
+            boolean assigneeChanged = false;
+            if (existing.getAuditee() != null && updatedAuditSchedule.getAuditee() != null 
+                    && !existing.getAuditee().equals(updatedAuditSchedule.getAuditee())) {
+                assigneeChanged = true;
+            }
+            if (existing.getAuditor() != null && updatedAuditSchedule.getAuditor() != null 
+                    && !existing.getAuditor().equals(updatedAuditSchedule.getAuditor())) {
+                assigneeChanged = true;
             }
 
             // Increment reschedule count if the audit date is changed
@@ -109,7 +163,17 @@ public class AuditScheduleService {
                     existing.getCriteriaList().add(criteria);
                 }
             }
-            return repository.save(existing);
+            AuditSchedule saved = repository.save(existing);
+
+            String actionType = "UPDATE";
+            if (dateOrTimeChanged) {
+                actionType = "RESCHEDULE";
+            } else if (assigneeChanged) {
+                actionType = "ASSIGN";
+            }
+            sendAuditNotifications(saved, actionType);
+
+            return saved;
         }).orElseThrow(() -> new RuntimeException("Audit Schedule not found with id " + id));
     }
 
@@ -245,7 +309,8 @@ public class AuditScheduleService {
                 throw new RuntimeException("Cannot delete this audit schedule because employee attendance has already been recorded.");
             }
             existing.setDeleted(true);
-            repository.save(existing);
+            AuditSchedule saved = repository.save(existing);
+            sendAuditNotifications(saved, "CANCEL");
         });
     }
 
