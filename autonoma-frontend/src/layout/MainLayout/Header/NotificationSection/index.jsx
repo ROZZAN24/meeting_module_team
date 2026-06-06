@@ -32,7 +32,7 @@ import NotificationList from './NotificationList';
 import useAuth from 'hooks/useAuth';
 
 // assets
-import { IconBell, IconX, IconInfoCircle } from '@tabler/icons-react';
+import { IconBell, IconX } from '@tabler/icons-react';
 
 // notification status options
 const status = [
@@ -81,16 +81,7 @@ const playNotificationSound = () => {
 const AuditNotificationToast = forwardRef(({ id, notif, onClose, onClick }, ref) => {
   const theme = useTheme();
   return (
-    <SnackbarContent 
-      ref={ref} 
-      role="alert" 
-      style={{ 
-        justifyContent: 'flex-end',
-        backgroundColor: 'transparent',
-        boxShadow: 'none',
-        padding: 0
-      }}
-    >
+    <SnackbarContent ref={ref} role="alert" style={{ justifyContent: 'flex-end' }}>
       <Card
         onClick={onClick}
         sx={{
@@ -124,7 +115,7 @@ const AuditNotificationToast = forwardRef(({ id, notif, onClose, onClick }, ref)
           >
             <IconBell size={20} />
           </Avatar>
-          <Box sx={{ flex: 1, pr: 7 }}>
+          <Box sx={{ flex: 1, pr: 3 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.3 }}>
               {notif.title}
             </Typography>
@@ -140,33 +131,19 @@ const AuditNotificationToast = forwardRef(({ id, notif, onClose, onClick }, ref)
               {notif.message}
             </Typography>
           </Box>
-          <Stack direction="row" gap={0.5} sx={{ position: 'absolute', top: 8, right: 8 }}>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-              }}
-              sx={{
-                color: theme.vars ? theme.vars.palette.primary.main : theme.palette.primary.main,
-                '&:hover': { color: theme.vars ? theme.vars.palette.primary.dark : theme.palette.primary.dark }
-              }}
-              title="View Details"
-            >
-              <IconInfoCircle size={16} />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={onClose}
-              sx={{
-                color: theme.vars ? theme.vars.palette.text.secondary : theme.palette.text.secondary,
-                '&:hover': { color: theme.vars ? theme.vars.palette.error.main : theme.palette.error.main }
-              }}
-              title="Close"
-            >
-              <IconX size={16} />
-            </IconButton>
-          </Stack>
+          <IconButton
+            size="small"
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              color: theme.vars ? theme.vars.palette.text.secondary : theme.palette.text.secondary,
+              '&:hover': { color: theme.vars ? theme.vars.palette.error.main : theme.palette.error.main }
+            }}
+          >
+            <IconX size={16} />
+          </IconButton>
         </Box>
       </Card>
     </SnackbarContent>
