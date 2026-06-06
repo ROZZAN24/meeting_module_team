@@ -173,8 +173,8 @@ const exportColumns = [
   }}
 ];
 
-const getFilterConfig = (departments) => [{
-    id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
+  const getFilterConfig = (departments) => [{
+    id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'Mine', options: [
       { value: 'All', label: 'All' },
       { value: 'Mine', label: 'Mine' },
       { value: 'Team', label: 'Team' },

@@ -456,19 +456,87 @@ public class ChecklistService {
             }
 
             // Task Type Logic (SOP Item 8)
+            boolean isUserAdmin = false;
+            Long userEmpId = null;
+            String userEmpCode = null;
+            String userEmpName = null;
+            String userEmpFullName = null;
+
+            if (currentUser != null && !currentUser.trim().isEmpty()) {
+                isUserAdmin = userRepository.findByUserId(currentUser)
+                    .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
+                    .orElse(false);
+
+                com.autonoma.erp.model.admin.UserCredential credential = userRepository.findByUserId(currentUser).orElse(null);
+                if (credential != null) {
+                    userEmpId = credential.getEmpId();
+                    if (userEmpId != null) {
+                        EmployeeMaster emp = employeeMasterRepository.findById(userEmpId).orElse(null);
+                        if (emp != null) {
+                            userEmpCode = emp.getEmpCode();
+                            userEmpName = emp.getEmployeeName();
+                            String first = emp.getFirstName() != null ? emp.getFirstName() : "";
+                            String last = emp.getLastName() != null ? emp.getLastName() : "";
+                            userEmpFullName = (first + " " + last).trim();
+                        }
+                    }
+                }
+            }
+
+            // Build assignedToMe predicate
+            List<Predicate> mePreds = new ArrayList<>();
+            if (currentUser != null) {
+                mePreds.add(cb.equal(cb.lower(root.get("assignedTo")), currentUser.toLowerCase()));
+            }
+            if (userEmpCode != null) {
+                mePreds.add(cb.equal(cb.lower(root.get("assignedTo")), userEmpCode.toLowerCase()));
+            }
+            if (userEmpName != null) {
+                mePreds.add(cb.equal(cb.lower(root.get("assignedTo")), userEmpName.toLowerCase()));
+            }
+            if (userEmpFullName != null && !userEmpFullName.isEmpty()) {
+                mePreds.add(cb.equal(cb.lower(root.get("assignedTo")), userEmpFullName.toLowerCase()));
+            }
+            Predicate assignedToMe = mePreds.isEmpty() ? cb.disjunction() : cb.or(mePreds.toArray(new Predicate[0]));
+
+            // Fetch reportees of the current user
+            List<String> reporteeIdentifiers = new ArrayList<>();
+            if (userEmpId != null) {
+                List<Long> reporteeEmpIds = managerMappingRepository.findReporteeEmpIdsByManagerId(userEmpId);
+                if (reporteeEmpIds != null && !reporteeEmpIds.isEmpty()) {
+                    List<EmployeeMaster> reportees = employeeMasterRepository.findAllById(reporteeEmpIds);
+                    for (EmployeeMaster rep : reportees) {
+                        if (rep.getEmpCode() != null) reporteeIdentifiers.add(rep.getEmpCode().toLowerCase());
+                        if (rep.getEmployeeName() != null) reporteeIdentifiers.add(rep.getEmployeeName().toLowerCase());
+                        String repFullName = ((rep.getFirstName() != null ? rep.getFirstName() : "") + " " + (rep.getLastName() != null ? rep.getLastName() : "")).trim();
+                        if (!repFullName.isEmpty()) reporteeIdentifiers.add(repFullName.toLowerCase());
+                    }
+                }
+            }
+
             if ("Mine".equalsIgnoreCase(taskType) && currentUser != null) {
-                // Show assignments that are either:
-                // 1. Assigned to the current user (their own tasks), OR
-                // 2. In a pending verification/acceptance state (tasks completed by others
-                //    that need the current user — as admin/manager — to verify)
                 Join<ChecklistAssignment, StatusMaster> mineStatusJoin = root.join("status", JoinType.LEFT);
-                Predicate assignedToMe = cb.equal(cb.lower(root.get("assignedTo")), currentUser.toLowerCase());
                 Predicate pendingVerification = mineStatusJoin.get("name").in("Pending for Verified", "Pending for Accepted");
-                predicates.add(cb.or(assignedToMe, pendingVerification));
+
+                Predicate allowedPending;
+                if (isUserAdmin) {
+                    allowedPending = pendingVerification;
+                } else if (!reporteeIdentifiers.isEmpty()) {
+                    allowedPending = cb.and(pendingVerification, cb.lower(root.get("assignedTo")).in(reporteeIdentifiers));
+                } else {
+                    allowedPending = cb.disjunction();
+                }
+
+                predicates.add(cb.or(assignedToMe, allowedPending));
             } else if ("Team".equalsIgnoreCase(taskType)) {
-                // For simplicity, we assume 'Team' means tasks for the user's department.
-                // This would normally involve joining with Employee departments.
-                // For now, we allow the UI to pass specific 'assignedTo' names for the team.
+                List<Predicate> teamPreds = new ArrayList<>();
+                teamPreds.add(assignedToMe);
+                if (!reporteeIdentifiers.isEmpty()) {
+                    teamPreds.add(cb.lower(root.get("assignedTo")).in(reporteeIdentifiers));
+                }
+                predicates.add(cb.or(teamPreds.toArray(new Predicate[0])));
+            } else if ("Company".equalsIgnoreCase(taskType)) {
+                // No assignment restriction (Company/All)
             }
 
             if (status != null && !status.equals("All") && !status.isEmpty()) {
