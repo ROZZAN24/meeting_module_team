@@ -1,5 +1,6 @@
 // assets
 import { IconDashboard, IconDeviceAnalytics, IconFileInvoice, IconArticle, IconLifebuoy, IconClipboardList } from '@tabler/icons-react';
+import { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const icons = {
   IconDashboard: IconDashboard,
@@ -32,6 +33,7 @@ const dashboard = {
       type: 'item',
       url: '/dashboard/task-dashboard',
       icon: icons.IconDashboard,
+      pageCode: PAGE_CODES.DASHBOARD_TASK,
       breadcrumbs: false
     },
     {

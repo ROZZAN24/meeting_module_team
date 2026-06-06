@@ -728,6 +728,7 @@ export default function TicketManagement({ viewType }) {
         type: 'select',
         options: [
           { value: 'All', label: 'All' },
+          { value: 'Active', label: 'Active Tasks' },
           { value: 'Open', label: 'Open' },
           { value: 'In Progress', label: 'In Progress' },
           { value: 'To Be Verified', label: 'To Be Verified' },
@@ -2465,7 +2466,12 @@ export default function TicketManagement({ viewType }) {
       const matchesType = filterTypeVal === 'All' || t.ticketType === filterTypeVal;
 
       const filterStatusVal = globalFilters.ticketStatus || 'All';
-      const matchesStatus = filterStatusVal === 'All' ? t.ticketStatus !== 'Completed' : t.ticketStatus === filterStatusVal;
+      let matchesStatus = true;
+      if (filterStatusVal === 'Active') {
+        matchesStatus = t.ticketStatus !== 'Completed' && t.ticketStatus !== 'Closed' && t.ticketStatus !== 'To Be Tested';
+      } else {
+        matchesStatus = filterStatusVal === 'All' ? t.ticketStatus !== 'Completed' : t.ticketStatus === filterStatusVal;
+      }
 
       const filterPriorityVal = globalFilters.priorityLevel || 'All';
       const matchesPriority = filterPriorityVal === 'All' || t.priorityLevel === filterPriorityVal;

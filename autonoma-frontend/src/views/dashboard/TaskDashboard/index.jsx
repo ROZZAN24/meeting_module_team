@@ -525,7 +525,7 @@ const WorkloadView = ({ realWorkload, isDark, navigate, filterRequestManagement,
               key={idx} 
               hover 
               sx={{ 
-                cursor: filterRequestManagement === 'My Request' && !isCurrentUser(row.user) ? 'pointer' : 'default',
+                cursor: 'pointer',
                 '& td': { borderBottom: idx === rows.length - 1 ? 'none' : `1px solid ${borderColor}` } 
               }}
               onDoubleClick={() => {
@@ -535,6 +535,15 @@ const WorkloadView = ({ realWorkload, isDark, navigate, filterRequestManagement,
                       openNewTask: true,
                       assignTo: row.user,
                       fromDashboard: true,
+                      fromTab: activeTab,
+                      dashboardFilters: globalFilters
+                    }
+                  });
+                } else if (filterRequestManagement === 'Request For Me' && row.tasks > 0) {
+                  navigate('/support/raised-for-me', {
+                    state: {
+                      fromDashboard: true,
+                      initialFilters: { assignedTo: row.user, ticketStatus: 'Active', taskScope: globalFilters?.performanceScope || 'Mine' },
                       fromTab: activeTab,
                       dashboardFilters: globalFilters
                     }
@@ -2231,6 +2240,7 @@ export default function TaskDashboard() {
 
         const filterUserScope = (uName) => {
            if (filterScope === 'Company') return true;
+           if (filterRequestManagement === 'My Request') return true;
            const targetField = uName.toLowerCase();
            if (filterScope === 'Team') {
               return matchTeam(targetField);
@@ -2254,13 +2264,13 @@ export default function TaskDashboard() {
 
           if (filterRequestManagement === 'Request For Me') {
              if (filterScope === 'Team') {
-                return matchTeam(createdBy);
+                return matchTeam(assignedTo);
              } else {
                 return assignedTo === currentUserId || assignedTo === currentUserName || assignedTo === myEmpName || (myEmpName && assignedTo.includes(myEmpName));
              }
           } else { // My Request
              if (filterScope === 'Team') {
-                return matchTeam(assignedTo);
+                return matchTeam(createdBy);
              } else {
                 return createdBy === currentUserId || createdBy === currentUserName || createdBy === myEmpName || (myEmpName && createdBy.includes(myEmpName));
              }
