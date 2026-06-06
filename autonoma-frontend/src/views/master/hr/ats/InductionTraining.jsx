@@ -20,6 +20,53 @@ import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { Navigate } from 'react-router-dom';
 
+const parseInductionDateTime = (dateStr, timeStr) => {
+  if (!dateStr) return null;
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length !== 3) return null;
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  
+  let hours = 9;
+  let minutes = 0;
+  
+  if (timeStr) {
+    const trimmed = timeStr.trim();
+    const match12 = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (match12) {
+      hours = parseInt(match12[1], 10);
+      minutes = parseInt(match12[2], 10);
+      const ampm = match12[3].toUpperCase();
+      if (ampm === 'PM' && hours < 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+    } else {
+      const match24 = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+      if (match24) {
+        hours = parseInt(match24[1], 10);
+        minutes = parseInt(match24[2], 10);
+      }
+    }
+  }
+  
+  return new Date(year, month, day, hours, minutes, 0, 0);
+};
+
+const getAssignmentTimeStatus = (a) => {
+  if (['COMPLETED', 'TRAINING GIVEN'].includes(a.currentStatus)) {
+    return 'COMPLETED';
+  }
+  const scheduledDateTime = parseInductionDateTime(a.inductionDate, a.inductionTime);
+  if (!scheduledDateTime) return 'UPCOMING';
+  
+  const now = new Date();
+  if (scheduledDateTime < now) {
+    return 'OVERDUE';
+  } else {
+    return 'UPCOMING';
+  }
+};
+
 // ==============================|| INDUCTION TRAINING (TRAINER PAGE) ||============================== //
 
 const columns = [
@@ -68,23 +115,39 @@ const columns = [
     label: 'Induction Status',
     minWidth: 130,
     align: 'center',
-    render: (row) => (
-      <Box sx={{
-        bgcolor: row.inductionStatus === 'COMPLETED' ? '#E8F5E9' : '#FFEBEE',
-        color: row.inductionStatus === 'COMPLETED' ? '#2E7D32' : '#C62828',
-        py: 0.75,
-        px: 1.5,
-        borderRadius: '6px',
-        fontWeight: 700,
-        fontSize: '0.75rem',
-        textAlign: 'center',
-        textTransform: 'uppercase',
-        width: 'fit-content',
-        mx: 'auto'
-      }}>
-        {row.inductionStatus}
-      </Box>
-    )
+    render: (row) => {
+      let bgcolor = '#FFEBEE';
+      let color = '#C62828';
+      
+      if (row.inductionStatus === 'COMPLETED') {
+        bgcolor = '#E8F5E9';
+        color = '#2E7D32';
+      } else if (row.inductionStatus === 'UPCOMING') {
+        bgcolor = '#E3F2FD';
+        color = '#1E88E5';
+      } else if (row.inductionStatus === 'OVERDUE') {
+        bgcolor = '#FFEBEE';
+        color = '#C62828';
+      }
+      
+      return (
+        <Box sx={{
+          bgcolor,
+          color,
+          py: 0.75,
+          px: 1.5,
+          borderRadius: '6px',
+          fontWeight: 700,
+          fontSize: '0.75rem',
+          textAlign: 'center',
+          textTransform: 'uppercase',
+          width: 'fit-content',
+          mx: 'auto'
+        }}>
+          {row.inductionStatus}
+        </Box>
+      );
+    }
   }
 ];
 
@@ -126,10 +189,11 @@ export default function InductionTraining() {
         type: 'select',
         options: [
           { value: 'ALL', label: 'ALL' },
-          { value: 'PENDING', label: 'PENDING' },
+          { value: 'UPCOMING', label: 'UPCOMING' },
+          { value: 'OVERDUE', label: 'OVERDUE' },
           { value: 'COMPLETED', label: 'COMPLETED' }
         ],
-        defaultValue: 'PENDING',
+        defaultValue: 'ALL',
         isStarred: true
       },
       {
@@ -569,37 +633,7 @@ export default function InductionTraining() {
       );
     }
 
-    const statusVal = globalFilters.status || 'ALL';
-    if (statusVal !== 'ALL') {
-      filtered = filtered.filter(r => {
-        const filteredAssignments = r.assignments.filter(a => {
-          if (!trainingDateVal) return true;
-          if (!a.inductionDate) return false;
-          const aDateStr = new Date(a.inductionDate).toISOString().split('T')[0];
-          return aDateStr === trainingDateVal;
-        });
-        const completedCount = filteredAssignments.filter(a => ['TRAINING GIVEN', 'COMPLETED'].includes(a.currentStatus)).length;
-        const totalCount = filteredAssignments.length;
-        const isCompleted = completedCount === totalCount;
-        
-        if (statusVal === 'PENDING') {
-          return !isCompleted;
-        } else {
-          return isCompleted;
-        }
-      });
-    }
-
-    if (globalQuery) {
-      const s = globalQuery.toLowerCase();
-      filtered = filtered.filter(r =>
-        (r.empCode || '').toLowerCase().includes(s) ||
-        (r.empName || '').toLowerCase().includes(s) ||
-        (r.department || '').toLowerCase().includes(s)
-      );
-    }
-
-    return filtered.map((r, i) => {
+    const mapped = filtered.map(r => {
       const filteredAssignments = r.assignments.filter(a => {
         if (!trainingDateVal) return true;
         if (!a.inductionDate) return false;
@@ -621,9 +655,17 @@ export default function InductionTraining() {
       const roundsStr = filteredAssignments.map(a => a.inductionRound).join(', ');
       const isCompleted = completedCount === totalCount;
 
+      let overallStatus = 'COMPLETED';
+      if (!isCompleted) {
+        const hasOverdue = filteredAssignments.some(a => {
+          if (['COMPLETED', 'TRAINING GIVEN'].includes(a.currentStatus)) return false;
+          return getAssignmentTimeStatus(a) === 'OVERDUE';
+        });
+        overallStatus = hasOverdue ? 'OVERDUE' : 'UPCOMING';
+      }
+
       return {
         ...r,
-        index: i + 1,
         inductionDate: inductionDateStr,
         inductionRound: roundsStr,
         completedCount,
@@ -631,9 +673,29 @@ export default function InductionTraining() {
         averageRating,
         isCompleted,
         currentStatus: `${completedCount}/${totalCount}`,
-        inductionStatus: isCompleted ? 'COMPLETED' : 'PENDING'
+        inductionStatus: overallStatus
       };
     });
+
+    const statusVal = globalFilters.status || 'ALL';
+    let finalFiltered = mapped;
+    if (statusVal !== 'ALL') {
+      finalFiltered = mapped.filter(r => r.inductionStatus === statusVal);
+    }
+
+    if (globalQuery) {
+      const s = globalQuery.toLowerCase();
+      finalFiltered = finalFiltered.filter(r =>
+        (r.empCode || '').toLowerCase().includes(s) ||
+        (r.empName || '').toLowerCase().includes(s) ||
+        (r.department || '').toLowerCase().includes(s)
+      );
+    }
+
+    return finalFiltered.map((r, i) => ({
+      ...r,
+      index: i + 1
+    }));
   }, [rows, globalFilters.status, globalFilters.trainingDate, globalQuery]);
 
   if (perms.loading) {

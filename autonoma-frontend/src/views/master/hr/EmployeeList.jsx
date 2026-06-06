@@ -31,6 +31,7 @@ const columns = [
   { id: 'unitId', label: 'Unit Name', minWidth: 120 },
   { id: 'homeManagerName', label: 'Home Manager', minWidth: 150 },
   { id: 'businessManagerName', label: 'Business Manager', minWidth: 150 },
+  { id: 'verticalHeadName', label: 'Vertical Head', minWidth: 150 },
   { id: 'supplierName', label: 'Supplier Name', minWidth: 150 },
   { id: 'createdBy', label: 'CREATED BY', minWidth: 120 },
   { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
@@ -261,6 +262,7 @@ export default function EmployeeList() {
       const map = mappings.find(m => String(m.empId) === String(row.id));
       const homeManager = map && map.homeManagerId ? rows.find(r => String(r.id) === String(map.homeManagerId)) : null;
       const businessManager = map && map.businessManagerId ? rows.find(r => String(r.id) === String(map.businessManagerId)) : null;
+      const verticalHead = map && map.verticalHeadId ? rows.find(r => String(r.id) === String(map.verticalHeadId)) : null;
 
       return {
         ...row,
@@ -277,6 +279,7 @@ export default function EmployeeList() {
         supplierName: row.supplierName || row.vendorName || '-',
         homeManagerName: homeManager ? getEmpDisplayName(homeManager) : '-',
         businessManagerName: businessManager ? getEmpDisplayName(businessManager) : '-',
+        verticalHeadName: verticalHead ? getEmpDisplayName(verticalHead) : '-',
         status: row.status || 'Active'
       };
     });
@@ -296,6 +299,7 @@ export default function EmployeeList() {
       'Unit Name': r.unitId,
       'Home Manager': r.homeManagerName,
       'Business Manager': r.businessManagerName,
+      'Vertical Head': r.verticalHeadName,
       'Supplier Name': r.supplierName,
       'Created By': r.createdBy,
       'Created Date': r.createdAt,
@@ -416,21 +420,78 @@ export default function EmployeeList() {
                         sx={{ '& .MuiOutlinedInput-root': { minHeight: 56, borderRadius: '12px' } }}
                       />
                     )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.2 }}>
-                        <Avatar sx={{ width: 38, height: 38, bgcolor: 'primary.main', fontSize: '0.9rem', fontWeight: 700 }}>
-                          {(option.firstName || '?')[0]}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={700}>
-                            {`${option.firstName || ''} ${option.lastName || ''}`.trim()} — {option.empCode}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {getDesigName(option.designationId)} / {getLevelName(option.empLevelId)}
-                          </Typography>
+                    renderOption={(props, option) => {
+                      const photoUrl = getPhotoUrl(option.employeePhotoUpload);
+                      return (
+                        <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.2 }}>
+                          <Tooltip
+                            placement="right"
+                            arrow
+                            enterDelay={150}
+                            leaveDelay={0}
+                            componentsProps={{
+                              tooltip: {
+                                sx: {
+                                  bgcolor: 'background.paper',
+                                  color: 'text.primary',
+                                  boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.15)',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  p: 0.5,
+                                  borderRadius: '12px',
+                                  maxWidth: 'none',
+                                  zIndex: 9999
+                                }
+                              }
+                            }}
+                            title={
+                              photoUrl ? (
+                                <Box
+                                  component="img"
+                                  src={photoUrl}
+                                  alt="Enlarged Photo"
+                                  sx={{
+                                    width: 120,
+                                    height: 150,
+                                    objectFit: 'contain',
+                                    display: 'block',
+                                    borderRadius: '8px'
+                                  }}
+                                />
+                              ) : (
+                                <Typography variant="caption" sx={{ p: 1, display: 'block' }}>No Photo Available</Typography>
+                              )
+                            }
+                          >
+                            <Avatar
+                              src={photoUrl}
+                              sx={{
+                                width: 38,
+                                height: 38,
+                                bgcolor: 'primary.main',
+                                fontSize: '0.9rem',
+                                fontWeight: 700,
+                                transition: 'transform 0.15s ease-in-out',
+                                '&:hover': {
+                                  transform: 'scale(1.2)',
+                                  boxShadow: 2
+                                }
+                              }}
+                            >
+                              {!photoUrl && (option.firstName || '?')[0]}
+                            </Avatar>
+                          </Tooltip>
+                          <Box>
+                            <Typography variant="body2" fontWeight={700}>
+                              {`${option.firstName || ''} ${option.lastName || ''}`.trim()} — {option.empCode}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {getDesigName(option.designationId)} / {getLevelName(option.empLevelId)}
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Box>
-                    )}
+                      );
+                    }}
                   />
                 </Box>
 
@@ -457,21 +518,78 @@ export default function EmployeeList() {
                         sx={{ '& .MuiOutlinedInput-root': { minHeight: 56, borderRadius: '12px' } }}
                       />
                     )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.2 }}>
-                        <Avatar sx={{ width: 38, height: 38, bgcolor: 'secondary.main', fontSize: '0.9rem', fontWeight: 700 }}>
-                          {(option.firstName || '?')[0]}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={700}>
-                            {`${option.firstName || ''} ${option.lastName || ''}`.trim()} — {option.empCode}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {getDesigName(option.designationId)} / {getLevelName(option.empLevelId)}
-                          </Typography>
+                    renderOption={(props, option) => {
+                      const photoUrl = getPhotoUrl(option.employeePhotoUpload);
+                      return (
+                        <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.2 }}>
+                          <Tooltip
+                            placement="right"
+                            arrow
+                            enterDelay={150}
+                            leaveDelay={0}
+                            componentsProps={{
+                              tooltip: {
+                                sx: {
+                                  bgcolor: 'background.paper',
+                                  color: 'text.primary',
+                                  boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.15)',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  p: 0.5,
+                                  borderRadius: '12px',
+                                  maxWidth: 'none',
+                                  zIndex: 9999
+                                }
+                              }
+                            }}
+                            title={
+                              photoUrl ? (
+                                <Box
+                                  component="img"
+                                  src={photoUrl}
+                                  alt="Enlarged Photo"
+                                  sx={{
+                                    width: 120,
+                                    height: 150,
+                                    objectFit: 'contain',
+                                    display: 'block',
+                                    borderRadius: '8px'
+                                  }}
+                                />
+                              ) : (
+                                <Typography variant="caption" sx={{ p: 1, display: 'block' }}>No Photo Available</Typography>
+                              )
+                            }
+                          >
+                            <Avatar
+                              src={photoUrl}
+                              sx={{
+                                width: 38,
+                                height: 38,
+                                bgcolor: 'secondary.main',
+                                fontSize: '0.9rem',
+                                fontWeight: 700,
+                                transition: 'transform 0.15s ease-in-out',
+                                '&:hover': {
+                                  transform: 'scale(1.2)',
+                                  boxShadow: 2
+                                }
+                              }}
+                            >
+                              {!photoUrl && (option.firstName || '?')[0]}
+                            </Avatar>
+                          </Tooltip>
+                          <Box>
+                            <Typography variant="body2" fontWeight={700}>
+                              {`${option.firstName || ''} ${option.lastName || ''}`.trim()} — {option.empCode}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {getDesigName(option.designationId)} / {getLevelName(option.empLevelId)}
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Box>
-                    )}
+                      );
+                    }}
                   />
                 </Box>
               </Box>
@@ -508,21 +626,78 @@ export default function EmployeeList() {
                         sx={{ '& .MuiOutlinedInput-root': { minHeight: 56, borderRadius: '12px' } }}
                       />
                     )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.2 }}>
-                        <Avatar sx={{ width: 38, height: 38, bgcolor: 'info.main', fontSize: '0.9rem', fontWeight: 700 }}>
-                          {(option.firstName || '?')[0]}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={700}>
-                            {`${option.firstName || ''} ${option.lastName || ''}`.trim()} — {option.empCode}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {getDesigName(option.designationId)} / {getLevelName(option.empLevelId)}
-                          </Typography>
+                    renderOption={(props, option) => {
+                      const photoUrl = getPhotoUrl(option.employeePhotoUpload);
+                      return (
+                        <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.2 }}>
+                          <Tooltip
+                            placement="right"
+                            arrow
+                            enterDelay={150}
+                            leaveDelay={0}
+                            componentsProps={{
+                              tooltip: {
+                                sx: {
+                                  bgcolor: 'background.paper',
+                                  color: 'text.primary',
+                                  boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.15)',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  p: 0.5,
+                                  borderRadius: '12px',
+                                  maxWidth: 'none',
+                                  zIndex: 9999
+                                }
+                              }
+                            }}
+                            title={
+                              photoUrl ? (
+                                <Box
+                                  component="img"
+                                  src={photoUrl}
+                                  alt="Enlarged Photo"
+                                  sx={{
+                                    width: 120,
+                                    height: 150,
+                                    objectFit: 'contain',
+                                    display: 'block',
+                                    borderRadius: '8px'
+                                  }}
+                                />
+                              ) : (
+                                <Typography variant="caption" sx={{ p: 1, display: 'block' }}>No Photo Available</Typography>
+                              )
+                            }
+                          >
+                            <Avatar
+                              src={photoUrl}
+                              sx={{
+                                width: 38,
+                                height: 38,
+                                bgcolor: 'info.main',
+                                fontSize: '0.9rem',
+                                fontWeight: 700,
+                                transition: 'transform 0.15s ease-in-out',
+                                '&:hover': {
+                                  transform: 'scale(1.2)',
+                                  boxShadow: 2
+                                }
+                              }}
+                            >
+                              {!photoUrl && (option.firstName || '?')[0]}
+                            </Avatar>
+                          </Tooltip>
+                          <Box>
+                            <Typography variant="body2" fontWeight={700}>
+                              {`${option.firstName || ''} ${option.lastName || ''}`.trim()} — {option.empCode}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {getDesigName(option.designationId)} / {getLevelName(option.empLevelId)}
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Box>
-                    )}
+                      );
+                    }}
                   />
                 </Box>
 
@@ -549,21 +724,78 @@ export default function EmployeeList() {
                         sx={{ '& .MuiOutlinedInput-root': { minHeight: 56, borderRadius: '12px' } }}
                       />
                     )}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.2 }}>
-                        <Avatar sx={{ width: 38, height: 38, bgcolor: 'warning.main', fontSize: '0.9rem', fontWeight: 700 }}>
-                          {(option.firstName || '?')[0]}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={700}>
-                            {`${option.firstName || ''} ${option.lastName || ''}`.trim()} — {option.empCode}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {getDesigName(option.designationId)} / {getLevelName(option.empLevelId)}
-                          </Typography>
+                    renderOption={(props, option) => {
+                      const photoUrl = getPhotoUrl(option.employeePhotoUpload);
+                      return (
+                        <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.2 }}>
+                          <Tooltip
+                            placement="right"
+                            arrow
+                            enterDelay={150}
+                            leaveDelay={0}
+                            componentsProps={{
+                              tooltip: {
+                                sx: {
+                                  bgcolor: 'background.paper',
+                                  color: 'text.primary',
+                                  boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.15)',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  p: 0.5,
+                                  borderRadius: '12px',
+                                  maxWidth: 'none',
+                                  zIndex: 9999
+                                }
+                              }
+                            }}
+                            title={
+                              photoUrl ? (
+                                <Box
+                                  component="img"
+                                  src={photoUrl}
+                                  alt="Enlarged Photo"
+                                  sx={{
+                                    width: 120,
+                                    height: 150,
+                                    objectFit: 'contain',
+                                    display: 'block',
+                                    borderRadius: '8px'
+                                  }}
+                                />
+                              ) : (
+                                <Typography variant="caption" sx={{ p: 1, display: 'block' }}>No Photo Available</Typography>
+                              )
+                            }
+                          >
+                            <Avatar
+                              src={photoUrl}
+                              sx={{
+                                width: 38,
+                                height: 38,
+                                bgcolor: 'warning.main',
+                                fontSize: '0.9rem',
+                                fontWeight: 700,
+                                transition: 'transform 0.15s ease-in-out',
+                                '&:hover': {
+                                  transform: 'scale(1.2)',
+                                  boxShadow: 2
+                                }
+                              }}
+                            >
+                              {!photoUrl && (option.firstName || '?')[0]}
+                            </Avatar>
+                          </Tooltip>
+                          <Box>
+                            <Typography variant="body2" fontWeight={700}>
+                              {`${option.firstName || ''} ${option.lastName || ''}`.trim()} — {option.empCode}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {getDesigName(option.designationId)} / {getLevelName(option.empLevelId)}
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Box>
-                    )}
+                      );
+                    }}
                   />
                 </Box>
               </Box>

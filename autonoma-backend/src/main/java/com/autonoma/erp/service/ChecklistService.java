@@ -565,11 +565,11 @@ public class ChecklistService {
 
             if (assignedTo != null && !assignedTo.isEmpty()) {
                 if (assignedTo.contains(",")) {
-                    // Multi-select support
+                    // Multi-select support (case-insensitive)
                     String[] users = assignedTo.split(",");
                     List<Predicate> orUserPreds = new ArrayList<>();
                     for (String user : users) {
-                        orUserPreds.add(cb.equal(root.get("assignedTo"), user.trim()));
+                        orUserPreds.add(cb.equal(cb.lower(root.get("assignedTo")), user.trim().toLowerCase()));
                     }
                     predicates.add(cb.or(orUserPreds.toArray(new Predicate[0])));
                 } else {
@@ -679,6 +679,25 @@ public class ChecklistService {
             // distinct(true) removed to avoid dense_rank order by on TEXT/NVARCHAR(MAX) columns in SQL Server
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
+    }
+
+    public List<EmployeeMaster> getMyTeamEmployees(String currentUser) {
+        if (currentUser == null || currentUser.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        String name = currentUser;
+        String code = currentUser;
+        Optional<EmployeeMaster> verifierOpt = employeeMasterRepository.findByEmpCodeOrName(currentUser);
+        if (verifierOpt.isPresent()) {
+            EmployeeMaster verifier = verifierOpt.get();
+            if (verifier.getEmployeeName() != null) {
+                name = verifier.getEmployeeName();
+            }
+            if (verifier.getEmpCode() != null) {
+                code = verifier.getEmpCode();
+            }
+        }
+        return employeeMasterRepository.findActiveReportsByVerticalHead(name, code, currentUser);
     }
 
     @Transactional

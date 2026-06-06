@@ -127,15 +127,6 @@ const getFilterConfig = (departments) => [{
     ]
   },
   { id: 'departments', label: 'Department', type: 'autocomplete', multiple: true, isStarred: true, options: departments.map(d => ({ value: d, label: d })) },
-  { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
-  { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
-  {
-    id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, defaultValue: 'No', options: [
-      { value: 'All', label: 'All' },
-      { value: 'Yes', label: 'Yes' },
-      { value: 'No', label: 'No' }
-    ]
-  },
   {
     id: 'searchBy', label: 'Search by', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'Global Search' },

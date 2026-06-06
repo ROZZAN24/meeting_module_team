@@ -30,7 +30,7 @@ public class InductionTrainingController {
     @GetMapping
     public ResponseEntity<List<InductionAssignment>> getAssignments(Principal principal) {
         if (authHelper.isAdmin(principal)) {
-            return ResponseEntity.ok(service.getAll());
+            return ResponseEntity.ok(service.getAllReady());
         }
         String empCode = authHelper.getEmpCode(principal);
         if (empCode == null) {
