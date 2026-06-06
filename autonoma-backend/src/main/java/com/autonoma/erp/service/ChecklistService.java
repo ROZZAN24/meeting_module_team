@@ -782,24 +782,31 @@ public class ChecklistService {
             }
 
             String verifierEmpCode = null;
+            String verifierEmpName = null;
             if (verifierEmpId != null) {
-                verifierEmpCode = employeeMasterRepository.findById(verifierEmpId)
-                    .map(EmployeeMaster::getEmpCode)
-                    .orElse(null);
+                EmployeeMaster verifierEmp = employeeMasterRepository.findById(verifierEmpId).orElse(null);
+                if (verifierEmp != null) {
+                    verifierEmpCode = verifierEmp.getEmpCode();
+                    verifierEmpName = verifierEmp.getEmployeeName();
+                    if (verifierEmpName == null) {
+                        verifierEmpName = (verifierEmp.getFirstName() + " " + verifierEmp.getLastName()).trim();
+                    }
+                }
             }
 
             if ("Completed".equalsIgnoreCase(statusName) || "Started".equalsIgnoreCase(statusName)) {
-                if (verifierEmpCode == null || !verifierEmpCode.equalsIgnoreCase(assignment.getAssignedTo())) {
+                boolean isMatch = (verifierEmpCode != null && verifierEmpCode.equalsIgnoreCase(assignment.getAssignedTo())) ||
+                                  (verifierEmpName != null && verifierEmpName.equalsIgnoreCase(assignment.getAssignedTo()));
+                if (!isMatch) {
                     throw new org.springframework.security.access.AccessDeniedException("Access Denied: You cannot submit or modify this task as you are not the assigned employee.");
                 }
             } else {
-                EmployeeMaster assignee = employeeMasterRepository.findByEmpCode(assignment.getAssignedTo()).orElse(null);
+                EmployeeMaster assignee = employeeMasterRepository.findByEmpCodeOrName(assignment.getAssignedTo()).orElse(null);
                 if (assignee != null && verifierEmpId != null) {
                     EmployeeManagerMapping mapping = managerMappingRepository.findByEmpIdAndStatus(assignee.getId(), "Active").orElse(null);
                     boolean isManager = false;
                     if (mapping != null) {
                         isManager = verifierEmpId.equals(mapping.getHomeManagerId()) ||
-                                    verifierEmpId.equals(mapping.getHomeManagerId()) || // home manager checks
                                     verifierEmpId.equals(mapping.getBusinessManagerId()) ||
                                     verifierEmpId.equals(mapping.getVerticalHeadId()) ||
                                     verifierEmpId.equals(mapping.getHrId());
