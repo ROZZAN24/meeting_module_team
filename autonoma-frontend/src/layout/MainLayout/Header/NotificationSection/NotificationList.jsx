@@ -16,7 +16,7 @@ import IconButton from '@mui/material/IconButton';
 import { withAlpha } from 'utils/colorUtils';
 
 // assets
-import { IconBell, IconX } from '@tabler/icons-react';
+import { IconBell, IconX, IconInfoCircle } from '@tabler/icons-react';
 
 function ListItemWrapper({ children, isRead, onClick }) {
   const theme = useTheme();
@@ -84,17 +84,33 @@ export default function NotificationList({ notifications = [], onNotifClick, onN
             disablePadding
             secondaryAction={
               <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
-                <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap', mr: 0.5 }}>
                   {formatTime(notif.createdAt)}
                 </Typography>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNotifClick && onNotifClick(notif);
+                  }}
+                  sx={{ 
+                    p: 0.25,
+                    color: 'primary.main',
+                    '&:hover': { color: 'primary.dark' }
+                  }}
+                  title="View Details"
+                >
+                  <IconInfoCircle size={15} />
+                </IconButton>
                 {!notif.isRead && (
                   <IconButton
                     size="small"
                     color="error"
                     onClick={(e) => onNotifDismiss && onNotifDismiss(notif, e)}
                     sx={{ p: 0.25 }}
+                    title="Dismiss"
                   >
-                    <IconX size={14} />
+                    <IconX size={15} />
                   </IconButton>
                 )}
               </Stack>
@@ -115,7 +131,7 @@ export default function NotificationList({ notifications = [], onNotifClick, onN
             </ListItemAvatar>
             <ListItemText 
               primary={
-                <Typography variant="subtitle2" sx={{ fontWeight: notif.isRead ? 500 : 700, pr: 4 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: notif.isRead ? 500 : 700, pr: '120px' }}>
                   {notif.title}
                 </Typography>
               } 
