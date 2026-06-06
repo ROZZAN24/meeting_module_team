@@ -24,6 +24,9 @@ public class InductionTraineeService {
     @Autowired
     private EmployeeMasterRepository empRepo;
 
+    @Autowired
+    private DesignationLevelRepository designationLevelRepo;
+
     /**
      * Get trainee records for the current employee (login-filtered).
      * Only shows records with currentStatus = 'TRAINING GIVEN'.
@@ -129,14 +132,21 @@ public class InductionTraineeService {
         long incompleteCount = assignmentRepo.countIncompleteByEmpCode(empCode);
         if (incompleteCount == 0) {
             long completedLevels = assignmentRepo.countCompletedLevelsByEmpCode(empCode);
-            if (completedLevels >= 2) {
-                empRepo.findByEmpCode(empCode).ifPresent(emp -> {
+            empRepo.findByEmpCode(empCode).ifPresent(emp -> {
+                int requiredLevels = 2; // fallback default
+                if (emp.getEmpLevelId() != null) {
+                    java.util.Optional<DesignationLevel> levelOpt = designationLevelRepo.findById(emp.getEmpLevelId());
+                    if (levelOpt.isPresent()) {
+                        requiredLevels = levelOpt.get().getScreeningLevel();
+                    }
+                }
+                if (completedLevels >= requiredLevels) {
                     emp.setInductionStatus("COMPLETED");
                     emp.setStatus("Active");
                     emp.setUpdatedAt(new Date());
                     empRepo.save(emp);
-                });
-            }
+                }
+            });
         }
     }
 }

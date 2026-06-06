@@ -75,11 +75,18 @@ public class InductionTrainingService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get ALL assignments (Admin/HR view).
-     */
     public List<InductionAssignment> getAll() {
         return assignmentRepo.findAllActive();
+    }
+
+    /**
+     * Get sequential active assignments that are ready (Admin/HR dashboard view).
+     */
+    public List<InductionAssignment> getAllReady() {
+        List<InductionAssignment> list = assignmentRepo.findAllActive();
+        return list.stream()
+                .filter(this::isAssignmentReady)
+                .collect(Collectors.toList());
     }
 
     /**

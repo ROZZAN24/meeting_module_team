@@ -137,16 +137,7 @@ const exportColumns = [
   { header: 'Task Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
 
-const getFilterConfig = (departments) => [{ id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
-  { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
-  {
-    id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'Yes', label: 'Yes' },
-      { value: 'No', label: 'No' }
-    ]
-  },
-  {
+const getFilterConfig = (departments) => [{
     id: 'status', label: 'Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'All' },
       { value: 'Open', label: 'Open' },

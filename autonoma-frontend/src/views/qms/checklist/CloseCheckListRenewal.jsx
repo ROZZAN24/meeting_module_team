@@ -68,10 +68,6 @@ const SEARCH_BY_OPTIONS = [
 
 const DEFAULT_FILTERS = {
   taskType: 'Mine',
-  fromDate: '',
-  toDate: '',
-  considerDate: 'No',
-  considerDateValue: '',
   statuses: [],
   searchBy: 'All',
   assignedTo: [],
@@ -247,10 +243,12 @@ function StatusChip({ status }) {
   );
 }
 
+const EMPTY_ARRAY = [];
+
 export default function CloseCheckListRenewal() {
   const { user } = useAuth();
   const dispatch = useDispatch();
-  const { employees = [] } = useLookups(['EMPLOYEES']);
+  const { employees = EMPTY_ARRAY } = useLookups(['EMPLOYEES']);
   const [myTeamEmployees, setMyTeamEmployees] = useState([]);
   const [myTeamLoaded, setMyTeamLoaded] = useState(false);
   const [rows, setRows] = useState([]);
@@ -290,12 +288,19 @@ export default function CloseCheckListRenewal() {
 
   const isVerticalHead = myTeamEmployees && myTeamEmployees.length > 0;
 
+  // Set initial filter config cleanup on mount/unmount
+  useEffect(() => {
+    return () => {
+      dispatch(setFilterConfig(null));
+      dispatch(setTableConfig(null));
+    };
+  }, [dispatch]);
+
   // Configure dynamic global search bar filters based on hierarchy and permissions
   useEffect(() => {
     if (perms.loading) return;
 
     const taskTypeOptions = [
-      { value: 'All', label: 'All' },
       { value: 'Mine', label: 'Mine' }
     ];
     if (isVerticalHead) {
@@ -313,20 +318,6 @@ export default function CloseCheckListRenewal() {
         isStarred: true,
         defaultValue: 'Mine',
         options: taskTypeOptions
-      },
-      { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
-      { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
-      {
-        id: 'considerDate',
-        label: 'Consider Date?',
-        type: 'select',
-        isStarred: true,
-        defaultValue: 'No',
-        options: [
-          { value: 'All', label: 'All' },
-          { value: 'Yes', label: 'Yes' },
-          { value: 'No', label: 'No' }
-        ]
       },
       {
         id: 'statuses',
@@ -429,11 +420,6 @@ export default function CloseCheckListRenewal() {
 
     dispatch(setFilterConfig(baseConfig));
     dispatch(setTableConfig(tableCols));
-
-    return () => {
-      dispatch(setFilterConfig(null));
-      dispatch(setTableConfig(null));
-    };
   }, [dispatch, isVerticalHead, myTeamEmployees, perms.additional1, perms.loading, employees, filters.taskType]);
 
   // Sync global search filters with local filters
@@ -606,7 +592,12 @@ export default function CloseCheckListRenewal() {
     }
   };
 
-  const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignedTo?.length || 0);
+  const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + 
+                      (globalFilters.createdDateStart ? 1 : 0) + 
+                      (globalFilters.createdDateEnd ? 1 : 0) + 
+                      (globalFilters.createdDateConsider && globalFilters.createdDateConsider !== 'No' ? 1 : 0) + 
+                      (filters.statuses?.length || 0) + 
+                      (filters.assignedTo?.length || 0);
 
   const canEditSelected = perms.write || (activeRow && activeRow.assignedTo && (
     activeRow.assignedTo.toLowerCase() === user?.id?.toLowerCase() ||

@@ -1,5 +1,5 @@
 import TextField from 'ui-component/CustomTextField';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, forwardRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 // material-ui
@@ -7,6 +7,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import Chip from '@mui/material/Chip';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
@@ -22,7 +23,7 @@ import IconButton from '@mui/material/IconButton';
 
 import axiosServices from 'utils/axios';
 
-import { useSnackbar } from 'notistack';
+import { useSnackbar, SnackbarContent, closeSnackbar } from 'notistack';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
@@ -74,6 +75,80 @@ const playNotificationSound = () => {
     oscillator.stop(audioCtx.currentTime + 0.3);
   } catch (error) {}
 };
+
+// ==============================|| AUDIT NOTIFICATION TOAST ||============================== //
+
+const AuditNotificationToast = forwardRef(({ id, notif, onClose, onClick }, ref) => {
+  const theme = useTheme();
+  return (
+    <SnackbarContent ref={ref} role="alert" style={{ justifyContent: 'flex-end' }}>
+      <Card
+        onClick={onClick}
+        sx={{
+          width: '100%',
+          minWidth: 280,
+          maxWidth: 360,
+          bgcolor: theme.vars ? theme.vars.palette.background.paper : theme.palette.background.paper,
+          border: '1px solid',
+          borderColor: theme.vars ? theme.vars.palette.divider : theme.palette.divider,
+          borderRadius: '12px',
+          boxShadow: theme.shadows[8],
+          cursor: 'pointer',
+          overflow: 'hidden',
+          transition: 'all 0.2s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: theme.shadows[12]
+          }
+        }}
+      >
+        <Box sx={{ p: 2, display: 'flex', gap: 1.5, alignItems: 'flex-start', position: 'relative' }}>
+          <Avatar
+            variant="rounded"
+            sx={{
+              width: 36,
+              height: 36,
+              bgcolor: theme.vars ? theme.vars.palette.primary.light : theme.palette.primary.light,
+              color: theme.vars ? theme.vars.palette.primary.main : theme.palette.primary.main,
+              flexShrink: 0
+            }}
+          >
+            <IconBell size={20} />
+          </Avatar>
+          <Box sx={{ flex: 1, pr: 3 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.3 }}>
+              {notif.title}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: theme.vars ? theme.vars.palette.text.secondary : theme.palette.text.secondary,
+                whiteSpace: 'pre-line',
+                fontSize: '0.825rem',
+                lineHeight: 1.4
+              }}
+            >
+              {notif.message}
+            </Typography>
+          </Box>
+          <IconButton
+            size="small"
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              color: theme.vars ? theme.vars.palette.text.secondary : theme.palette.text.secondary,
+              '&:hover': { color: theme.vars ? theme.vars.palette.error.main : theme.palette.error.main }
+            }}
+          >
+            <IconX size={16} />
+          </IconButton>
+        </Box>
+      </Card>
+    </SnackbarContent>
+  );
+});
 
 // ==============================|| NOTIFICATION ||============================== //
 
@@ -132,12 +207,26 @@ export default function NotificationSection() {
             const oldNotif = currentNotifs.find(n => n.id === newNotif.id);
             if (!oldNotif) {
               hasNew = true;
-              enqueueSnackbar(newNotif.message || newNotif.title, {
+              enqueueSnackbar('', {
                 variant: 'info',
                 anchorOrigin: { vertical: 'top', horizontal: 'right' },
-                autoHideDuration: 2000,
+                persist: true,
                 preventDuplicate: true,
-                style: { marginTop: '50px' }
+                style: { marginTop: '50px' },
+                content: (key) => (
+                  <AuditNotificationToast
+                    id={key}
+                    notif={newNotif}
+                    onClose={(e) => {
+                      e.stopPropagation();
+                      closeSnackbar(key);
+                    }}
+                    onClick={() => {
+                      closeSnackbar();
+                      handleNotifClick(newNotif);
+                    }}
+                  />
+                )
               });
             }
           }

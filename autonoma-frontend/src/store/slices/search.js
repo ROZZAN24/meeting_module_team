@@ -26,9 +26,13 @@ const search = createSlice({
     setFilterConfig(state, action) {
       console.log('REDUX REDUCER - setFilterConfig called with:', JSON.stringify(action.payload));
       state.config = action.payload;
-      // Reset filter values and query when a new page sets its config,
-      // so each page starts with its specified default filters.
-      const nextFilters = {};
+      if (action.payload === null) {
+        state.filters = {};
+        state.query = '';
+        return;
+      }
+      // Preserve existing filters where possible to prevent loops and losing user inputs on config change.
+      const nextFilters = { ...state.filters };
       if (Array.isArray(action.payload)) {
         action.payload.forEach((field) => {
           if (field) {
@@ -38,16 +42,21 @@ const search = createSlice({
               const mm = String(today.getMonth() + 1).padStart(2, '0');
               const dd = String(today.getDate()).padStart(2, '0');
               const todayStr = `${yyyy}-${mm}-${dd}`;
-              nextFilters[`${field.id}Start`] = todayStr;
-              nextFilters[`${field.id}End`] = todayStr;
+              if (nextFilters[`${field.id}Start`] === undefined) {
+                nextFilters[`${field.id}Start`] = todayStr;
+              }
+              if (nextFilters[`${field.id}End`] === undefined) {
+                nextFilters[`${field.id}End`] = todayStr;
+              }
             } else if (field.defaultValue !== undefined) {
-              nextFilters[field.id] = field.defaultValue;
+              if (nextFilters[field.id] === undefined) {
+                nextFilters[field.id] = field.defaultValue;
+              }
             }
           }
         });
       }
       state.filters = nextFilters;
-      state.query = '';
     },
     resetFilters(state) {
       const nextFilters = {};

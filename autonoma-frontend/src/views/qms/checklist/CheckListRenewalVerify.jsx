@@ -145,20 +145,10 @@ const exportColumns = [
 ];
 
 const filterConfig = [{
-    id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
+    id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'Mine', options: [
       { value: 'Mine', label: 'Mine' },
       { value: 'Team', label: 'Team' },
       { value: 'Company', label: 'Company' }
-    ]
-  },
-  { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
-  { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
-  {
-    id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, defaultValue: 'No', options: [
-      { value: 'All', label: 'All' },
-      { value: 'Yes', label: 'Yes' },
-      { value: 'No', label: 'No' }
     ]
   },
   { id: 'statuses', label: 'Status', type: 'autocomplete', multiple: true, isStarred: true, options: STATUS_OPTIONS.map(s => ({ value: s, label: s })) },
