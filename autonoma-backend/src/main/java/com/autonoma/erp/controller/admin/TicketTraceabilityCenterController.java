@@ -119,6 +119,9 @@ public class TicketTraceabilityCenterController {
                     EmployeeMaster emp = empOpt.get();
                     if (emp.getOfficeMail() != null) currentUserEmail = emp.getOfficeMail();
                     if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
+                    if ("YES".equalsIgnoreCase(emp.getPermissionToggle())) {
+                        isAdmin = true;
+                    }
                 }
             }
         }
@@ -132,8 +135,9 @@ public class TicketTraceabilityCenterController {
             boolean isAssignee = ticket.getAssignedTo() != null && (ticket.getAssignedTo().equalsIgnoreCase(currentUserId) || ticket.getAssignedTo().equalsIgnoreCase(currentUserName));
             boolean isDev = ticket.getDeveloperName() != null && ticket.getDeveloperName().equalsIgnoreCase(currentUserName);
             boolean isDevEmail = ticket.getDeveloperEmail() != null && ticket.getDeveloperEmail().equalsIgnoreCase(currentUserEmail);
+            boolean isTester = ticket.getTestedBy() != null && (ticket.getTestedBy().equalsIgnoreCase(currentUserId) || ticket.getTestedBy().equalsIgnoreCase(currentUserName) || ticket.getTestedBy().equalsIgnoreCase(currentUserEmail));
 
-            if (!isCreator && !isEmail && !isEmpName && !isVerifier && !isAssignee && !isDev && !isDevEmail) {
+            if (!isCreator && !isEmail && !isEmpName && !isVerifier && !isAssignee && !isDev && !isDevEmail && !isTester) {
                 return ResponseEntity.status(403).build();
             }
         }
@@ -240,6 +244,9 @@ public class TicketTraceabilityCenterController {
                     EmployeeMaster emp = empOpt.get();
                     if (emp.getOfficeMail() != null) currentUserEmail = emp.getOfficeMail();
                     if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
+                    if ("YES".equalsIgnoreCase(emp.getPermissionToggle())) {
+                        isAdmin = true;
+                    }
                 }
             }
         }
@@ -253,8 +260,9 @@ public class TicketTraceabilityCenterController {
             boolean isAssignee = existingTicket.getAssignedTo() != null && (existingTicket.getAssignedTo().equalsIgnoreCase(currentUserId) || existingTicket.getAssignedTo().equalsIgnoreCase(currentUserName));
             boolean isDev = existingTicket.getDeveloperName() != null && existingTicket.getDeveloperName().equalsIgnoreCase(currentUserName);
             boolean isDevEmail = existingTicket.getDeveloperEmail() != null && existingTicket.getDeveloperEmail().equalsIgnoreCase(currentUserEmail);
+            boolean isTester = existingTicket.getTestedBy() != null && (existingTicket.getTestedBy().equalsIgnoreCase(currentUserId) || existingTicket.getTestedBy().equalsIgnoreCase(currentUserName) || existingTicket.getTestedBy().equalsIgnoreCase(currentUserEmail));
 
-            if (!isCreator && !isEmail && !isEmpName && !isVerifier && !isAssignee && !isDev && !isDevEmail) {
+            if (!isCreator && !isEmail && !isEmpName && !isVerifier && !isAssignee && !isDev && !isDevEmail && !isTester) {
                 return ResponseEntity.status(403).build();
             }
         }
@@ -303,7 +311,10 @@ public class TicketTraceabilityCenterController {
                 if (oldAssignee == null || !oldAssignee.equalsIgnoreCase(newAssignee)) {
                     existingTicket.setAssignedTo(newAssignee);
                     
-                    String reassignActionDesc = "Reassigned to " + newAssignee;
+                    String reassignActionDesc = "Reassigned: " + (oldAssignee != null ? oldAssignee : "Unassigned") + " -> " + newAssignee;
+                    if (ticketDetails.getReassignReason() != null && !ticketDetails.getReassignReason().trim().isEmpty()) {
+                        reassignActionDesc += " | Reason: " + ticketDetails.getReassignReason();
+                    }
                     if (ticketDetails.getReassignComment() != null && !ticketDetails.getReassignComment().trim().isEmpty()) {
                         reassignActionDesc += " | Comment: " + ticketDetails.getReassignComment();
                     }

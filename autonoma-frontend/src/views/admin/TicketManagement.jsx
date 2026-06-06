@@ -67,6 +67,7 @@ import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 import ViewModuleOutlinedIcon from '@mui/icons-material/ViewModuleOutlined';
 import DesktopWindowsOutlinedIcon from '@mui/icons-material/DesktopWindowsOutlined';
+import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 const HtmlTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
 ))(({ theme }) => ({
@@ -231,6 +232,7 @@ export default function TicketManagement({ viewType }) {
   const [reassignEmployee, setReassignEmployee] = useState(null);
   const [reassignComment, setReassignComment] = useState('');
   const [reassignTicket, setReassignTicket] = useState(null);
+  const [reassignReason, setReassignReason] = useState('');
 
   const handleTogglePanel = (panelId) => {
     setPanelsOpen((prev) => {
@@ -1837,10 +1839,68 @@ export default function TicketManagement({ viewType }) {
     submitTicket(updatedPayload);
   };
 
+  const getReassignReasonOptions = () => {
+    const status = reassignTicket?.ticketStatus || '';
+    if (status === 'To Be Tested') {
+      return [
+        'Bug Found During Testing', 'Test Case Failed', 'Regression Issue Identified',
+        'Environment Issue', 'Integration Issue', 'Performance Issue',
+        'Tester Not Available', 'Tester On Leave', 'Workload Balancing',
+        'Requirement Clarification Needed', 'Test Data Not Available',
+        'Deployment Dependency Pending', 'Verification Required Before Testing',
+        'Testing Scope Changed', 'Others'
+      ];
+    } else if (status === 'To Be Verified') {
+      return [
+        'Estimation Exceeded', 'Delay in Progress', 'Incorrect Understanding of Requirement',
+        'Quality Issues Identified', 'Additional Requirement Added', 'Priority Changed',
+        'Resource Not Suitable', 'Dependency Not Resolved', 'Others'
+      ];
+    } else if (status === 'Yet To Deploy') {
+      return [
+        'Deployment Approval Pending',
+        'Build Not Ready',
+        'Code Merge Pending',
+        'QA Verification Pending',
+        'UAT Approval Pending',
+        'Environment Not Ready',
+        'Release Schedule Pending',
+        'Dependency Pending',
+        'Others'
+      ];
+    } else {
+      return [
+        'Workload Balancing', 'Leave / Not Available', 'Skill Set Required',
+        'Dependency on Another Resource', 'Module Ownership Change', 'Priority Conflict',
+        'Technical Expertise Required', 'Task Complexity Increased', 'Others'
+      ];
+    }
+  };
+
+  const getFilteredEmployeesList = () => {
+    let list = employeesList.filter(emp => emp.employeeName !== (reassignTicket?.employeeName || reassignTicket?.createdBy));
+    const status = reassignTicket?.ticketStatus || '';
+    
+    if (status === 'To Be Tested') {
+      list = list.filter(emp => emp.isTaskTester && emp.isTaskTester.toLowerCase() === 'yes');
+    } else if (status === 'To Be Verified') {
+      const verticalHeads = new Set(employeesList.map(e => (e.verticalHead || '').trim().toLowerCase()).filter(Boolean));
+      list = list.filter(emp => verticalHeads.has((emp.employeeName || '').trim().toLowerCase()));
+    } else if (status === 'Yet To Deploy') {
+      list = list.filter(emp => emp.permissionToggle && emp.permissionToggle.toLowerCase() === 'yes');
+    }
+    
+    return list;
+  };
+
   // Status transitions or assignee updates
   const handleReassignSubmit = async () => {
     if (!reassignEmployee) {
       showSnackbar('Please select an employee to reassign to', 'warning');
+      return;
+    }
+    if (!reassignReason) {
+      showSnackbar('Please select a reassignment reason', 'warning');
       return;
     }
     if (!reassignComment.trim()) {
@@ -1854,12 +1914,14 @@ export default function TicketManagement({ viewType }) {
         developerName: reassignEmployee.employeeName,
         developerEmail: reassignEmployee.officeMail || '',
         developerMobileNo: '',
+        reassignReason: reassignReason,
         reassignComment: reassignComment
       };
       await axios.put(`/api/tickets/${reassignTicket.rowId}`, payload);
       showSnackbar('Task reassigned successfully!');
       setReassignOpen(false);
       setReassignEmployee(null);
+      setReassignReason('');
       setReassignComment('');
       setReassignTicket(null);
       fetchTickets();
@@ -2451,7 +2513,13 @@ export default function TicketManagement({ viewType }) {
       ? ticketTimeline.filter(event => {
         if (!event.fromStatus) return true;
         if (event.fromStatus !== event.toStatus) return true;
-        if (event.comment === 'Ticket created' || (event.comment && event.comment.startsWith('Reassigned to'))) return true;
+        if (event.comment === 'Ticket created' || (event.comment && (event.comment.startsWith('Reassigned to') || event.comment.startsWith('Reassigned:')))) return true;
+        try {
+          const parsed = JSON.parse(event.comment);
+          if (parsed && (parsed.activityName === 'Estimated Time Updated' || parsed.activityName === 'Estimated Time Set' || parsed.activityName === 'Additional Requirement Added' || parsed.activityName === 'Ticket Reassigned')) {
+            return true;
+          }
+        } catch (e) { }
         return false;
       })
       : [{
@@ -2472,7 +2540,7 @@ export default function TicketManagement({ viewType }) {
         <Box sx={{ position: 'relative', pl: 1 }}>
           {roadmapEvents.map((event, idx) => {
             const isLast = idx === roadmapEvents.length - 1;
-            const isReassign = event.comment && event.comment.startsWith('Reassigned to');
+            const isReassign = event.comment && (event.comment.startsWith('Reassigned to') || event.comment.startsWith('Reassigned:'));
 
             let titleText = '';
             if (event.comment === 'Ticket created') {
@@ -2625,10 +2693,10 @@ export default function TicketManagement({ viewType }) {
       ? ticketTimeline.filter(event => {
         if (!event.fromStatus) return true;
         if (event.fromStatus !== event.toStatus) return true;
-        if (event.comment === 'Ticket created' || (event.comment && event.comment.startsWith('Reassigned to'))) return true;
+        if (event.comment === 'Ticket created' || (event.comment && (event.comment.startsWith('Reassigned to') || event.comment.startsWith('Reassigned:')))) return true;
         try {
           const parsed = JSON.parse(event.comment);
-          if (parsed && (parsed.activityName === 'Estimated Time Updated' || parsed.activityName === 'Estimated Time Set' || parsed.activityName === 'Additional Requirement Added')) {
+          if (parsed && (parsed.activityName === 'Estimated Time Updated' || parsed.activityName === 'Estimated Time Set' || parsed.activityName === 'Additional Requirement Added' || parsed.activityName === 'Ticket Reassigned')) {
             return true;
           }
         } catch (e) { }
@@ -3686,16 +3754,18 @@ export default function TicketManagement({ viewType }) {
                   <Box sx={{ position: 'relative', pl: 0.5 }}>
                     {roadmapEvents.map((event, idx) => {
                       const isLast = idx === roadmapEvents.length - 1;
-                      const isReassign = event.comment && event.comment.startsWith('Reassigned to');
-
-                      let titleText = '';
                       let parsedEvent = null;
                       try { parsedEvent = JSON.parse(event.comment); } catch (e) { }
+
+                      const isReassignStr = event.comment && (event.comment.startsWith('Reassigned to') || event.comment.startsWith('Reassigned:'));
+                      const isReassign = isReassignStr || (parsedEvent && parsedEvent.activityName === 'Ticket Reassigned');
+
+                      let titleText = '';
 
                       if (event.comment === 'Ticket created' || (parsedEvent && parsedEvent.activityName === 'Task Created')) {
                         titleText = 'Task Created';
                       } else if (isReassign || (parsedEvent && parsedEvent.activityName === 'Ticket Reassigned')) {
-                        titleText = parsedEvent ? parsedEvent.comment : event.comment;
+                        titleText = 'Reassigned';
                       } else if (parsedEvent && (parsedEvent.activityName === 'Estimated Time Updated' || parsedEvent.activityName === 'Estimated Time Set')) {
                         titleText = 'Estimate Time';
                       } else if (parsedEvent && parsedEvent.activityName === 'Additional Requirement Added') {
@@ -3768,7 +3838,50 @@ export default function TicketManagement({ viewType }) {
                               {format(new Date(event.updatedAt), 'dd/MM/yyyy HH:mm')} by {event.updatedBy}
                             </Typography>
 
-                            {event.comment && event.comment !== 'Ticket created' && !isReassign && !event.comment.startsWith('Status updated to') && (() => {
+                            {event.comment && event.comment !== 'Ticket created' && !event.comment.startsWith('Status updated to') && (() => {
+                              if (isReassign) {
+                                // Extract the inner string if it's JSON
+                                let rawComment = event.comment;
+                                if (parsedEvent && parsedEvent.comment) {
+                                  rawComment = parsedEvent.comment;
+                                }
+
+                                let assignText = '';
+                                let reasonText = '';
+                                let commentText = '';
+                                const parts = rawComment.split(' | ');
+                                assignText = parts[0].replace('Reassigned: ', '').replace('Reassigned to ', '');
+                                
+                                parts.forEach(p => {
+                                  if (p.startsWith('Reason: ')) reasonText = p.replace('Reason: ', '');
+                                  if (p.startsWith('Comment: ')) commentText = p.replace('Comment: ', '');
+                                });
+
+                                return (
+                                  <Box sx={{ mt: 1, p: 1, bgcolor: '#f8fafc', borderRadius: '6px', borderLeft: '3px solid #673ab7' }}>
+                                    {assignText && (
+                                      <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: '#334155', mb: 0.5 }}>
+                                        {assignText.includes('->') ? assignText : `-> ${assignText}`}
+                                      </Typography>
+                                    )}
+                                    {(reasonText || commentText) && (
+                                      <Box sx={{ mt: 0.5 }}>
+                                        {reasonText && (
+                                          <Typography variant="caption" sx={{ display: 'block', color: '#64748b' }}>
+                                            <span style={{ fontWeight: 600 }}>Reason:</span> {reasonText}
+                                          </Typography>
+                                        )}
+                                        {commentText && (
+                                          <Typography variant="caption" sx={{ display: 'block', color: '#64748b', fontStyle: 'italic', mt: 0.2 }}>
+                                            <span style={{ fontWeight: 600, fontStyle: 'normal' }}>Comment:</span> {commentText}
+                                          </Typography>
+                                        )}
+                                      </Box>
+                                    )}
+                                  </Box>
+                                );
+                              }
+
                               let textToDisplay = event.comment;
                               let isHtml = false;
                               try {
@@ -4785,7 +4898,7 @@ export default function TicketManagement({ viewType }) {
       <Dialog
         open={reassignOpen}
         onClose={() => setReassignOpen(false)}
-        maxWidth="sm"
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: { borderRadius: '16px', boxShadow: '0px 10px 30px rgba(0,0,0,0.1)' }
@@ -4815,48 +4928,155 @@ export default function TicketManagement({ viewType }) {
           </IconButton>
         </DialogTitle>
         <Divider sx={{ mx: 3 }} />
-        <DialogContent sx={{ p: 3 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
-            Employee Name <span style={{ color: '#ef4444' }}>*</span>
-          </Typography>
-          <Autocomplete
-            options={employeesList.filter(emp => emp.employeeName !== (reassignTicket?.employeeName || reassignTicket?.createdBy))}
-            getOptionLabel={(option) => option.employeeName || ''}
-            value={reassignEmployee}
-            onChange={(e, val) => setReassignEmployee(val)}
-            renderInput={(params) => (
+        <DialogContent sx={{ p: 4 }}>
+          {/* Read-only top row */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            gap: 2,
+            mb: 4, 
+            pb: 3,
+            borderBottom: '1px solid #e2e8f0',
+            flexWrap: 'wrap'
+          }}>
+            {/* Task ID */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: '10px', border: '1px solid #e9d5ff', bgcolor: '#faf5ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9333ea' }}>
+                <DescriptionOutlinedIcon sx={{ fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.2 }}>Task ID</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a' }}>{reassignTicket?.ticketId || '-'}</Typography>
+              </Box>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ borderColor: '#e2e8f0', height: '40px', alignSelf: 'center' }} />
+
+            {/* Task Owner */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: '10px', border: '1px solid #bae6fd', bgcolor: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                <PersonOutlineIcon sx={{ fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.2 }}>Task Owner</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a' }}>{reassignTicket?.createdBy || '-'}</Typography>
+              </Box>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ borderColor: '#e2e8f0', height: '40px', alignSelf: 'center' }} />
+
+            {/* Verification Owner */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: '10px', border: '1px solid #bbf7d0', bgcolor: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
+                <SecurityOutlinedIcon sx={{ fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.2 }}>Verification Owner</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a' }}>{reassignTicket?.verifiedBy || '-'}</Typography>
+              </Box>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ borderColor: '#e2e8f0', height: '40px', alignSelf: 'center' }} />
+
+            {/* Testing Owner */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: '10px', border: '1px solid #fed7aa', bgcolor: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ea580c' }}>
+                <ScienceOutlinedIcon sx={{ fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.2 }}>Testing Owner</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a' }}>{reassignTicket?.testedBy || '-'}</Typography>
+              </Box>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ borderColor: '#e2e8f0', height: '40px', alignSelf: 'center' }} />
+
+            {/* Current Assignee */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: '10px', border: '1px solid #e9d5ff', bgcolor: '#faf5ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9333ea' }}>
+                <PersonOutlineIcon sx={{ fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.2 }}>Current Assignee</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a' }}>{reassignTicket?.assignedTo || '-'}</Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+                Reassign To <span style={{ color: '#ef4444' }}>*</span>
+              </Typography>
+              <Autocomplete
+                options={getFilteredEmployeesList()}
+                getOptionLabel={(option) => option.employeeName || ''}
+                value={reassignEmployee}
+                onChange={(e, val) => setReassignEmployee(val)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Select an employee"
+                    size="small"
+                    fullWidth
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <PersonOutlineIcon sx={{ color: '#94a3b8', ml: 1, mr: 0.5 }} />
+                          {params.InputProps.startAdornment}
+                        </>
+                      )
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': { borderRadius: '8px' }
+                    }}
+                  />
+                )}
+              />
+              <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.5 }}>
+                Choose the employee to whom this task should be reassigned.
+              </Typography>
+            </Box>
+
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+                Reassignment Reason <span style={{ color: '#ef4444' }}>*</span>
+              </Typography>
               <TextField
-                {...params}
-                placeholder="Select an employee"
+                select
+                size="small"
                 fullWidth
                 required
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <>
-                      <PersonOutlineIcon sx={{ color: '#94a3b8', ml: 1, mr: 0.5 }} />
-                      {params.InputProps.startAdornment}
-                    </>
-                  )
-                }}
+                value={reassignReason}
+                onChange={(e) => setReassignReason(e.target.value)}
                 sx={{
-                  mb: 3,
                   '& .MuiOutlinedInput-root': { borderRadius: '8px' }
                 }}
-              />
-            )}
-          />
+              >
+                {getReassignReasonOptions().map(option => (
+                  <MenuItem key={option} value={option}>{option}</MenuItem>
+                ))}
+              </TextField>
+              <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.5 }}>
+                Select the most appropriate reason for reassignment.
+              </Typography>
+            </Box>
+          </Box>
 
           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
-            Reassign Comments <span style={{ color: '#ef4444' }}>*</span>
+            Reassignment Remarks <span style={{ color: '#ef4444' }}>*</span>
           </Typography>
           <Box sx={{ position: 'relative' }}>
             <TextField
+              size="small"
               fullWidth
               multiline
               rows={4}
               required
-              placeholder="Enter reason for reassignment..."
+              placeholder="Enter remarks for reassignment..."
               value={reassignComment}
               onChange={(e) => {
                 if (e.target.value.length <= 500) {
@@ -4878,6 +5098,9 @@ export default function TicketManagement({ viewType }) {
               {reassignComment.length} / 500
             </Typography>
           </Box>
+          <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.5 }}>
+            Provide additional details or context for this reassignment.
+          </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0, justifyContent: 'flex-end' }}>
           <Tooltip title="Ctrl+S to Save">
