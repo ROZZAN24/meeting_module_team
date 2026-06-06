@@ -583,7 +583,8 @@ export default function CompletedDashboard({ isDark, realTasks = [], activeTab }
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC', borderBottom: 'none' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task No</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task No</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task Name</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Assigned To</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Priority</TableCell>
@@ -597,7 +598,12 @@ export default function CompletedDashboard({ isDark, realTasks = [], activeTab }
                     const pInfo = getPriorityInfo(t);
                     return (
                       <TableRow key={idx} hover>
-                        <TableCell>
+                        <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                           <Typography variant="body2" fontWeight={900} color="#10B981">
                             {t._ticketId || t._id || '-'}
                           </Typography>
@@ -825,7 +831,8 @@ export default function CompletedDashboard({ isDark, realTasks = [], activeTab }
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Employee</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Employee</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>
                     Total Completed
                   </TableCell>
@@ -837,7 +844,12 @@ export default function CompletedDashboard({ isDark, realTasks = [], activeTab }
               <TableBody>
                 {employeeTableData.map((row, idx) => (
                   <TableRow key={idx}>
-                    <TableCell>
+                    <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                       <Stack direction="row" alignItems="center" gap={1}>
                         <Avatar sx={{ width: 20, height: 20, bgcolor: '#10B981', fontSize: '9px', fontWeight: 800 }}>
                           {row.name.charAt(0)}
@@ -940,7 +952,8 @@ export default function CompletedDashboard({ isDark, realTasks = [], activeTab }
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Pages</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Pages</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Total</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>This Week</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>This Month</TableCell>
@@ -950,7 +963,12 @@ export default function CompletedDashboard({ isDark, realTasks = [], activeTab }
               <TableBody>
                 {pagesData.slice(0, 5).map((row, idx) => (
                   <TableRow key={idx}>
-                    <TableCell>
+                    <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                       <Typography fontSize="0.7rem" fontWeight={700} noWrap sx={{ maxWidth: 70 }}>
                         {row.name}
                       </Typography>
@@ -1071,7 +1089,8 @@ export default function CompletedDashboard({ isDark, realTasks = [], activeTab }
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task No</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task No</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task Name</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Assigned To</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Priority</TableCell>
@@ -1085,7 +1104,12 @@ export default function CompletedDashboard({ isDark, realTasks = [], activeTab }
                   const pInfo = getPriorityInfo(t);
                   return (
                     <TableRow key={idx}>
-                      <TableCell>
+                      <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                         <Typography fontWeight={800} fontSize="0.7rem" color="#10B981">
                           {t._ticketId || t._id || '-'}
                         </Typography>

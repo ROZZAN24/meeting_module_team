@@ -1,5 +1,5 @@
 import TextField from 'ui-component/CustomTextField';
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 // material-ui
@@ -864,18 +864,50 @@ export default function TicketManagement({ viewType }) {
     return () => window.removeEventListener('keydown', handleSaveShortcut, { capture: true });
   }, [createOpen, detailsOpen, isSaving]);
 
+  const handleCloseDetails = useCallback(() => {
+    if (location.state?.fromNotification) {
+      navigate(-1);
+    } else {
+      setDetailsOpen(false);
+      setSelectedTicket(null);
+      const params = new URLSearchParams(location.search);
+      if (params.get('openTicketId')) {
+        navigate(location.pathname, { replace: true, state: location.state });
+      }
+    }
+  }, [location, navigate]);
+
+  // Handle openTicketId from URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const openTicketId = params.get('openTicketId');
+    if (openTicketId) {
+      if (tickets.length === 0) {
+        // Still loading tickets...
+        return;
+      }
+      const ticket = tickets.find(t => t.ticketId === openTicketId);
+      if (ticket) {
+        if (!detailsOpen) {
+          setSelectedTicket(ticket);
+          setTabValue(0);
+          setDetailsOpen(true);
+        }
+      }
+    }
+  }, [location.search, tickets, detailsOpen]);
+
   // Handle Escape to close details
   useEffect(() => {
     const handleEscapeShortcut = (e) => {
       if (e.key === 'Escape' && detailsOpen && !previewModalOpen) {
         e.preventDefault();
-        setDetailsOpen(false);
-        setSelectedTicket(null);
+        handleCloseDetails();
       }
     };
     window.addEventListener('keydown', handleEscapeShortcut, { capture: true });
     return () => window.removeEventListener('keydown', handleEscapeShortcut, { capture: true });
-  }, [detailsOpen, previewModalOpen]);
+  }, [detailsOpen, previewModalOpen, handleCloseDetails]);
 
   // When a ticket is selected, load its comments/timeline
   useEffect(() => {
@@ -2042,8 +2074,7 @@ export default function TicketManagement({ viewType }) {
         showSnackbar('Task updated successfully!');
         fetchTickets();
         setHasSavedInDetails(true);
-        setDetailsOpen(false);
-        setSelectedTicket(null);
+        handleCloseDetails();
         setFormAttachments([]);
         setFormVoiceFiles([]);
         return;
@@ -2121,8 +2152,7 @@ export default function TicketManagement({ viewType }) {
 
           fetchTickets();
           setHasSavedInDetails(true);
-          setDetailsOpen(false);
-          setSelectedTicket(null);
+          handleCloseDetails();
           setFormAttachments([]);
           setFormVoiceFiles([]);
         } catch (e) { showSnackbar('Failed to update ticket', 'error'); }
@@ -2745,7 +2775,7 @@ export default function TicketManagement({ viewType }) {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
                 <Tooltip title="Back (Esc)" arrow placement="bottom">
                   <IconButton
-                    onClick={() => { setDetailsOpen(false); setSelectedTicket(null); }}
+                    onClick={handleCloseDetails}
                     sx={{
                       width: 48, height: 48, borderRadius: '12px',
                       bgcolor: '#f3e8ff', color: '#673ab7',

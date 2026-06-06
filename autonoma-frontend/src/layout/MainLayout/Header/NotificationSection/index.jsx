@@ -123,30 +123,34 @@ export default function NotificationSection() {
   const fetchNotifications = async () => {
     if (!user || !user.empId) return;
     try {
-      const res = await axiosServices.get(`/api/notifications/all/${user.empId}`);
-      const currentNotifs = notifsRef.current;
-      if (currentNotifs.length > 0) {
+      const res = await axiosServices.get(`/api/notifications/unread/${user.empId}`);
+      if (res.data && res.data.length > 0) {
+        const currentNotifs = notifsRef.current || [];
+        let hasNew = false;
         res.data.forEach(newNotif => {
           if (!newNotif.isRead) {
             const oldNotif = currentNotifs.find(n => n.id === newNotif.id);
             if (!oldNotif) {
-              enqueueSnackbar(newNotif.title, {
+              hasNew = true;
+              enqueueSnackbar(newNotif.message || newNotif.title, {
                 variant: 'info',
                 anchorOrigin: { vertical: 'top', horizontal: 'right' },
-                persist: true,
-                action: (key) => (
-                  <IconButton size="small" onClick={() => closeSnackbar(key)} sx={{ color: 'white' }}>
-                    <IconX size={16} />
-                  </IconButton>
-                )
+                autoHideDuration: 2000,
+                preventDuplicate: true,
+                style: { marginTop: '50px' }
               });
-              playNotificationSound();
             }
           }
         });
+        if (hasNew) {
+          playNotificationSound();
+        }
+        notifsRef.current = res.data;
+        setNotifications(res.data);
+      } else {
+        notifsRef.current = [];
+        setNotifications([]);
       }
-      setNotifications(res.data);
-      notifsRef.current = res.data;
     } catch (e) {
       console.error('Failed to fetch notifications', e);
     }
@@ -189,13 +193,23 @@ export default function NotificationSection() {
       if (!notif.isRead) {
         await axiosServices.put(`/api/notifications/${notif.id}/read`);
       }
+    } catch (e) {
+      console.error('Failed to handle notification click', e);
+    } finally {
       setOpen(false);
       fetchNotifications();
       if (notif.linkUrl) {
-        navigate(notif.linkUrl);
+        let finalUrl = notif.linkUrl;
+        if ((finalUrl === '/support' || finalUrl.startsWith('/support?')) && notif.message && notif.message.includes('Task No ')) {
+          const match = notif.message.match(/Task No (INT\/[A-Z0-9\/]+)/i);
+          if (match && match[1]) {
+            finalUrl = `/support/raised-for-me?openTicketId=${encodeURIComponent(match[1])}`;
+          }
+        } else if (finalUrl && finalUrl.startsWith('/support?')) {
+          finalUrl = finalUrl.replace('/support?', '/support/raised-for-me?');
+        }
+        navigate(finalUrl, { state: { fromNotification: true } });
       }
-    } catch (e) {
-      console.error('Failed to handle notification click', e);
     }
   };
 

@@ -64,6 +64,26 @@ public class TicketTraceabilityCenterController {
     @Autowired
     private SupportTicketReopenHistoryRepository reopenHistoryRepository;
 
+    @Autowired
+    private AppNotificationRepository appNotificationRepository;
+
+    private void createAssignmentNotification(TicketTraceabilityCenter ticket, String title, String message) {
+        if (ticket.getAssignedTo() == null || ticket.getAssignedTo().trim().isEmpty()) return;
+        try {
+            java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = employeeMasterRepository.findByEmpCodeOrName(ticket.getAssignedTo());
+            if (empOpt.isPresent()) {
+                AppNotification notif = new AppNotification();
+                notif.setRecipientEmpId(empOpt.get().getId());
+                notif.setTitle(title);
+                notif.setMessage(message);
+                notif.setLinkUrl("/support/raised-for-me?openTicketId=" + ticket.getTicketId());
+                appNotificationRepository.save(notif);
+            }
+        } catch (Exception e) {
+            log.error("Failed to create assignment notification", e);
+        }
+    }
+
     private boolean isInternalUser() {
         String userId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         if (userId == null)
@@ -250,6 +270,8 @@ public class TicketTraceabilityCenterController {
                 savedTicket = ticketRepository.save(savedTicket);
             }
 
+            createAssignmentNotification(savedTicket, "New Task Created", "New Task Created With Task No " + savedTicket.getTicketId());
+
             return ResponseEntity.ok(savedTicket);
         } catch (Exception e) {
             log.error("Error creating ticket", e);
@@ -381,6 +403,7 @@ public class TicketTraceabilityCenterController {
                 String newAssignee = ticketDetails.getAssignedTo();
                 if (oldAssignee == null || !oldAssignee.equalsIgnoreCase(newAssignee)) {
                     existingTicket.setAssignedTo(newAssignee);
+                    createAssignmentNotification(existingTicket, "Task Reassigned", "New Task Assigned With Task No " + existingTicket.getTicketId());
                     
                     String reassignActionDesc = "Reassigned: " + (oldAssignee != null ? oldAssignee : "Unassigned") + " -> " + newAssignee;
                     if (ticketDetails.getReassignReason() != null && !ticketDetails.getReassignReason().trim().isEmpty()) {

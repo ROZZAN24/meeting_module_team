@@ -551,7 +551,8 @@ export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) 
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Employee Name</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 2 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 1 }}>Employee Name</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>
                       Total Overdue
                     </TableCell>
@@ -567,7 +568,12 @@ export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) 
                   {fullEmpTableData.length > 0 ? (
                     fullEmpTableData.map((row, idx) => (
                       <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === fullEmpTableData.length - 1 ? 'none' : undefined } }}>
-                        <TableCell sx={{ pl: 3 }}>
+                        <TableCell sx={{ pl: 2 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ pl: 1 }}>
                           <Stack direction="row" alignItems="center" gap={1.5}>
                             <Avatar sx={{ width: 32, height: 32, bgcolor: '#EF4444', fontSize: '14px', fontWeight: 800 }}>
                               {row.name.charAt(0)}
@@ -657,7 +663,8 @@ export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) 
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Task No</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 2 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 1 }}>Task No</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task Name</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Assigned To</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Priority</TableCell>
@@ -677,7 +684,12 @@ export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) 
                         const pInfo = getPriorityInfo(t);
                         return (
                           <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === overdueTasks.length - 1 ? 'none' : undefined } }}>
-                            <TableCell sx={{ pl: 3 }}>
+                            <TableCell sx={{ pl: 2 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ pl: 1 }}>
                               <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color="#EF4444">
                                 {getTicketId(t)}
                               </Typography>
@@ -947,7 +959,8 @@ export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) 
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Employee</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Employee</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Total</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>1-3 D</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>4-7 D</TableCell>
@@ -960,6 +973,11 @@ export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) 
                     empTableData.map((row, idx) => (
                       <TableRow key={idx}>
                         <TableCell sx={{ px: 0.5 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ px: 0.5 }}>
                           <Stack direction="row" alignItems="center" gap={1}>
                             <Avatar sx={{ width: 20, height: 20, bgcolor: '#EF4444', fontSize: '9px', fontWeight: 800 }}>
                               {row.name.charAt(0)}
@@ -1246,7 +1264,8 @@ export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) 
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem', color: textMuted }}>Task No</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem', color: textMuted }}>Task No</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem', color: textMuted }}>Task Name</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem', color: textMuted }}>Assigned To</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem', color: textMuted }}>Priority</TableCell>
@@ -1263,7 +1282,12 @@ export default function OverdueDashboard({ isDark, realTasks = [], activeTab }) 
                       const pInfo = getPriorityInfo(t);
                       return (
                         <TableRow key={idx}>
-                          <TableCell>
+                          <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                             <Typography variant="body2" fontWeight={800} fontSize="0.75rem" color="#EF4444">
                               {getTicketId(t)}
                             </Typography>

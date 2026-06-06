@@ -208,7 +208,7 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
     return t._ticketId || t._id || `TCK-???`;
   };
 
-  const topTasksData = reopenedTasks.slice(0, 5).map((t) => {
+  const topTasksData = reopenedTasks.slice(0, 5).map((t, idx) => {
     return { ticketId: getTicketId(t), name: t._title, emp: t._user, count: 1 };
   });
 
@@ -318,7 +318,8 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Employee Name</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 2 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 1 }}>Employee Name</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Count</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Total Rework</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Avg Resolution</TableCell>
@@ -352,7 +353,8 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Employee Name</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 2 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 1 }}>Employee Name</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Original Hours</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Rework Hours</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center', pr: 3 }}>Efficiency Loss %</TableCell>
@@ -384,7 +386,8 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Task No</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 2 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 1 }}>Task No</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task Name</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Assigned To</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Priority</TableCell>
@@ -398,7 +401,12 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
                     const pInfo = getPriorityInfo(t);
                     return (
                     <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === reopenedTasks.length - 1 ? 'none' : undefined } }}>
-                      <TableCell sx={{ pl: 3 }}>
+                      <TableCell sx={{ pl: 2 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ pl: 1 }}>
                         <Typography variant="body2" fontWeight={900} fontSize="0.9rem" color="#3B82F6">{getTicketId(t)}</Typography>
                       </TableCell>
                       <TableCell>
@@ -569,7 +577,8 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }}>Employee</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }}>Employee</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, textAlign: 'center' }}>Count</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, textAlign: 'center' }}>Rework</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, textAlign: 'center' }}>Avg Res</TableCell>
@@ -580,6 +589,11 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
                   {healthData.length > 0 ? healthData.map((row, idx) => (
                     <TableRow key={idx} sx={{ '& td': { borderBottom: idx === healthData.length - 1 ? 'none' : undefined } }}>
                       <TableCell sx={{ px: 0.5 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ px: 0.5 }}>
                         <Stack direction="row" alignItems="center" gap={1.5}>
                           <Avatar sx={{ width: 28, height: 28, bgcolor: '#3B82F6', fontSize: '12px', fontWeight: 800 }}>
                             {row.name.charAt(0)}
@@ -639,7 +653,8 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }}>Employee</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }}>Employee</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, textAlign: 'center' }}>Original</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, textAlign: 'center' }}>Rework</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted, textAlign: 'center', borderTopRightRadius: 8, borderBottomRightRadius: 8 }}>Loss %</TableCell>
@@ -649,6 +664,11 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
                   {timeLossData.length > 0 ? timeLossData.map((row, idx) => (
                     <TableRow key={idx} sx={{ '& td': { borderBottom: idx === timeLossData.length - 1 ? 'none' : undefined } }}>
                       <TableCell sx={{ px: 0.5 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ px: 0.5 }}>
                         <Stack direction="row" alignItems="center" gap={1.5}>
                           <Avatar sx={{ width: 28, height: 28, bgcolor: row.color, fontSize: '12px', fontWeight: 800 }}>
                             {row.name.charAt(0)}
@@ -738,7 +758,8 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted }}>Task No</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted }}>Task No</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted }}>Task Name</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted }}>Assigned To</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textMuted }}>Priority</TableCell>
@@ -752,7 +773,12 @@ export default function ReopenDashboard({ realData, realTasks = [], isDark, acti
                     const pInfo = getPriorityInfo(t);
                     return (
                     <TableRow key={idx} sx={{ '& td': { borderBottom: idx === Math.min(reopenedTasks.length, 5) - 1 ? 'none' : undefined } }}>
-                      <TableCell><Typography variant="body2" fontWeight={800} fontSize="0.75rem" color="#3B82F6">{t._ticketId || t._id || '-'}</Typography></TableCell>
+                      <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell><Typography variant="body2" fontWeight={800} fontSize="0.75rem" color="#3B82F6">{t._ticketId || t._id || '-'}</Typography></TableCell>
                       <TableCell><Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={textColor} noWrap sx={{ maxWidth: 100 }}>{t._title}</Typography></TableCell>
                       <TableCell><Typography variant="body2" fontWeight={600} fontSize="0.75rem" color={textMuted} noWrap sx={{ maxWidth: 70 }}>{t._user || 'Unknown'}</Typography></TableCell>
                       <TableCell>

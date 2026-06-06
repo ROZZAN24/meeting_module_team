@@ -561,7 +561,8 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Tester</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 2 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 1 }}>Tester</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Total</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Waiting</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>In Testing</TableCell>
@@ -574,7 +575,12 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
                   {fullTesterData.length > 0 ? (
                     fullTesterData.map((row, idx) => (
                       <TableRow key={idx} hover>
-                        <TableCell sx={{ pl: 3 }}>
+                        <TableCell sx={{ pl: 2 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ pl: 1 }}>
                           <Stack direction="row" alignItems="center" gap={1.5}>
                             <Avatar sx={{ width: 32, height: 32, bgcolor: '#8B5CF6', fontSize: '14px', fontWeight: 800 }}>
                               {row.name.charAt(0)}
@@ -628,7 +634,8 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Task No</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 2 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 1 }}>Task No</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task Name</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Assigned To</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Priority</TableCell>
@@ -645,7 +652,12 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
                       const pInfo = getPriorityInfo(t);
                       return (
                         <TableRow key={idx} hover>
-                          <TableCell sx={{ pl: 3 }}>
+                          <TableCell sx={{ pl: 2 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ pl: 1 }}>
                             <Typography fontWeight={900} fontSize="0.9rem" color="#8B5CF6">
                               {getTicketId(t)}
                             </Typography>
@@ -726,7 +738,8 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Pages</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 2 }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 1 }}>Pages</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Total Tasks</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Waiting</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>In Testing</TableCell>
@@ -740,7 +753,12 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
                   {pagesData.length > 0 ? (
                     pagesData.map((row, idx) => (
                       <TableRow key={idx} hover>
-                        <TableCell sx={{ pl: 3 }}>
+                        <TableCell sx={{ pl: 2 }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ pl: 1 }}>
                           <Stack direction="row" alignItems="center" gap={1.5}>
                             <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: row.color }} />
                             <Typography fontWeight={700} fontSize="0.9rem" color={textColor}>
@@ -938,7 +956,8 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Tester</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Tester</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Total</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Waiting</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>In Testing</TableCell>
@@ -949,7 +968,12 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
                 {testerTableData.length > 0 ? (
                   testerTableData.map((row, idx) => (
                     <TableRow key={idx}>
-                      <TableCell>
+                      <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                         <Stack direction="row" alignItems="center" gap={1}>
                           <Avatar sx={{ width: 20, height: 20, bgcolor: '#8B5CF6', fontSize: '9px', fontWeight: 800 }}>
                             {row.name.charAt(0)}
@@ -1085,7 +1109,8 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Pages</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Pages</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Total</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Waiting</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>In Testing</TableCell>
@@ -1095,7 +1120,12 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
               <TableBody>
                 {pagesData.slice(0, 5).map((row, idx) => (
                   <TableRow key={idx}>
-                    <TableCell>
+                    <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                       <Stack direction="row" alignItems="center" gap={1}>
                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.color }} />
                         <Typography fontSize="0.7rem" fontWeight={700} noWrap sx={{ maxWidth: 80 }}>
@@ -1233,7 +1263,8 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task No</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task No</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task Name</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Assigned To</TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Priority</TableCell>
@@ -1247,7 +1278,12 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab 
                   const pInfo = getPriorityInfo(t);
                   return (
                     <TableRow key={idx}>
-                      <TableCell>
+                      <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                         <Typography fontWeight={800} fontSize="0.72rem" color="#8B5CF6">
                           {getTicketId(t)}
                         </Typography>

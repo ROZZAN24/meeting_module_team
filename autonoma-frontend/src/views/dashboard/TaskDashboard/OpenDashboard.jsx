@@ -512,7 +512,8 @@ export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task No</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task No</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Task Name</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Assigned To</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Priority</TableCell>
@@ -528,7 +529,12 @@ export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
                       const pInfo = getPriorityInfo(t);
                       return (
                         <TableRow key={idx} hover>
-                          <TableCell>
+                          <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                             <Typography variant="body2" fontWeight={900} fontSize="0.9rem" color="#3B82F6">
                               {t._ticketId || t._id || 'TCK-???'}
                             </Typography>
@@ -591,7 +597,8 @@ export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Developer</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted }}>Developer</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>
                       Total Open Tasks
                     </TableCell>
@@ -609,7 +616,12 @@ export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
                 <TableBody>
                   {fullDeveloperData.map((row, idx) => (
                     <TableRow key={idx} hover>
-                      <TableCell>
+                      <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                         <Stack direction="row" alignItems="center" gap={1.5}>
                           <Avatar sx={{ width: 32, height: 32, bgcolor: '#3B82F6', fontSize: '13px', fontWeight: 800 }}>
                             {row.name.charAt(0)}
@@ -816,7 +828,8 @@ export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Developer</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Developer</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Open Tasks</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>
                       <Box display="inline-flex" alignItems="center" gap={0.5}>
@@ -844,7 +857,12 @@ export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
                 <TableBody>
                   {developerTableData.map((row, idx) => (
                     <TableRow key={idx}>
-                      <TableCell>
+                      <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                         <Stack direction="row" alignItems="center" gap={1}>
                           <Avatar sx={{ width: 20, height: 20, bgcolor: '#3B82F6', fontSize: '9px', fontWeight: 800 }}>
                             {row.name.charAt(0)}
@@ -993,7 +1011,8 @@ export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task No</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }} width={50}>S.No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task No</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Task Name</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Assigned To</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted }}>Priority</TableCell>
@@ -1010,7 +1029,12 @@ export default function OpenDashboard({ isDark, realTasks = [], activeTab }) {
                       const pInfo = getPriorityInfo(t);
                       return (
                         <TableRow key={idx}>
-                          <TableCell>
+                          <TableCell sx={{ color: textMuted }}>
+                                <Typography variant="body2" fontWeight={800} fontSize="0.8rem" color={textMuted}>
+                                  {idx + 1}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                             <Typography fontWeight={900} fontSize="0.72rem" color="#3B82F6">
                               {t._ticketId || t._id || 'TCK-???'}
                             </Typography>

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -166,6 +166,8 @@ import ThumbUpAltRoundedIcon from '@mui/icons-material/ThumbUpAltRounded';
 import MonitorHeartRoundedIcon from '@mui/icons-material/MonitorHeartRounded';
 import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded';
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 import ReopenDashboard from './ReopenDashboard';
 import ToBeTestedDashboard from './ToBeTestedDashboard';
@@ -465,69 +467,97 @@ const WorkloadView = ({ realWorkload, isDark, navigate, filterRequestManagement,
 
   const borderColor = isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0';
 
-  const DataTable = ({ rows }) => (
-    <TableContainer>
-      <Table>
-        <TableHead sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF' }}>
-          <TableRow>
-            <TableCell sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}` }}>
-              <Stack direction="row" alignItems="center" gap={1}>
-                <PersonOutlineRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} />
+  const DataTable = ({ rows }) => {
+    const [sortConfig, setSortConfig] = useState({ key: 'status', direction: 'asc' });
+
+    const handleSort = (key) => {
+      let direction = 'desc';
+      if (sortConfig.key === key && sortConfig.direction === 'desc') {
+        direction = 'asc';
+      }
+      setSortConfig({ key, direction });
+    };
+
+    const sortedRows = useMemo(() => {
+      let sortableItems = [...rows];
+      if (sortConfig.key) {
+        sortableItems.sort((a, b) => {
+          let aValue = a[sortConfig.key];
+          let bValue = b[sortConfig.key];
+          
+          if (sortConfig.key === 'status') {
+             const statusWeight = { 'Critical': 1, 'Normal': 2, 'Healthy': 3 };
+             aValue = statusWeight[aValue] || 4;
+             bValue = statusWeight[bValue] || 4;
+          } else if (sortConfig.key === 'user') {
+             aValue = aValue ? aValue.toLowerCase() : '';
+             bValue = bValue ? bValue.toLowerCase() : '';
+          } else if (sortConfig.key === 'percent' || sortConfig.key === 'tasks' || sortConfig.key === 'days') {
+             aValue = Number(aValue) || 0;
+             bValue = Number(bValue) || 0;
+          }
+          if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+      return sortableItems;
+    }, [rows, sortConfig]);
+
+    const getSortIcon = (key) => {
+      if (sortConfig.key === key) {
+        return sortConfig.direction === 'desc' ? <KeyboardArrowUpIcon fontSize="small" sx={{ ml: 0.5, color: '#6366F1' }} /> : <KeyboardArrowDownIcon fontSize="small" sx={{ ml: 0.5, color: '#6366F1' }} />;
+      }
+      return <KeyboardArrowDownIcon fontSize="small" sx={{ ml: 0.5, color: 'text.secondary', opacity: 0.3 }} />;
+    };
+
+    return (
+      <TableContainer>
+        <Table>
+          <TableHead sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF' }}>
+            <TableRow>
+              <TableCell sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}`, width: '60px' }}>
                 <Typography variant="subtitle2" fontWeight={800} color="text.primary">
-                  Employee
+                  S.No
                 </Typography>
-              </Stack>
-            </TableCell>
-            <TableCell sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}`, width: '35%' }}>
-              <Stack direction="row" alignItems="center" gap={1}>
-                <Box sx={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <AssignmentRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} />
+              </TableCell>
+              {[
+                { key: 'user', label: 'Employee', icon: <PersonOutlineRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} /> },
+                { key: 'percent', label: 'Workload', icon: <Box sx={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AssignmentRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} /></Box>, width: '35%' },
+                { key: 'tasks', label: 'Active Task', icon: <FolderOpenRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} /> },
+                { key: 'days', label: 'Total Days', icon: <CalendarTodayRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} /> },
+                { key: 'status', label: 'Status', icon: <BookmarkBorderRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} /> },
+              ].map((col) => (
+                <TableCell 
+                  key={col.key} 
+                  sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}`, width: col.width || 'auto', cursor: 'pointer', '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' } }} 
+                  onClick={() => handleSort(col.key)}
+                >
+                  <Stack direction="row" alignItems="center" gap={1}>
+                    {col.icon}
+                    <Typography variant="subtitle2" fontWeight={800} color={sortConfig.key === col.key ? '#6366F1' : 'text.primary'}>
+                      {col.label}
+                    </Typography>
+                    {getSortIcon(col.key)}
+                  </Stack>
+                </TableCell>
+              ))}
+              <TableCell align="right" sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}` }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <MoreVertRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} />
                 </Box>
-                <Typography variant="subtitle2" fontWeight={800} color="text.primary">
-                  Workload
-                </Typography>
-              </Stack>
-            </TableCell>
-            <TableCell sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}` }}>
-              <Stack direction="row" alignItems="center" gap={1}>
-                <FolderOpenRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} />
-                <Typography variant="subtitle2" fontWeight={800} color="text.primary">
-                  Active Task
-                </Typography>
-              </Stack>
-            </TableCell>
-            <TableCell sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}` }}>
-              <Stack direction="row" alignItems="center" gap={1}>
-                <CalendarTodayRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} />
-                <Typography variant="subtitle2" fontWeight={800} color="text.primary">
-                  Total Days
-                </Typography>
-              </Stack>
-            </TableCell>
-            <TableCell sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}` }}>
-              <Stack direction="row" alignItems="center" gap={1}>
-                <BookmarkBorderRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} />
-                <Typography variant="subtitle2" fontWeight={800} color="text.primary">
-                  Status
-                </Typography>
-              </Stack>
-            </TableCell>
-            <TableCell align="right" sx={{ py: 1.5, borderBottom: `1px solid ${borderColor}` }}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <MoreVertRoundedIcon fontSize="small" sx={{ color: '#94A3B8' }} />
-              </Box>
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody sx={{ bgcolor: isDark ? '#1E293B' : '#FFFFFF' }}>
-          {rows.map((row, idx) => (
-            <TableRow 
-              key={idx} 
-              hover 
-              sx={{ 
-                cursor: 'pointer',
-                '& td': { borderBottom: idx === rows.length - 1 ? 'none' : `1px solid ${borderColor}` } 
-              }}
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody sx={{ bgcolor: isDark ? '#1E293B' : '#FFFFFF' }}>
+            {sortedRows.map((row, idx) => (
+              <TableRow 
+                key={idx} 
+                hover 
+                sx={{ 
+                  cursor: 'pointer',
+                  '& td': { borderBottom: idx === sortedRows.length - 1 ? 'none' : `1px solid ${borderColor}` } 
+                }}
               onDoubleClick={() => {
                 if (filterRequestManagement === 'My Request' && !isCurrentUser(row.user)) {
                   navigate('/support/ticket-by-me', {
@@ -551,6 +581,11 @@ const WorkloadView = ({ realWorkload, isDark, navigate, filterRequestManagement,
                 }
               }}
             >
+              <TableCell sx={{ py: 1.5 }}>
+                <Typography variant="subtitle2" fontWeight={800} color="text.secondary">
+                  {idx + 1}
+                </Typography>
+              </TableCell>
               <TableCell sx={{ py: 1.5 }}>
                 <Stack direction="row" alignItems="center" gap={2}>
                   <Avatar sx={{ width: 32, height: 32, bgcolor: row.color, fontSize: '14px', fontWeight: 700, color: '#fff' }}>
@@ -651,9 +686,10 @@ const WorkloadView = ({ realWorkload, isDark, navigate, filterRequestManagement,
             </TableRow>
           ))}
         </TableBody>
-      </Table>
-    </TableContainer>
-  );
+        </Table>
+      </TableContainer>
+    );
+  };
 
   return (
     <Box sx={{ p: 0 }}>
@@ -1274,6 +1310,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                   <TableHead>
                     <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC' }}>
                       {[
+                        { key: null, label: 'S.No' },
                         { key: 'user', label: 'Developer' },
                         { key: 'assignedHrs', label: 'Assigned Hrs' },
                         { key: 'takenHrs', label: 'Taken Time' },
@@ -1317,7 +1354,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                   <TableBody>
                     {devStats.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4, color: textMuted }}>
+                        <TableCell colSpan={10} sx={{ textAlign: 'center', py: 4, color: textMuted }}>
                           No data available.
                         </TableCell>
                       </TableRow>
@@ -1338,6 +1375,9 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                       };
                       return (
                         <TableRow key={idx} hover sx={{ '&:last-child td': { border: 0 } }}>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: textMuted, textAlign: 'center' }}>
+                            {idx + 1}
+                          </TableCell>
                           <TableCell sx={{ py: 0.5 }}>
                             <Stack direction="row" alignItems="center" gap={1.5}>
                               <Avatar
@@ -1882,6 +1922,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                   <TableHead>
                     <TableRow sx={{ bgcolor: isDark ? '#1E293B' : '#F8FAFC' }}>
                       {[
+                        { key: null, label: 'S.No', icon: '#' },
                         { key: 'user', label: 'Developer', icon: '👤' },
                         { key: 'assignedHrs', label: 'Assigned Hrs', icon: '📋' },
                         { key: 'takenHrs', label: 'Taken Time', icon: '⏱' },
@@ -1944,6 +1985,9 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                           '&:hover': { bgcolor: isDark ? 'rgba(99,102,241,0.04)' : '#F8FAFF' },
                           transition: 'background 0.15s'
                         }}>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 800, color: textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '14px' }}>
+                            {idx + 1}
+                          </TableCell>
                           <TableCell sx={{ py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
                             <Stack direction="row" alignItems="center" gap={1.5}>
                               <Avatar sx={{ width: 40, height: 40, bgcolor: AVATAR_COLORS[idx % AVATAR_COLORS.length], fontSize: '15px', fontWeight: 700, boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
