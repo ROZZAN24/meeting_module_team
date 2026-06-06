@@ -156,6 +156,9 @@ public class TicketTraceabilityCenter {
     @Transient
     private String reassignComment;
 
+    @Transient
+    private String reassignReason;
+
     @PrePersist
     protected void onCreate() {
         String currentUserId = null;
