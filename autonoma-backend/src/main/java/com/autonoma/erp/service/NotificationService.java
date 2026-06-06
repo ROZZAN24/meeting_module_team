@@ -62,4 +62,57 @@ public class NotificationService {
         // Also trigger the existing email log logic
         sendMeetingNotification(recipient.getEmployeeName(), recipient.getOfficeMail(), notification.getTitle(), notification.getMessage());
     }
+
+    public void notifyUserAboutAudit(EmployeeMaster recipient, com.autonoma.erp.model.AuditSchedule schedule, String actionType) {
+        if (recipient == null || recipient.getId() == null) return;
+
+        AppNotification notification = new AppNotification();
+        notification.setRecipientEmpId(recipient.getId());
+
+        String auditType = schedule.getAuditType() != null ? schedule.getAuditType() : "Audit";
+        String auditArea = schedule.getAuditArea() != null ? schedule.getAuditArea() : "N/A";
+        String auditDateStr = schedule.getAuditDate() != null ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(schedule.getAuditDate()) : "N/A";
+        String timeStr = "";
+        if (schedule.getStartTime() != null && !schedule.getStartTime().trim().isEmpty()) {
+            timeStr += schedule.getStartTime().trim();
+        }
+        if (schedule.getEndTime() != null && !schedule.getEndTime().trim().isEmpty()) {
+            if (!timeStr.isEmpty()) timeStr += " - ";
+            timeStr += schedule.getEndTime().trim();
+        }
+        if (timeStr.isEmpty()) {
+            timeStr = "N/A";
+        }
+
+        if ("CREATE".equalsIgnoreCase(actionType)) {
+            notification.setTitle("New Audit Scheduled: " + schedule.getScheduleNo());
+            notification.setMessage(String.format("You have a new audit scheduled.\nSchedule Number: %s\nAudit Type: %s\nAudit Area: %s\nAudit Date: %s\nTime: %s", 
+                schedule.getScheduleNo(), auditType, auditArea, auditDateStr, timeStr));
+        } else if ("UPDATE".equalsIgnoreCase(actionType)) {
+            notification.setTitle("Audit Details Updated: " + schedule.getScheduleNo());
+            notification.setMessage(String.format("Audit details have been updated.\nSchedule Number: %s\nAudit Type: %s\nAudit Area: %s\nAudit Date: %s\nTime: %s", 
+                schedule.getScheduleNo(), auditType, auditArea, auditDateStr, timeStr));
+        } else if ("RESCHEDULE".equalsIgnoreCase(actionType)) {
+            notification.setTitle("Audit Rescheduled: " + schedule.getScheduleNo());
+            notification.setMessage(String.format("Audit has been rescheduled.\nSchedule Number: %s\nAudit Type: %s\nAudit Area: %s\nAudit Date: %s\nTime: %s", 
+                schedule.getScheduleNo(), auditType, auditArea, auditDateStr, timeStr));
+        } else if ("CANCEL".equalsIgnoreCase(actionType)) {
+            notification.setTitle("Audit Cancelled: " + schedule.getScheduleNo());
+            notification.setMessage(String.format("Audit has been cancelled.\nSchedule Number: %s\nAudit Type: %s\nAudit Area: %s\nAudit Date: %s\nTime: %s", 
+                schedule.getScheduleNo(), auditType, auditArea, auditDateStr, timeStr));
+        } else if ("ASSIGN".equalsIgnoreCase(actionType)) {
+            notification.setTitle("Audit Assigned: " + schedule.getScheduleNo());
+            notification.setMessage(String.format("You have been assigned to audit.\nSchedule Number: %s\nAudit Type: %s\nAudit Area: %s\nAudit Date: %s\nTime: %s", 
+                schedule.getScheduleNo(), auditType, auditArea, auditDateStr, timeStr));
+        } else {
+            notification.setTitle("Audit Notification: " + schedule.getScheduleNo());
+            notification.setMessage(String.format("Audit Update.\nSchedule Number: %s\nAudit Type: %s\nAudit Area: %s\nAudit Date: %s\nTime: %s", 
+                schedule.getScheduleNo(), auditType, auditArea, auditDateStr, timeStr));
+        }
+
+        notification.setLinkUrl("/qms/audit/schedule/edit/" + schedule.getId());
+        notificationRepository.save(notification);
+
+        sendMeetingNotification(recipient.getEmployeeName(), recipient.getOfficeMail(), notification.getTitle(), notification.getMessage());
+    }
 }

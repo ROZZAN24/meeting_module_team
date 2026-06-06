@@ -81,6 +81,10 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const startCamera = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      dispatch(openSnackbar({ open: true, message: 'Webcam access is not supported in this browser or context (requires HTTPS)', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     try {
       setCameraActive(true);
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 320 } });

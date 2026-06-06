@@ -448,6 +448,10 @@ export default function ChatMainPage() {
 
   const handleMicClick = async () => {
     if (!activeChannel) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      enqueueSnackbar('Microphone access is not supported in this browser or context (requires HTTPS)', { variant: 'warning' });
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);

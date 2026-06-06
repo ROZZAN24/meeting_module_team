@@ -33,6 +33,7 @@ import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters, BOSDateP
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import useLookups from 'hooks/useLookups';
 
 const columns = [
   '#',
@@ -73,7 +74,7 @@ const DEFAULT_FILTERS = {
   considerDateValue: '',
   statuses: [],
   searchBy: 'All',
-  departments: [],
+  assignedTo: [],
 
   // Add-on filter support
   seqNo: '',
@@ -173,63 +174,7 @@ const exportColumns = [
   }}
 ];
 
-const getFilterConfig = (departments) => [{
-    id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'Mine', label: 'Mine' },
-      { value: 'Team', label: 'Team' },
-      { value: 'Company', label: 'Company' }
-    ]
-  },
-  { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
-  { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
-  {
-    id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, defaultValue: 'No', options: [
-      { value: 'All', label: 'All' },
-      { value: 'Yes', label: 'Yes' },
-      { value: 'No', label: 'No' }
-    ]
-  },
-  { id: 'statuses', label: 'Status', type: 'autocomplete', multiple: true, isStarred: true, options: STATUS_OPTIONS.map(s => ({ value: s, label: s })) },
-  { id: 'departments', label: 'Department', type: 'autocomplete', multiple: true, isStarred: true, options: departments.map(d => ({ value: d, label: d })) },
-  {
-    id: 'searchBy', label: 'Search by', type: 'select', isStarred: true, defaultValue: 'All', options: [
-      { value: 'All', label: 'Global Search' },
-      { value: 'checkingPoint', label: 'Checking Point' },
-      { value: 'seqNo', label: 'Seq.No' }
-    ]
-  },
-
-  // The remaining fields in the table can be added by the "Add Filter" option (isStarred: false)
-  { id: 'seqNo', label: 'Sequence No', type: 'text', isStarred: false },
-  { id: 'checkingPoint', label: 'Checking Point', type: 'text', isStarred: false },
-  {
-    id: 'category', label: 'Category', type: 'select', isStarred: false, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'RENEWAL', label: 'RENEWAL' },
-      { value: 'CHECK LIST', label: 'CHECK LIST' }
-    ]
-  },
-  {
-    id: 'frequency', label: 'Frequency', type: 'select', isStarred: false, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'DAILY', label: 'DAILY' },
-      { value: 'WEEKLY', label: 'WEEKLY' },
-      { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' },
-      { value: 'MONTHLY', label: 'MONTHLY' },
-      { value: 'QUARTERLY', label: 'QUARTERLY' },
-      { value: 'HALF YEARLY', label: 'HALF YEARLY' },
-      { value: 'YEARLY', label: 'YEARLY' }
-    ]
-  },
-  {
-    id: 'stockLink', label: 'Stock Link', type: 'select', isStarred: false, defaultValue: 'All', options: [
-      { value: 'All', label: 'All' },
-      { value: 'YES', label: 'YES' },
-      { value: 'NO', label: 'NO' }
-    ]
-  },
-  ...getCommonDateFilters('createdDate', 'updatedDate')];
+// getFilterConfig removed. Replaced by dynamic useEffect setup inside the component.
 
 function FilterSection({ title, open, onToggle, children }) {
   return (
@@ -305,6 +250,9 @@ function StatusChip({ status }) {
 export default function CloseCheckListRenewal() {
   const { user } = useAuth();
   const dispatch = useDispatch();
+  const { employees = [] } = useLookups(['EMPLOYEES']);
+  const [myTeamEmployees, setMyTeamEmployees] = useState([]);
+  const [myTeamLoaded, setMyTeamLoaded] = useState(false);
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -319,46 +267,174 @@ export default function CloseCheckListRenewal() {
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_CLOSE);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, searchBy: false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
-  const [departmentsList, setDepartmentsList] = useState([]);
-
-  // Auto-set fromDate to today when the filter drawer opens (only if not already set)
+  // Load reporting employees on mount
   useEffect(() => {
-    if (drawerOpen && !filters.fromDate) {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      setFilters((prev) => ({ ...prev, fromDate: `${yyyy}-${mm}-${dd}` }));
-    }
-  }, [drawerOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    axios.get('/api/master/hr/departments')
+    if (user?.name || user?.id) {
+      axios.get('/api/qms/checklist/my-team-employees', {
+        params: { currentUser: user?.name || user?.id }
+      })
       .then(res => {
-        const list = (res.data || [])
-          .filter(d => d.status?.toLowerCase() === 'active' || d.status === null)
-          .map(d => d.departmentName);
-        setDepartmentsList(list);
+        setMyTeamEmployees(res.data || []);
+        setMyTeamLoaded(true);
       })
       .catch(err => {
-        console.error("Failed to load departments from master", err);
+        console.error("Failed to load team employees", err);
+        setMyTeamLoaded(true);
       });
-  }, []);
+    }
+  }, [user]);
 
-  // Configure global search bar filters on mount
+  const isVerticalHead = myTeamEmployees && myTeamEmployees.length > 0;
+
+  // Configure dynamic global search bar filters based on hierarchy and permissions
   useEffect(() => {
-    dispatch(setFilterConfig(getFilterConfig(departmentsList)));
+    if (perms.loading) return;
+
+    const taskTypeOptions = [
+      { value: 'All', label: 'All' },
+      { value: 'Mine', label: 'Mine' }
+    ];
+    if (isVerticalHead) {
+      taskTypeOptions.push({ value: 'Team', label: 'My Team' });
+    }
+    if (perms.additional1) {
+      taskTypeOptions.push({ value: 'Company', label: 'My Company' });
+    }
+
+    const baseConfig = [
+      {
+        id: 'taskType',
+        label: 'Task Type',
+        type: 'select',
+        isStarred: true,
+        defaultValue: 'Mine',
+        options: taskTypeOptions
+      },
+      { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
+      { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
+      {
+        id: 'considerDate',
+        label: 'Consider Date?',
+        type: 'select',
+        isStarred: true,
+        defaultValue: 'No',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'Yes', label: 'Yes' },
+          { value: 'No', label: 'No' }
+        ]
+      },
+      {
+        id: 'statuses',
+        label: 'Status',
+        type: 'autocomplete',
+        multiple: true,
+        isStarred: true,
+        options: STATUS_OPTIONS.map((s) => ({ value: s, label: s }))
+      }
+    ];
+
+    if (filters.taskType === 'Team' && isVerticalHead) {
+      const empOptions = myTeamEmployees.map((e) => ({
+        value: e.employeeName,
+        label: e.employeeName
+      }));
+      baseConfig.push({
+        id: 'assignedTo',
+        label: 'Employee',
+        type: 'autocomplete',
+        multiple: true,
+        isStarred: true,
+        options: empOptions
+      });
+    } else if (filters.taskType === 'Company' && perms.additional1) {
+      const empOptions = (employees || [])
+        .filter((e) => e.status === 'Active' || e.status === null)
+        .map((e) => ({
+          value: e.employeeName,
+          label: e.employeeName
+        }));
+      baseConfig.push({
+        id: 'assignedTo',
+        label: 'Employee',
+        type: 'autocomplete',
+        multiple: true,
+        isStarred: true,
+        options: empOptions
+      });
+    }
+
+    baseConfig.push(
+      {
+        id: 'searchBy',
+        label: 'Search by',
+        type: 'select',
+        isStarred: true,
+        defaultValue: 'All',
+        options: [
+          { value: 'All', label: 'Global Search' },
+          { value: 'checkingPoint', label: 'Checking Point' },
+          { value: 'seqNo', label: 'Seq.No' }
+        ]
+      },
+      { id: 'seqNo', label: 'Sequence No', type: 'text', isStarred: false },
+      { id: 'checkingPoint', label: 'Checking Point', type: 'text', isStarred: false },
+      {
+        id: 'category',
+        label: 'Category',
+        type: 'select',
+        isStarred: false,
+        defaultValue: 'All',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'RENEWAL', label: 'RENEWAL' },
+          { value: 'CHECK LIST', label: 'CHECK LIST' }
+        ]
+      },
+      {
+        id: 'frequency',
+        label: 'Frequency',
+        type: 'select',
+        isStarred: false,
+        defaultValue: 'All',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'DAILY', label: 'DAILY' },
+          { value: 'WEEKLY', label: 'WEEKLY' },
+          { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' },
+          { value: 'MONTHLY', label: 'MONTHLY' },
+          { value: 'QUARTERLY', label: 'QUARTERLY' },
+          { value: 'HALF YEARLY', label: 'HALF YEARLY' },
+          { value: 'YEARLY', label: 'YEARLY' }
+        ]
+      },
+      {
+        id: 'stockLink',
+        label: 'Stock Link',
+        type: 'select',
+        isStarred: false,
+        defaultValue: 'All',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'YES', label: 'YES' },
+          { value: 'NO', label: 'NO' }
+        ]
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')
+    );
+
+    dispatch(setFilterConfig(baseConfig));
     dispatch(setTableConfig(tableCols));
+
     return () => {
       dispatch(setFilterConfig(null));
       dispatch(setTableConfig(null));
     };
-  }, [dispatch, departmentsList]);
+  }, [dispatch, isVerticalHead, myTeamEmployees, perms.additional1, perms.loading, employees, filters.taskType]);
 
   // Sync global search filters with local filters
   useEffect(() => {
@@ -369,7 +445,7 @@ export default function CloseCheckListRenewal() {
 
         const filterKeys = [
           'taskType', 'fromDate', 'toDate', 'considerDate', 'considerDateValue', 'statuses',
-          'searchBy', 'departments', 'seqNo', 'checkingPoint', 'category',
+          'searchBy', 'assignedTo', 'seqNo', 'checkingPoint', 'category',
           'frequency', 'stockLink'
         ];
 
@@ -388,7 +464,6 @@ export default function CloseCheckListRenewal() {
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
     try {
-      const depts = filters.departments || [];
       const considerDate = globalFilters.createdDateConsider || filters.considerDate || 'No';
       const params = {
         page,
@@ -400,13 +475,15 @@ export default function CloseCheckListRenewal() {
         considerDateValue: (String(considerDate).trim().toUpperCase() === 'YES' && (globalFilters.createdDateConsiderValue || filters.considerDateValue)) ? (globalFilters.createdDateConsiderValue || filters.considerDateValue) : undefined,
         searchValue: searchQuery || undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
-        department: depts.length > 0 ? depts[0] : undefined,
 
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
         currentUser: user?.id || user?.name || undefined,
         excludeCompleted: true,
         excludePending: false,
+
+        // Assigned To Multi-select parameter mapping
+        assignedTo: (filters.assignedTo && filters.assignedTo.length > 0) ? filters.assignedTo.join(',') : undefined,
 
         // Add-on filters
         seqNo: filters.seqNo || undefined,
@@ -529,7 +606,7 @@ export default function CloseCheckListRenewal() {
     }
   };
 
-  const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
+  const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignedTo?.length || 0);
 
   const canEditSelected = perms.write || (activeRow && activeRow.assignedTo && (
     activeRow.assignedTo.toLowerCase() === user?.id?.toLowerCase() ||
@@ -548,25 +625,12 @@ export default function CloseCheckListRenewal() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          
           exportFilename="Close_Checklist"
           hasExportPermission={perms.export}
-          onCompleteTask={canEditSelected ? () => setDialogOpen(true) : null}
-          completeTaskDisabled={!selectedRowId}
-         columns={columns} />
+          columns={columns} />
       }
     >
-      {activeCount > 0 && (
-        <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mr: 0.5 }}>Filters:</Typography>
-          {filters.taskType !== 'Mine' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType', 'Mine')} />}
-          {filters.fromDate && <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate', '')} />}
-          {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate', '')} />}
-          {filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate', 'All')} />}
-          {filters.statuses.map((s) => <Chip key={s} label={`Status: ${s}`} size="small" color="warning" onDelete={() => toggleStatus(s)} />)}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml: 1 }}>Clear All</Button>
-        </Box>
-      )}
+
 
       {/* ── Cursor-following 'Double tap' label ── */}
       {showDoubleTap && (
@@ -752,94 +816,7 @@ export default function CloseCheckListRenewal() {
 
 
 
-      {/* FILTER DRAWER */}
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: 320 } }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Filters</Typography>
-          <IconButton size="small" onClick={() => setDrawerOpen(false)}><IconX size={20} /></IconButton>
-        </Box>
-        <Box sx={{ overflowY: 'auto', flex: 1 }}>
-          <FilterSection title="Task Type" open={openSections.taskType} onToggle={() => toggleSection('taskType')}>
-            <FormControl><RadioGroup value={filters.taskType} onChange={(e) => setFilter('taskType', e.target.value)}>
-              {['All', 'Mine', 'Team', 'Company'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
-            <Box sx={{ mb: 1.5 }}>
-              <BOSDatePicker label="From" value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} />
-            </Box>
-            <Box>
-              <BOSDatePicker label="To" value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} />
-            </Box>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Consider Date?" open={openSections.considerDate} onToggle={() => toggleSection('considerDate')}>
-            <FormControl><RadioGroup value={filters.considerDate} onChange={(e) => {
-              const val = e.target.value;
-              setFilter('considerDate', val);
-              if (val === 'Yes') {
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const dd = String(today.getDate()).padStart(2, '0');
-                const todayStr = `${yyyy}-${mm}-${dd}`;
-                setFilter('considerDateValue', todayStr);
-                setFilter('fromDate', todayStr);
-              }
-            }}>
-              {['All', 'Yes', 'No'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
-            </RadioGroup></FormControl>
-            {filters.considerDate === 'Yes' && (
-              <Box sx={{ mt: 1.5 }}>
-                <Box sx={{ mb: 1.5 }}>
-                  <BOSDatePicker label="Consider Date" value={filters.considerDateValue || ''} onChange={(e) => {
-                    const val = e.target.value;
-                    setFilter('considerDateValue', val);
-                    if (val) {
-                      setFilter('fromDate', val);
-                    }
-                  }} />
-                </Box>
-                {filters.considerDateValue && (
-                  (() => {
-                    const considerVal = new Date(filters.considerDateValue);
-                    const fromVal = filters.fromDate ? new Date(filters.fromDate) : null;
-                    const toVal = filters.toDate ? new Date(filters.toDate) : null;
-                    let isInvalid = false;
-                    if (fromVal && considerVal < fromVal) isInvalid = true;
-                    if (toVal && considerVal > toVal) isInvalid = true;
-                    if (isInvalid) {
-                      return (
-                        <Typography variant="caption" color="error" sx={{ fontWeight: 600, display: 'block', mt: 0.5 }}>
-                          Consider Date must fall within Created Date From and Created Date To range
-                        </Typography>
-                      );
-                    }
-                    return null;
-                  })()
-                )}
-              </Box>
-            )}
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <Box>
-              {STATUS_OPTIONS.map((s) => <FormControlLabel key={s} sx={{ display: 'flex', ml: 0, mr: 0, py: 0.2 }} control={<Checkbox size="small" checked={filters.statuses.includes(s)} onChange={() => toggleStatus(s)} sx={{ p: 0.5 }} />} label={<Typography variant="body2">{s}</Typography>} />)}
-            </Box>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
-            <FormControl fullWidth><RadioGroup value={filters.searchBy} onChange={(e) => setFilter('searchBy', e.target.value)}>
-              {SEARCH_BY_OPTIONS.map((opt) => <FormControlLabel key={opt.key} value={opt.key} control={<Radio size="small" />} label={<Typography variant="body2">{opt.label}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-        </Box>
-        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', gap: 1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
-          <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
-        </Box>
-      </Drawer>
+
       <ExecutionVerifyDialog
         open={dialogOpen}
         handleClose={() => setDialogOpen(false)}
