@@ -13,4 +13,5 @@ public interface EmployeeMasterRepository extends JpaRepository<EmployeeMaster, 
     java.util.Optional<EmployeeMaster> findByEmpCode(String empCode);
     java.util.List<EmployeeMaster> findByIsInductionEligibleAndStatus(String isInductionEligible, String status);
     java.util.List<EmployeeMaster> findByEmpCodeStartingWith(String prefix);
+    boolean existsByVerticalHeadIgnoreCase(String verticalHead);
 }
